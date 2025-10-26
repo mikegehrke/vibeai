@@ -1,0 +1,165 @@
+/* 🎮 Interactive Preview Styling */
+.interactive-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.preview-app-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 48px 16px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.preview-app-bar h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.preview-content {
+  flex: 1;
+  padding: 24px 16px;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Timer Display */
+.timer-display {
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.timer-circle {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.timer-circle::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.timer-text {
+  position: relative;
+  z-index: 1;
+  font-size: 56px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+/* Buttons */
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.flutter-button {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 110px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.flutter-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.flutter-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.flutter-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-stop {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.btn-start:hover:not(:disabled) { 
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); 
+}
+
+.btn-stop:hover:not(:disabled) { 
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); 
+}
+
+.btn-reset:hover:not(:disabled) { 
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); 
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0;
+}
+
+.status-running {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-stopped {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border: 2px solid rgba(107, 114, 128, 0.2);
+}
+
+/* Animation */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.timer-circle.running {
+  animation: pulse 2s ease-in-out infinite;
+}

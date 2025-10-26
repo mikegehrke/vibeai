@@ -1,0 +1,178 @@
+/* Markdown Content Styling */
+
+.markdown-content {
+  color: white;
+  line-height: 1.8;
+}
+
+/* Headings */
+.md-h1 {
+  font-size: 2rem;
+  margin: 1.5em 0 0.5em 0;
+  color: #4ecdc4;
+  border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+  padding-bottom: 0.3em;
+}
+
+.md-h2 {
+  font-size: 1.6rem;
+  margin: 1.3em 0 0.5em 0;
+  color: #4ecdc4;
+}
+
+.md-h3 {
+  font-size: 1.3rem;
+  margin: 1.2em 0 0.5em 0;
+  color: #45b7d1;
+}
+
+/* Paragraphs */
+.md-p {
+  margin: 1em 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Lists */
+.md-ul, .md-ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.md-li {
+  margin: 0.5em 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.md-li::marker {
+  color: #4ecdc4;
+}
+
+/* Links */
+.md-link {
+  color: #4ecdc4;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(78, 205, 196, 0.3);
+  transition: all 0.3s ease;
+}
+
+.md-link:hover {
+  color: #45b7d1;
+  border-bottom-color: #45b7d1;
+}
+
+/* Blockquotes */
+.md-quote {
+  border-left: 4px solid #4ecdc4;
+  padding-left: 1em;
+  margin: 1em 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+  background: rgba(78, 205, 196, 0.1);
+  padding: 1em;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Tables */
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.md-table th {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.md-table td {
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.md-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Inline Code */
+.markdown-content code {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+/* Code Blocks */
+.code-block {
+  margin: 1em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-language {
+  color: #8b9dc3;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.code-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(78, 205, 196, 0.2);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  color: #4ecdc4;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.code-copy-btn:hover {
+  background: rgba(78, 205, 196, 0.3);
+  transform: translateY(-1px);
+}
+
+.code-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Horizontal Rule */
+.markdown-content hr {
+  border: none;
+  border-top: 2px solid rgba(78, 205, 196, 0.2);
+  margin: 2em 0;
+}
+
+/* Strong & Em */
+.markdown-content strong {
+  color: #4ecdc4;
+  font-weight: 700;
+}
+
+.markdown-content em {
+  color: #45b7d1;
+  font-style: italic;
+}

@@ -1,0 +1,245 @@
+/* 🔧 Git Panel Styling - Reusable Component */
+
+.git-panel {
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.1), rgba(59, 130, 246, 0.1));
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(138, 43, 226, 0.2);
+}
+
+.git-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #a78bfa;
+  margin-bottom: 20px;
+}
+
+.git-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #666;
+  text-align: center;
+}
+
+.git-empty svg {
+  color: #a78bfa;
+  margin-bottom: 12px;
+}
+
+.git-init {
+  text-align: center;
+  padding: 20px;
+}
+
+.git-init p {
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.git-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.git-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.git-section label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #a78bfa;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.git-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.git-input:focus {
+  outline: none;
+  border-color: #a78bfa;
+  background: rgba(17, 24, 39, 0.8);
+}
+
+.git-input::placeholder {
+  color: #666;
+}
+
+.btn-git {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.btn-git:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+}
+
+.btn-git:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-commit {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-commit:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-push {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.btn-pull {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.btn-github {
+  background: linear-gradient(135deg, #6b7280, #374151);
+}
+
+.btn-create {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.git-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.github-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.github-form {
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  padding: 30px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.github-form h4 {
+  color: #a78bfa;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0e0e0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.git-status {
+  background: rgba(17, 24, 39, 0.4);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(138, 43, 226, 0.2);
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.status-label {
+  color: #999;
+  font-weight: 500;
+}
+
+.status-value {
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.btn-git:disabled {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .git-actions {
+    grid-template-columns: 1fr;
+  }
+  
+  .github-form {
+    width: 95%;
+    padding: 20px;
+  }
+}

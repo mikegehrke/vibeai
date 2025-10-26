@@ -1,0 +1,50 @@
+
+fastapi
+uvicorn
+openai
+gitpython
+
+# 🚀 VibeAI 2.0 Premium Modules - ULTIMATE AI POWERHOUSE
+# Web Search & Research
+tavily-python
+
+# Multi-Modal AI
+anthropic
+
+# Vector Database & Memory
+chromadb
+
+# File Processing & Multi-Modal
+PyPDF2
+python-multipart
+aiofiles
+pillow
+ffmpeg-python
+
+# Real-time Communication
+websockets
+redis
+
+# Background Tasks & Queue
+celery
+
+# Database & Persistence
+sqlalchemy
+alembic
+psycopg2-binary
+python-dotenv
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Web Scraping & Data Extraction
+beautifulsoup4
+youtube-dl
+requests
+
+# Container & Deployment
+docker
+
+# Payment Processing
+stripe
