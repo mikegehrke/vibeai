@@ -4,7 +4,42 @@ import {
   FiCopy, FiEdit2, FiRefreshCw, FiThumbsUp, FiThumbsDown,
   FiMic, FiVolume2, FiStopCircle, FiCheck, FiPlus, FiSearch
 } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './ChatInterfaceEnhanced.css';
+
+// Einfache Code-Highlighter Komponente
+const CodeBlock = ({ language, children }) => {
+  return (
+    <div style={{ 
+      background: '#1e1e1e', 
+      padding: '1rem', 
+      borderRadius: '8px', 
+      overflow: 'auto',
+      marginTop: '0.5rem',
+      marginBottom: '0.5rem'
+    }}>
+      <div style={{ 
+        color: '#858585', 
+        fontSize: '0.75rem', 
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase'
+      }}>
+        {language || 'code'}
+      </div>
+      <pre style={{ margin: 0 }}>
+        <code style={{ 
+          color: '#d4d4d4',
+          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+          fontSize: '14px',
+          lineHeight: '1.5'
+        }}>
+          {children}
+        </code>
+      </pre>
+    </div>
+  );
+};
 
 const ChatInterfaceEnhanced = () => {
   // State Management
@@ -15,6 +50,7 @@ const ChatInterfaceEnhanced = () => {
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamController, setStreamController] = useState(null);  // AbortController für Stop-Button
   const [showSettings, setShowSettings] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -30,26 +66,154 @@ const ChatInterfaceEnhanced = () => {
   const [settings, setSettings] = useState({
     temperature: 0.7,
     maxTokens: 4000,
-    systemPrompt: 'You are a helpful AI assistant.',
-    voice: 'alloy', // for TTS
+    agentMode: false, // Normal-Modus = false, Agent-Modus = true
+    systemPrompt: `Du bist ein hilfreicher AI Assistent und Agent.
+
+WICHTIGE REGELN für Code-Projekte:
+
+1. SCHRITT-FÜR-SCHRITT Modus (Standard):
+   - Zeige EINE Datei mit komplettem Code
+   - Am Ende schreibe: "✅ Datei [Name] fertig. Soll ich mit der nächsten Datei weitermachen? (ja/weiter/nein)"
+   - Warte auf Bestätigung
+   - Dann die nächste Datei
+
+2. AGENT Modus (alle auf einmal):
+   - Erstelle ALLE Dateien nacheinander ohne zu fragen
+   - Jede Datei klar markieren: "📄 Datei: path/filename.ext" am Anfang
+   - Am Ende jeder Datei: "✅ Ende Datei: filename.ext"
+   - Dann sofort nächste Datei
+
+3. QUALITÄT:
+   - Jede Datei KOMPLETT mit allem Code
+   - Keine Platzhalter wie "... rest of code ..."
+   - Production-ready Code
+   - Klare Trennung zwischen Dateien
+
+Beispiel Schritt-für-Schritt:
+📄 Datei: lib/main.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Datei main.dart fertig. Soll ich mit der nächsten Datei weitermachen?
+
+Beispiel Agent-Modus:
+📄 Datei: lib/main.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Ende: main.dart
+
+📄 Datei: lib/models/todo.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Ende: todo.dart
+
+[... alle weiteren Dateien ...]`,
+    voice: 'alloy',
     streamResponses: true,
   });
 
-  // All 88 available models
+  // All AI Models including GitHub, Claude, Gemini
   const models = {
-    'GPT-5 (12 models)': [
+    'GitHub Models (10 models)': [
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o1-preview',
+      'o1-mini',
+      'phi-4',
+      'Mistral-large',
+      'Mistral-large-2411',
+      'Mistral-Nemo',
+      'Mistral-small',
+      'AI21-Jamba-1.5-Large'
+    ],
+    'Claude - Anthropic (8 models)': [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-sonnet-20240620',
+      'claude-3-5-haiku-20241022',
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+      'claude-2.1',
+      'claude-2.0'
+    ],
+    'Gemini - Google (12 models)': [
+      'models/gemini-2.5-pro',
+      'models/gemini-2.5-flash',
+      'models/gemini-2.0-flash-thinking-exp-1219',
+      'models/gemini-2.0-flash-exp',
+      'models/gemini-2.0-flash',
+      'models/gemini-2.0-flash-lite',
+      'models/gemini-2.0-pro-exp',
+      'models/gemini-exp-1206',
+      'models/gemini-flash-latest',
+      'models/gemini-pro-latest',
+      'models/learnlm-2.0-flash-experimental',
+      'models/gemma-3-12b-it'
+    ],
+    'Ollama - Local (15 models)': [
+      'llama3.2',
+      'llama3.1',
+      'llama3',
+      'mistral',
+      'mixtral',
+      'codellama',
+      'deepseek-coder',
+      'qwen2.5',
+      'phi3',
+      'gemma2',
+      'neural-chat',
+      'starling-lm',
+      'vicuna',
+      'orca-mini',
+      'dolphin-mistral'
+    ],
+    'GPT-5 (10 models)': [
       'gpt-5',
-      'gpt-5-preview', 
+      'gpt-5-pro',
       'gpt-5-mini',
-      'gpt-5-turbo',
-      'gpt-5-0125',
-      'gpt-5-1106',
-      'gpt-5-vision',
-      'gpt-5-32k',
-      'gpt-5-128k',
-      'gpt-5-base',
-      'gpt-5-instruct',
-      'gpt-5-code'
+      'gpt-5-nano',
+      'gpt-5-codex',
+      'gpt-5-chat-latest',
+      'gpt-5-search-api',
+      'gpt-5-2025-08-07',
+      'gpt-5-pro-2025-10-06',
+      'gpt-5-mini-2025-08-07'
+    ],
+    'GPT-4.1 (6 models)': [
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'gpt-4.1-nano',
+      'gpt-4.1-2025-04-14',
+      'gpt-4.1-mini-2025-04-14',
+      'gpt-4.1-nano-2025-04-14'
+    ],
+    'GPT-4o (12 models)': [
+      'gpt-4o',
+      'gpt-4o-mini',
+      'chatgpt-4o-latest',
+      'gpt-4o-2024-11-20',
+      'gpt-4o-2024-08-06',
+      'gpt-4o-mini-2024-07-18',
+      'gpt-4o-search-preview',
+      'gpt-4o-mini-search-preview',
+      'gpt-4o-audio-preview',
+      'gpt-4o-mini-audio-preview',
+      'gpt-4o-realtime-preview',
+      'gpt-4o-mini-realtime-preview'
+    ],
+    'O-Series (10 models)': [
+      'o1',
+      'o1-pro',
+      'o1-2024-12-17',
+      'o1-pro-2025-03-19',
+      'o3',
+      'o3-mini',
+      'o3-pro',
+      'o3-deep-research',
+      'o3-2025-04-16',
+      'o3-mini-2025-01-31'
     ],
     'GPT-4 (13 models)': [
       'gpt-4o',
@@ -164,6 +328,65 @@ const ChatInterfaceEnhanced = () => {
       localStorage.setItem('vibeai_conversations', JSON.stringify(conversations));
     }
   }, [conversations]);
+
+  // Get dynamic system prompt based on agent mode
+  const getSystemPrompt = () => {
+    const basePrompt = `Du bist ein hilfreicher AI Assistent und Agent.
+
+QUALITÄT:
+- Jede Datei KOMPLETT mit allem Code
+- Keine Platzhalter wie "... rest of code ..."
+- Production-ready Code
+- Klare Trennung zwischen Dateien`;
+
+    if (settings.agentMode) {
+      // Agent Modus: Alle Dateien auf einmal
+      return `${basePrompt}
+
+🤖 AGENT MODUS AKTIVIERT 🤖
+
+WICHTIG - Erstelle ALLE Dateien nacheinander OHNE zu warten:
+- Jede Datei klar markieren: "📄 Datei: path/filename.ext" am Anfang
+- Am Ende jeder Datei: "✅ Ende Datei: filename.ext"
+- Dann sofort die nächste Datei
+- KEINE Fragen stellen
+- NICHT auf Bestätigung warten
+
+Beispiel:
+📄 Datei: lib/main.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Ende: main.dart
+
+📄 Datei: lib/models/todo.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Ende: todo.dart
+
+[... alle weiteren Dateien direkt hintereinander ...]`;
+    } else {
+      // Normal Modus: Schritt-für-Schritt
+      return `${basePrompt}
+
+👤 NORMAL MODUS (Schritt-für-Schritt)
+
+WICHTIG - Eine Datei nach der anderen:
+- Zeige EINE Datei mit komplettem Code
+- Datei klar markieren: "📄 Datei: path/filename.ext"
+- Am Ende schreibe: "✅ Datei [Name] fertig. Soll ich mit der nächsten Datei weitermachen? (ja/weiter/nein)"
+- WARTE auf Bestätigung vom User
+- Dann erst die nächste Datei
+
+Beispiel:
+📄 Datei: lib/main.dart
+\`\`\`dart
+[kompletter Code]
+\`\`\`
+✅ Datei main.dart fertig. Soll ich mit der nächsten Datei weitermachen? (ja/weiter/nein)`;
+    }
+  };
 
   // Helper Functions
   const scrollToBottom = () => {
@@ -373,11 +596,11 @@ const ChatInterfaceEnhanced = () => {
       content: messageText,
       files: files,
       timestamp: new Date().toLocaleTimeString(),
-      id: Date.now()
+      id: `user-${Date.now()}-${Math.random()}`
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    // Add user message immediately
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setAttachedFiles([]);
     setIsLoading(true);
@@ -387,7 +610,7 @@ const ChatInterfaceEnhanced = () => {
       const newConv = {
         id: Date.now(),
         title: generateConversationTitle(messageText),
-        messages: newMessages,
+        messages: [userMessage],
         model: selectedModel,
         created: new Date().toISOString()
       };
@@ -396,7 +619,12 @@ const ChatInterfaceEnhanced = () => {
     }
 
     try {
-      if (settings.streamResponses) {
+      // GPT-5, O1, O3 don't support streaming well - use normal response
+      const isReasoningModel = selectedModel.includes('gpt-5') || 
+                               selectedModel.includes('o1') || 
+                               selectedModel.includes('o3');
+      
+      if (settings.streamResponses && !isReasoningModel) {
         await handleStreamingResponse(messageText);
       } else {
         await handleNormalResponse(messageText);
@@ -406,7 +634,7 @@ const ChatInterfaceEnhanced = () => {
         role: 'error',
         content: `❌ Error: ${error.message}`,
         timestamp: new Date().toLocaleTimeString(),
-        id: Date.now()
+        id: `error-${Date.now()}`
       };
       setMessages(prev => [...prev, errorMessage]);
     }
@@ -416,73 +644,182 @@ const ChatInterfaceEnhanced = () => {
   };
 
   const handleNormalResponse = async (messageText) => {
-    const response = await fetch('http://127.0.0.1:8005/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
+      
+      // Build conversation history (last 10 messages to keep context)
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const response = await fetch('http://localhost:8000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: selectedModel,
+          prompt: messageText,
+          agent: 'aura',
+          system_prompt: getSystemPrompt(),
+          conversation_history: conversationHistory
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('🔍 Backend Response:', data);
+
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.response || data.error || 'Keine Antwort erhalten',
         model: selectedModel,
-        prompt: messageText,
-        settings: settings,
-        messages: messages.map(m => ({ role: m.role, content: m.content }))
-      })
-    });
+        timestamp: new Date().toLocaleTimeString(),
+        imageUrl: data.imageUrl,
+        audioUrl: data.audioUrl,
+        id: `assistant-${Date.now()}-${Math.random()}`
+      };
+      console.log('📨 Assistant Message:', assistantMessage);
 
-    const data = await response.json();
-
-    const assistantMessage = {
-      role: 'assistant',
-      content: data.response || data.error,
-      model: selectedModel,
-      timestamp: new Date().toLocaleTimeString(),
-      imageUrl: data.imageUrl,
-      audioUrl: data.audioUrl,
-      id: Date.now()
-    };
-
-    setMessages(prev => [...prev, assistantMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('❌ Error in handleNormalResponse:', error);
+      const errorMessage = {
+        role: 'error',
+        content: `❌ Fehler: ${error.message}`,
+        timestamp: new Date().toLocaleTimeString(),
+        id: `error-${Date.now()}`
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleStreamingResponse = async (messageText) => {
+    console.log('🚀 Starting streaming response for:', messageText);
     setIsStreaming(true);
     
+    // Create AbortController for cancellation
+    const controller = new AbortController();
+    setStreamController(controller);
+    
+    const messageId = `assistant-${Date.now()}-${Math.random()}`;
     const assistantMessage = {
       role: 'assistant',
       content: '',
       model: selectedModel,
       timestamp: new Date().toLocaleTimeString(),
-      id: Date.now(),
+      id: messageId,
       streaming: true
     };
 
     setMessages(prev => [...prev, assistantMessage]);
+    console.log('📝 Created streaming message with ID:', messageId);
 
-    // Simulated streaming (replace with actual SSE implementation)
-    const response = await fetch('http://127.0.0.1:8005/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: selectedModel,
-        prompt: messageText,
-        settings: settings,
-        stream: true
-      })
-    });
+    try {
+      console.log('📡 Fetching from backend with stream=true...');
+      
+      // Build conversation history (last 10 messages)
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-    const data = await response.json();
-    
-    // Update final message
-    setMessages(prev => prev.map(m => 
-      m.id === assistantMessage.id 
-        ? { ...m, content: data.response, streaming: false }
-        : m
-    ));
+      const response = await fetch('http://localhost:8000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: selectedModel,
+          prompt: messageText,
+          agent: 'aura',
+          stream: true,
+          system_prompt: getSystemPrompt(),
+          conversation_history: conversationHistory
+        }),
+        signal: controller.signal
+      });
 
-    setIsStreaming(false);
+      console.log('✅ Got response, starting to read stream...');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+      let chunkCount = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log('✅ Stream finished. Total chunks:', chunkCount);
+          break;
+        }
+
+        const chunk = decoder.decode(value);
+        chunkCount++;
+        console.log(`📦 Chunk ${chunkCount}:`, chunk.substring(0, 100));
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                accumulatedContent += data.content;
+                setMessages(prev => prev.map(msg => 
+                  msg.id === messageId 
+                    ? { ...msg, content: accumulatedContent }
+                    : msg
+                ));
+              }
+              if (data.done) {
+                console.log('🏁 Received done signal');
+                break;
+              }
+            } catch (e) {
+              console.error('❌ Parse error:', e, 'Line:', line);
+            }
+          }
+        }
+      }
+
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId
+          ? { ...msg, streaming: false }
+          : msg
+      ));
+      console.log('✅ Streaming complete! Final content length:', accumulatedContent.length);
+
+    } catch (error) {
+      console.error('❌ Streaming error:', error);
+      if (error.name === 'AbortError') {
+        // User stopped the stream
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content: msg.content + '\n\n⏹️ Gestoppt vom User', streaming: false }
+            : msg
+        ));
+      } else {
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content: `❌ Fehler: ${error.message}`, streaming: false }
+            : msg
+        ));
+      }
+    } finally {
+      setIsStreaming(false);
+      setStreamController(null);
+    }
   };
 
   const stopStreaming = () => {
+    console.log('⏹️ User clicked STOP - aborting stream...');
+    if (streamController) {
+      streamController.abort();
+    }
     setIsStreaming(false);
-    // TODO: Cancel fetch request
   };
 
   // Export Functions
@@ -609,6 +946,34 @@ const ChatInterfaceEnhanced = () => {
 
               <div className="settings-body">
                 <div className="setting-item">
+                  <label>
+                    🤖 Agent Modus {settings.agentMode ? '(Alle Dateien auf einmal)' : '(Schritt-für-Schritt)'}
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '14px', color: settings.agentMode ? '#888' : '#4CAF50', fontWeight: settings.agentMode ? 'normal' : 'bold' }}>
+                      👤 Normal
+                    </span>
+                    <label className="switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.agentMode}
+                        onChange={(e) => setSettings({...settings, agentMode: e.target.checked})}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                    <span style={{ fontSize: '14px', color: settings.agentMode ? '#4CAF50' : '#888', fontWeight: settings.agentMode ? 'bold' : 'normal' }}>
+                      🤖 Agent
+                    </span>
+                  </div>
+                  <small style={{ color: '#888', fontSize: '12px', marginTop: '5px', display: 'block' }}>
+                    {settings.agentMode 
+                      ? '✅ Erstellt alle Dateien automatisch ohne zu fragen (Premium Feature)'
+                      : '✅ Wartet nach jeder Datei auf deine Bestätigung'
+                    }
+                  </small>
+                </div>
+
+                <div className="setting-item">
                   <label>Temperature: {settings.temperature}</label>
                   <input 
                     type="range" 
@@ -708,9 +1073,33 @@ const ChatInterfaceEnhanced = () => {
                 
                 {msg.content && (
                   <div className="message-text-enhanced">
-                    <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          const language = match ? match[1] : '';
+                          
+                          return !inline ? (
+                            <CodeBlock language={language}>
+                              {String(children).replace(/\n$/, '')}
+                            </CodeBlock>
+                          ) : (
+                            <code style={{
+                              background: '#f4f4f4',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.9em',
+                              fontFamily: 'Monaco, Consolas, "Courier New", monospace'
+                            }} {...props}>
+                              {children}
+                            </code>
+                          );
+                        }
+                      }}
+                    >
                       {msg.content}
-                    </pre>
+                    </ReactMarkdown>
                   </div>
                 )}
 
@@ -856,6 +1245,22 @@ const ChatInterfaceEnhanced = () => {
               multiple
               style={{ display: 'none' }}
             />
+
+            {(selectedModel.includes('gpt-5') || selectedModel.includes('o1') || selectedModel.includes('o3')) && (
+              <div style={{
+                backgroundColor: '#2a2a3e',
+                color: '#ffa726',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                ⏳ <strong>Reasoning Model:</strong> Antwort kann 30-60 Sekunden dauern
+              </div>
+            )}
 
             <textarea
               value={input}

@@ -146,6 +146,23 @@
   padding: 10px;
   border-radius: 8px;
   font-size: 0.9rem;
+  cursor: pointer;
+  max-height: 400px;
+}
+
+.sidebar-model-selector select option {
+  background: #1a1a2e;
+  color: white;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.sidebar-model-selector select optgroup {
+  background: #0f0f23;
+  color: #4ecdc4;
+  font-weight: bold;
+  font-size: 0.85rem;
+  padding: 8px;
 }
 
 .sidebar-footer-actions {
@@ -640,4 +657,60 @@
   .quick-prompts {
     grid-template-columns: 1fr;
   }
+}
+
+/* Toggle Switch für Agent Modus */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 30px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px linear-gradient(45deg, #4ecdc4, #45b7d1);
+}
+
+input:checked + .slider:before {
+  transform: translateX(30px);
+}
+
+.slider.round {
+  border-radius: 30px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
