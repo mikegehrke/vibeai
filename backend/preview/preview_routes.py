@@ -21,7 +21,7 @@ Features:
 
 from fastapi import APIRouter, Request, HTTPException, WebSocket
 from fastapi.responses import JSONResponse
-from typing import Dict
+from typing import Dict, Any
 from preview.preview_manager import preview_manager
 from preview.preview_ws import preview_ws
 from auth import get_current_user
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/preview", tags=["Preview System"])
 # START PREVIEW
 # -------------------------------------------------------------
 @router.post("/start")
-async def start_preview(request: Request) -> Dict[str, any]:
+async def start_preview(request: Request) -> Dict[str, Any]:
     """
     Startet Live Preview für ein Projekt.
     
@@ -121,7 +121,7 @@ async def stop_preview(request: Request) -> Dict[str, bool]:
 # RESTART PREVIEW
 # -------------------------------------------------------------
 @router.post("/restart")
-async def restart_preview(request: Request) -> Dict[str, any]:
+async def restart_preview(request: Request) -> Dict[str, Any]:
     """
     Startet Preview neu (für Hot Reload).
     
@@ -153,7 +153,7 @@ async def restart_preview(request: Request) -> Dict[str, any]:
 # PREVIEW STATUS
 # -------------------------------------------------------------
 @router.get("/status")
-async def get_preview_status(request: Request) -> Dict[str, any]:
+async def get_preview_status(request: Request) -> Dict[str, Any]:
     """
     Gibt Status des aktiven Previews zurück.
     
@@ -188,7 +188,7 @@ async def get_preview_status(request: Request) -> Dict[str, any]:
 # LIST ALL PREVIEWS (Admin)
 # -------------------------------------------------------------
 @router.get("/list")
-async def list_all_previews() -> Dict[str, any]:
+async def list_all_previews() -> Dict[str, Any]:
     """
     Liste aller aktiven Previews (Admin-Funktion).
     

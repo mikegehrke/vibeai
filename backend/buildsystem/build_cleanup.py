@@ -26,7 +26,7 @@ import os
 import shutil
 import time
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from pathlib import Path
 
 from .build_manager import build_manager
@@ -178,7 +178,7 @@ def delete_build_artifacts(build_id: str) -> bool:
         return False
 
 
-def cleanup_old_builds_advanced(max_age_days: int = 7) -> Dict[str, any]:
+def cleanup_old_builds_advanced(max_age_days: int = 7) -> Dict[str, Any]:
     """
     Löscht Builds älter als X Tage (erweiterte Version).
     
@@ -234,7 +234,7 @@ def cleanup_old_builds_advanced(max_age_days: int = 7) -> Dict[str, any]:
 def cleanup_by_count(
     max_builds: int = 10,
     user_id: Optional[str] = None
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Behält nur die letzten N Builds pro User.
     
@@ -285,7 +285,7 @@ def cleanup_by_count(
     }
 
 
-def cleanup_failed_builds(max_age_hours: int = 24) -> Dict[str, any]:
+def cleanup_failed_builds(max_age_hours: int = 24) -> Dict[str, Any]:
     """
     Löscht fehlgeschlagene Builds älter als X Stunden.
     
@@ -323,7 +323,7 @@ def cleanup_failed_builds(max_age_hours: int = 24) -> Dict[str, any]:
     }
 
 
-def cleanup_until_size(max_size_gb: float = 5.0) -> Dict[str, any]:
+def cleanup_until_size(max_size_gb: float = 5.0) -> Dict[str, Any]:
     """
     Löscht älteste Builds bis Gesamtgröße unter Limit ist.
     
@@ -374,7 +374,7 @@ def cleanup_until_size(max_size_gb: float = 5.0) -> Dict[str, any]:
     }
 
 
-def cleanup_temp_files() -> Dict[str, any]:
+def cleanup_temp_files() -> Dict[str, Any]:
     """
     Löscht temporäre Build-Dateien (.tmp, .cache, etc.).
     
@@ -417,7 +417,7 @@ def cleanup_temp_files() -> Dict[str, any]:
     }
 
 
-def get_cleanup_stats() -> Dict[str, any]:
+def get_cleanup_stats() -> Dict[str, Any]:
     """
     Statistiken über Build-Artifacts.
     

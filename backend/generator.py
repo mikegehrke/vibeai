@@ -1,6 +1,7 @@
 # backend/generator.py
 # KI-Code-Erzeugung mit OpenAI-API (oder lokalem Modell)
 
+from typing import Any, Dict
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
@@ -184,7 +185,7 @@ class CodeGeneratorV2:
         output_dir: str,
         model: Optional[str] = None,
         agent: Optional[str] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Generiert komplettes Projekt basierend auf Beschreibung.
         
@@ -358,7 +359,7 @@ CRITICAL: Return ONLY the JSON, no explanations before or after.
         description: str,
         file_type: str = "python",
         model: Optional[str] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Generiert einzelne Datei (schneller für kleine Tasks).
         

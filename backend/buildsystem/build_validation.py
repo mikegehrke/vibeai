@@ -20,7 +20,7 @@ Verwendung:
 
 import os
 import shutil
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 from .build_manager import build_manager
@@ -30,7 +30,7 @@ async def validate_build_request(
     user: str,
     project_path: str,
     build_type: str
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Validiert Build-Request vor dem Start.
     
@@ -247,7 +247,7 @@ def get_build_queue_position(build_id: str) -> Optional[int]:
     return None
 
 
-async def check_build_dependencies(build_type: str) -> Dict[str, any]:
+async def check_build_dependencies(build_type: str) -> Dict[str, Any]:
     """
     Prüft ob notwendige Build-Tools installiert sind.
     

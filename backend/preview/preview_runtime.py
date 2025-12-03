@@ -23,7 +23,7 @@ Verwendung:
 import asyncio
 import os
 import time
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, Any
 from pathlib import Path
 import hashlib
 
@@ -334,7 +334,7 @@ class PreviewRuntime:
     # ---------------------------------------------------------
     # STATS
     # ---------------------------------------------------------
-    def get_watcher_stats(self) -> Dict[str, any]:
+    def get_watcher_stats(self) -> Dict[str, Any]:
         """
         Statistiken über aktive Watchers.
         

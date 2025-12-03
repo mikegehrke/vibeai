@@ -30,7 +30,7 @@ import random
 import os
 import signal
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from preview.preview_ws import preview_ws
 
@@ -125,7 +125,7 @@ class PreviewManager:
         user: str,
         project_id: str,
         project_path: str
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Startet Web Preview mit npm run dev.
         
@@ -189,7 +189,7 @@ class PreviewManager:
         user: str,
         project_id: str,
         project_path: str
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Startet Flutter Web Preview.
         

@@ -1,6 +1,7 @@
 # backend/api_diagnostics.py
 # Automatische Diagnose von OpenAI API-Problemen und Lösungsvorschläge
 
+from typing import Any, Dict
 from openai import OpenAI
 import os
 import re

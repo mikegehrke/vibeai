@@ -85,7 +85,7 @@ class Mailer:
 # VIBEAI – MAILER SERVICE V2 (ASYNC + TEMPLATES + RETRY)
 # -------------------------------------------------------------
 import ssl
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
@@ -124,7 +124,7 @@ class MailerServiceV2:
         message: str,
         html: Optional[str] = None,
         retry: int = 3
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Async Email mit Retry-Logik.
         
@@ -213,7 +213,7 @@ class MailerServiceV2:
         subject: str,
         message: str,
         html: Optional[str] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Sendet Email an mehrere Empfänger (parallel).
         
@@ -249,7 +249,7 @@ class MailerServiceV2:
         self,
         message: str,
         details: Optional[str] = None
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Sendet Alert an Admin.
         
@@ -283,7 +283,7 @@ class MailerServiceV2:
         user_email: str,
         ticket_id: str,
         reply_message: str
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Sendet Ticket-Antwort an User.
         """
@@ -315,7 +315,7 @@ class MailerServiceV2:
         user_email: str,
         project_name: str,
         download_url: str
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Benachrichtigt User dass Projekt fertig ist.
         """
@@ -350,7 +350,7 @@ class MailerServiceV2:
         self,
         user_email: str,
         reason: str
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Informiert User über Account-Sperrung.
         """

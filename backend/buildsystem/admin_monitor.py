@@ -23,7 +23,7 @@ import os
 import time
 import psutil
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from datetime import datetime, timedelta
 
 from .build_manager import build_manager
@@ -33,7 +33,7 @@ from .build_cleanup import (
     cleanup_failed_builds,
     get_all_builds_size
 )
-from ..auth import verify_admin  # Admin-Auth Middleware
+from auth import verify_admin  # Admin-Auth Middleware
 
 router = APIRouter(prefix="/api/admin/builds", tags=["admin-builds"])
 
@@ -43,8 +43,9 @@ async def list_all_builds(
     limit: int = 50,
     offset: int = 0,
     status: Optional[str] = None,
-    user: Optional[str] = None
-) -> Dict[str, any]:
+    user: Optional[str] = None,
+    admin_user=Depends(verify_admin)
+) -> Dict[str, Any]:
     """
     Liste aller Builds mit Filterung.
     
@@ -111,7 +112,7 @@ async def list_all_builds(
 
 
 @router.get("/stats")
-async def get_build_statistics() -> Dict[str, any]:
+async def get_build_statistics() -> Dict[str, Any]:
     """
     Build-Statistiken für Admin-Dashboard.
     
@@ -200,7 +201,7 @@ async def get_build_statistics() -> Dict[str, any]:
 
 
 @router.get("/active")
-async def get_active_builds() -> Dict[str, any]:
+async def get_active_builds() -> Dict[str, Any]:
     """
     Aktuell laufende Builds.
     
@@ -272,7 +273,7 @@ async def cancel_build(build_id: str) -> Dict[str, str]:
 async def trigger_cleanup(
     max_age_days: int = 7,
     cleanup_failed: bool = True
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Startet Cleanup-Operation.
     
@@ -303,7 +304,7 @@ async def trigger_cleanup(
 
 
 @router.get("/system")
-async def get_system_resources() -> Dict[str, any]:
+async def get_system_resources() -> Dict[str, Any]:
     """
     System-Ressourcen für Monitoring.
     
@@ -347,7 +348,7 @@ async def get_system_resources() -> Dict[str, any]:
 
 
 @router.get("/cleanup-stats")
-async def get_cleanup_statistics() -> Dict[str, any]:
+async def get_cleanup_statistics() -> Dict[str, Any]:
     """
     Cleanup-Statistiken für Admin-Dashboard.
     
@@ -361,7 +362,7 @@ async def get_cleanup_statistics() -> Dict[str, any]:
 async def get_user_builds(
     user_id: str,
     limit: int = 20
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Alle Builds eines Users.
     

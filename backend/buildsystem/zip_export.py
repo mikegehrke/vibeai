@@ -18,7 +18,7 @@ Verwendung:
 import os
 import shutil
 import tempfile
-from typing import List
+from typing import List, Any
 from pathlib import Path
 
 

@@ -105,6 +105,10 @@ async def require_admin(current_user=Depends(get_current_user_v2)):
     return current_user
 
 
+# Alias für Kompatibilität
+verify_admin = require_admin
+
+
 # ============================================================
 # ⭐ VIBEAI – PROFESSIONAL AUTH EXTENSIONS (2025)
 # ============================================================

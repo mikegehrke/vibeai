@@ -20,7 +20,7 @@ Features:
 import os
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse, StreamingResponse
-from typing import List, Dict
+from typing import List, Dict, Any
 import mimetypes
 
 from .build_manager import build_manager
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/builds", tags=["artifacts"])
 
 
 @router.get("/{build_id}/artifacts")
-async def list_artifacts(build_id: str) -> Dict[str, any]:
+async def list_artifacts(build_id: str) -> Dict[str, Any]:
     """
     Liste aller verfügbaren Artifacts für einen Build.
     
@@ -215,7 +215,7 @@ async def download_logs(build_id: str):
 
 
 @router.get("/{build_id}/artifacts/info")
-async def get_artifacts_info(build_id: str) -> Dict[str, any]:
+async def get_artifacts_info(build_id: str) -> Dict[str, Any]:
     """
     Detaillierte Info über alle Artifacts (inkl. ZIP-Größe).
     

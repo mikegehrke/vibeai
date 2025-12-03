@@ -5,7 +5,7 @@ import os
 import asyncio
 import shutil
 import logging
-from typing import Dict, Optional, Callable
+from typing import Dict, Optional, Callable, Any
 from abc import ABC, abstractmethod
 
 from buildsystem.build_manager import build_manager

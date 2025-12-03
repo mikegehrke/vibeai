@@ -93,7 +93,7 @@ async def broadcast_ws_notification(
 # -------------------------------------------------------------
 # VIBEAI – NOTIFICATION ROUTES V2 (PRODUCTION FEATURES)
 # -------------------------------------------------------------
-from typing import List, Optional
+from typing import List, Optional, Any
 from pydantic import BaseModel, EmailStr
 from admin.notifications.mailer import mailer_v2
 

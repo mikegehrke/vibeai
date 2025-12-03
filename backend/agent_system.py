@@ -516,8 +516,13 @@ class AgentSystemV2(AgentSystem):
         # Request Queue
         self.request_queue = AgentRequestQueue(max_concurrent=10)
         
-        # Start queue processor
-        asyncio.create_task(self.request_queue.process_queue())
+        # Queue processor task (wird später gestartet)
+        self._queue_task = None
+    
+    async def start_queue_processor(self):
+        """Startet den Queue Processor (muss aus async Context aufgerufen werden)"""
+        if self._queue_task is None:
+            self._queue_task = asyncio.create_task(self.request_queue.process_queue())
     
     async def run_agent_v2(
         self,

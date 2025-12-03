@@ -1,6 +1,7 @@
 # backend/composer.py
 # Baut mehrere Module nach Architekturplan automatisch zusammen
 
+from typing import Any, Dict
 from generator import generate_code
 import os
 

@@ -19,7 +19,7 @@ Features:
 from fastapi import APIRouter, HTTPException
 import os
 import shutil
-from typing import List, Dict
+from typing import List, Dict, Any
 from buildsystem.build_manager import build_manager
 
 router = APIRouter(prefix="/admin/builds", tags=["Admin Builds"])

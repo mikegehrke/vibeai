@@ -380,3 +380,9 @@ def check_user_rate_limit(
         )
     
     return True
+
+
+# -------------------------------------------------------------
+# Globale Instanz für Import
+# -------------------------------------------------------------
+limiter = AdvancedRateLimiter()
