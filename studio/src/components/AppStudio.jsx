@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import JSZip from 'jszip';
+import PromptHelper from './PromptHelper';
 import { FiPlay, FiDownload, FiCopy, FiCode, FiZap } from 'react-icons/fi';
 import './AppStudio.css';
 
@@ -362,6 +363,9 @@ Generated on: ${new Date().toLocaleString()}
           <p>Select a template, describe your app, and let AI generate the code!</p>
         </div>
       )}
+      
+      {/* Prompt Helper */}
+      <PromptHelper onInsertPrompt={(prompt) => setDescription(description + '\n' + prompt)} />
     </div>
   );
 };

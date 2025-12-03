@@ -4,8 +4,17 @@ import ModelTester from './components/ModelTester'
 import ModelComparison from './components/ModelComparison'
 import ChatInterfaceEnhanced from './components/ChatInterfaceEnhanced'
 import AppStudioUltra from './components/AppStudioUltra'
-import CodeStudio from './components/CodeStudio'
+import CodeStudio from './components/CodeStudio';
 import AppBuilder from './components/AppBuilder'
+import FlowPanel from './components/FlowPanel'
+import FlowchartPanel from './components/FlowchartPanel'
+import TestPanel from './components/TestPanel'
+import ErrorPanel from './components/ErrorPanel'
+import PaymentPanel from './components/PaymentPanel'
+import RealtimePanel from './components/RealtimePanel'
+import StorePanel from './components/StorePanel'
+import AIIntelligencePanel from './components/AIIntelligencePanel'
+import AutopilotPanel from './components/AutopilotPanel'
 import './App.css'
 
 function App() {
@@ -18,9 +27,27 @@ function App() {
       case 'studio':
         return <AppStudioUltra />
       case 'codestudio':
-        return <CodeStudio />
+        return <CodeStudio />;
       case 'appbuilder':
         return <AppBuilder />
+      case 'flow':
+        return <FlowPanel />
+      case 'flowchart':
+        return <FlowchartPanel />
+      case 'testgen':
+        return <TestPanel />
+      case 'errorfixer':
+        return <ErrorPanel />
+      case 'payment':
+        return <PaymentPanel />
+      case 'realtime':
+        return <RealtimePanel />
+      case 'store':
+        return <StorePanel />
+      case 'ai-intelligence':
+        return <AIIntelligencePanel />
+      case 'autopilot':
+        return <AutopilotPanel />
       case 'dashboard':
         return <ModelDashboard />
       case 'tester':
@@ -64,6 +91,60 @@ function App() {
             onClick={() => setActiveTab('codestudio')}
           >
             💻 Code Studio
+          </button>
+          <button 
+            className={activeTab === 'flow' ? 'active' : ''}
+            onClick={() => setActiveTab('flow')}
+          >
+            🗺️ Flow Builder
+          </button>
+          <button 
+            className={activeTab === 'flowchart' ? 'active' : ''}
+            onClick={() => setActiveTab('flowchart')}
+          >
+            🎨 AI Flowchart
+          </button>
+          <button 
+            className={activeTab === 'testgen' ? 'active' : ''}
+            onClick={() => setActiveTab('testgen')}
+          >
+            🧪 Test Generator
+          </button>
+          <button 
+            className={activeTab === 'errorfixer' ? 'active' : ''}
+            onClick={() => setActiveTab('errorfixer')}
+          >
+            🔧 Error Fixer
+          </button>
+          <button 
+            className={activeTab === 'payment' ? 'active' : ''}
+            onClick={() => setActiveTab('payment')}
+          >
+            💳 Payment Generator
+          </button>
+          <button 
+            className={activeTab === 'realtime' ? 'active' : ''}
+            onClick={() => setActiveTab('realtime')}
+          >
+            🔴 Realtime Generator
+          </button>
+          <button 
+            className={activeTab === 'store' ? 'active' : ''}
+            onClick={() => setActiveTab('store')}
+          >
+            🏪 Store Generator
+          </button>
+          <button 
+            className={activeTab === 'ai-intelligence' ? 'active' : ''}
+            onClick={() => setActiveTab('ai-intelligence')}
+          >
+            🤖 AI Intelligence
+          </button>
+          <button 
+            className={activeTab === 'autopilot' ? 'active' : ''}
+            onClick={() => setActiveTab('autopilot')}
+          >
+            🚀 Autopilot
           </button>
           <button 
             className={activeTab === 'dashboard' ? 'active' : ''}

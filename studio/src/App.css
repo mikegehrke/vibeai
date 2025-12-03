@@ -99,6 +99,8 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
+  height: calc(100vh - 100px); /* Subtract navbar height */
+  overflow: hidden;
 }
 
 /* Mobile Responsive */

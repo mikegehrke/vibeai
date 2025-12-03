@@ -1,0 +1,248 @@
+/* ============================================================
+   VIBEAI – FULL CYCLE DEMO STYLES
+   ============================================================ */
+
+.full-cycle-demo {
+    min-height: 100vh;
+    background: #181818;
+    padding: 24px;
+}
+
+/* Header */
+.demo-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.demo-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #e0e0e0;
+}
+
+.demo-header p {
+    margin: 0;
+    font-size: 16px;
+    color: #858585;
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 40px;
+    padding: 24px;
+    background: #1e1e1e;
+    border-radius: 12px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    opacity: 0.4;
+}
+
+.step.active {
+    opacity: 1;
+}
+
+.step.current {
+    background: rgba(0, 122, 204, 0.1);
+    border: 2px solid #007acc;
+}
+
+.step-icon {
+    font-size: 32px;
+}
+
+.step-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e0e0e0;
+    text-align: center;
+}
+
+/* Content */
+.demo-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Build Section */
+.build-section {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.build-section h2 {
+    margin: 0 0 24px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+/* Download Section */
+.download-section {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+}
+
+.success-message {
+    margin-bottom: 32px;
+}
+
+.success-message h2 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #4caf50;
+}
+
+.success-message p {
+    margin: 0;
+    font-size: 16px;
+    color: #858585;
+}
+
+.download-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.download-btn {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 32px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.download-btn:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.restart-btn {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #3e3e3e;
+    border-radius: 8px;
+    padding: 16px 32px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.restart-btn:hover {
+    background: #3e3e3e;
+    border-color: #007acc;
+}
+
+/* Cycle Summary */
+.cycle-summary {
+    background: #2d2d2d;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: left;
+}
+
+.cycle-summary h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.summary-item {
+    font-size: 14px;
+    color: #d4d4d4;
+}
+
+.summary-item strong {
+    color: #858585;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .progress-steps {
+        flex-wrap: wrap;
+    }
+
+    .step {
+        flex: 1 1 calc(33.333% - 16px);
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .full-cycle-demo {
+        padding: 16px;
+    }
+
+    .demo-header h1 {
+        font-size: 24px;
+    }
+
+    .demo-header p {
+        font-size: 14px;
+    }
+
+    .progress-steps {
+        padding: 16px;
+    }
+
+    .step {
+        flex: 1 1 calc(50% - 8px);
+    }
+
+    .step-icon {
+        font-size: 24px;
+    }
+
+    .step-label {
+        font-size: 10px;
+    }
+
+    .download-actions {
+        flex-direction: column;
+    }
+
+    .download-btn,
+    .restart-btn {
+        width: 100%;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+}

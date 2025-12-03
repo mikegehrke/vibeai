@@ -8,8 +8,8 @@ import os
 import sys
 sys.path.append('/Users/mikegehrke/Development/vibeai/backend')
 
-from core.multimodal_ai import MultimodalAI
-from core.web_search import WebSearchService
+from core.multimodal_ai import MultimodalAI  # type: ignore
+from core.web_search import WebSearchService  # type: ignore
 
 async def test_vibeai_ultimate():
     """Test all capabilities of VibeAI 2.0"""

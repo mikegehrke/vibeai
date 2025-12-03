@@ -1,0 +1,277 @@
+/* VIBEAI - Device Frame Styles */
+
+.device-frame-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+  padding: 40px;
+  overflow: auto;
+}
+
+.device-label {
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.device-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-frame {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Device Screen */
+.device-screen {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.device-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* Dynamic Island (iPhone 15 Pro) */
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 37px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Notch (older iPhones) */
+.notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 30px;
+  background: #000;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  z-index: 100;
+}
+
+/* Punch Hole (Pixel 8) */
+.punch-hole {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: #000;
+  border-radius: 50%;
+  z-index: 100;
+  box-shadow: 0 0 0 2px #1a1a1a;
+}
+
+/* Power Button */
+.power-button {
+  position: absolute;
+  right: -4px;
+  top: 200px;
+  width: 4px;
+  height: 80px;
+  background: linear-gradient(90deg, #333 0%, #1a1a1a 100%);
+  border-radius: 2px 0 0 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Volume Buttons (iPhone) */
+.volume-button {
+  position: absolute;
+  left: -4px;
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(270deg, #333 0%, #1a1a1a 100%);
+  border-radius: 0 2px 2px 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.volume-up {
+  top: 140px;
+}
+
+.volume-down {
+  top: 220px;
+}
+
+/* Device-specific styles */
+.device-frame.iphone15 {
+  background: linear-gradient(135deg, #1c1c1e 0%, #0a0a0a 100%);
+}
+
+.device-frame.pixel8 {
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+}
+
+.device-frame.ipad {
+  background: linear-gradient(135deg, #1c1c1e 0%, #0a0a0a 100%);
+}
+
+.device-frame.desktop {
+  background: #1a1a1a;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Device Selector */
+.device-selector {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 20px;
+}
+
+.device-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.device-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.device-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: #fff;
+  font-weight: 600;
+}
+
+.device-btn span {
+  display: none;
+}
+
+/* Responsive - Show text on larger screens */
+@media (min-width: 768px) {
+  .device-btn span {
+    display: inline;
+  }
+}
+
+/* Zoom controls */
+.device-frame-container:hover .device-frame {
+  transform: scale(1.02);
+}
+
+/* Loading State */
+.device-screen.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.device-screen.loading::before {
+  content: 'Loading...';
+  color: #999;
+  font-size: 14px;
+}
+
+/* Scrollbar for container */
+.device-frame-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.device-frame-container::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+.device-frame-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.device-frame-container::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.device-frame {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Orientation Toggle (future feature) */
+.device-frame.landscape {
+  transform: rotate(90deg);
+}
+
+/* Dark Mode Enhancements */
+.device-screen {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Realistic Reflections */
+.device-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}

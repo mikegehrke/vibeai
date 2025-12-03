@@ -1,0 +1,191 @@
+/* ============================================================
+   VIBEAI – BUILD LOG VIEWER STYLES
+   ============================================================ */
+
+.build-log-viewer {
+    background: #1e1e1e;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.build-header {
+    background: #2d2d2d;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #3e3e3e;
+}
+
+.build-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.build-info h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.build-status {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.build-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.download-btn {
+    background: #007acc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.download-btn:hover {
+    background: #005a9e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.3);
+}
+
+/* Progress Bar */
+.build-progress {
+    padding: 16px 20px;
+    background: #252525;
+    border-bottom: 1px solid #3e3e3e;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #3e3e3e;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #2196f3;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e0e0e0;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Metadata */
+.build-metadata {
+    padding: 16px 20px;
+    background: #252525;
+    border-bottom: 1px solid #3e3e3e;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+}
+
+.metadata-item {
+    display: flex;
+    gap: 6px;
+    color: #d4d4d4;
+}
+
+.metadata-item strong {
+    color: #858585;
+    font-weight: 500;
+}
+
+/* Logs */
+.build-logs {
+    padding: 16px;
+}
+
+/* Artifacts */
+.build-artifacts {
+    padding: 16px 20px;
+    background: #252525;
+    border-top: 1px solid #3e3e3e;
+}
+
+.build-artifacts h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.artifacts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.artifact-item {
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.artifact-item:hover {
+    background: #2d2d2d;
+    transform: translateX(4px);
+}
+
+.artifact-name {
+    color: #d4d4d4;
+    font-size: 13px;
+}
+
+.artifact-size {
+    color: #858585;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .build-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .build-metadata {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .artifact-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

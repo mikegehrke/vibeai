@@ -1,0 +1,379 @@
+/**
+ * Realtime Panel Styles
+ * Cyan/Teal theme for realtime communication
+ */
+
+.realtime-panel {
+  padding: 2rem;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  min-height: 100vh;
+  color: #fff;
+}
+
+.realtime-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.realtime-header h2 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.realtime-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.realtime-content {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 2rem;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.realtime-config {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  color: #333;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.mode-selector button {
+  padding: 1rem;
+  background: #f0fdfa;
+  border: 2px solid #0891b2;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-selector button.active {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: #fff;
+}
+
+.config-section {
+  margin-bottom: 2rem;
+}
+
+.config-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #0891b2;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.feature-card {
+  background: #f0fdfa;
+  border: 2px solid #e0f2fe;
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  border-color: #06b6d4;
+  transform: translateX(4px);
+}
+
+.feature-card.selected {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-color: #0891b2;
+  color: #fff;
+}
+
+.feature-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.feature-desc {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.feature-req {
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+
+.config-section select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e0f2fe;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.generate-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.realtime-output {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  color: #333;
+}
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0f2fe;
+}
+
+.output-header h3 {
+  font-size: 1.5rem;
+  color: #0891b2;
+  margin: 0;
+}
+
+.copy-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid #06b6d4;
+  background: #fff;
+  color: #06b6d4;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+  background: #06b6d4;
+  color: #fff;
+}
+
+.code-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.code-tabs button {
+  padding: 0.75rem 1.5rem;
+  background: #f0fdfa;
+  border: 2px solid #e0f2fe;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.code-tabs button.active {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-color: #06b6d4;
+  color: #fff;
+}
+
+.code-display {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+}
+
+.code-display pre {
+  margin: 0;
+  color: #d4d4d4;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.installation-commands {
+  background: #f0fdfa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.installation-commands h4 {
+  margin: 0 0 1rem 0;
+  color: #0891b2;
+}
+
+.command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.command-item code {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+}
+
+.command-item button {
+  padding: 0.25rem 0.75rem;
+  background: #06b6d4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.realtime-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.info-card {
+  background: #f0fdfa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.info-card h4 {
+  margin: 0 0 1rem 0;
+  color: #0891b2;
+}
+
+.info-card ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.info-card li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.realtime-examples {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.realtime-examples h3 {
+  text-align: center;
+  color: #0891b2;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.example-card {
+  background: #f0fdfa;
+  border: 2px solid #e0f2fe;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.example-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
+  border-color: #06b6d4;
+}
+
+.example-card div:first-child {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.example-card div:last-child {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+@media (max-width: 1400px) {
+  .realtime-content {
+    grid-template-columns: 1fr;
+  }
+
+  .realtime-config {
+    position: static;
+  }
+
+  .realtime-info {
+    grid-template-columns: 1fr;
+  }
+
+  .examples-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .realtime-panel {
+    padding: 1rem;
+  }
+
+  .mode-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+}

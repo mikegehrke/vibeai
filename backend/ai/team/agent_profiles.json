@@ -1,0 +1,243 @@
+{
+  "agents": {
+    "frontend": {
+      "name": "Frontend Specialist",
+      "model": "gpt-4o",
+      "fallback": "gpt-4o-mini",
+      "expertise": [
+        "React",
+        "Next.js",
+        "TypeScript",
+        "CSS",
+        "UI/UX",
+        "Component Design",
+        "State Management",
+        "Frontend Performance"
+      ],
+      "prompt_prefix": "You are a Frontend Development Expert specializing in React, Next.js, and modern UI frameworks.",
+      "temperature": 0.4,
+      "max_tokens": 3000
+    },
+    "backend": {
+      "name": "Backend Specialist",
+      "model": "claude-3-5-sonnet-20241022",
+      "fallback": "gpt-4o",
+      "expertise": [
+        "FastAPI",
+        "Python",
+        "REST API",
+        "Database Design",
+        "Authentication",
+        "API Security",
+        "Backend Architecture",
+        "Microservices"
+      ],
+      "prompt_prefix": "You are a Backend Development Expert specializing in Python, FastAPI, and scalable API design.",
+      "temperature": 0.3,
+      "max_tokens": 3000
+    },
+    "designer": {
+      "name": "UI/UX Designer",
+      "model": "gpt-4o",
+      "fallback": "gpt-4o-mini",
+      "expertise": [
+        "UI Design",
+        "UX Patterns",
+        "Color Theory",
+        "Typography",
+        "Accessibility",
+        "Responsive Design",
+        "Design Systems",
+        "User Flow"
+      ],
+      "prompt_prefix": "You are a UI/UX Design Expert focused on creating beautiful, accessible, and user-friendly interfaces.",
+      "temperature": 0.6,
+      "max_tokens": 2500
+    },
+    "testing": {
+      "name": "QA & Testing Specialist",
+      "model": "gemini-1.5-flash",
+      "fallback": "gpt-4o-mini",
+      "expertise": [
+        "Unit Testing",
+        "Integration Testing",
+        "E2E Testing",
+        "Test Automation",
+        "Bug Detection",
+        "Code Coverage",
+        "Performance Testing",
+        "Security Testing"
+      ],
+      "prompt_prefix": "You are a QA and Testing Expert specializing in comprehensive test coverage and bug detection.",
+      "temperature": 0.2,
+      "max_tokens": 2500
+    },
+    "local": {
+      "name": "Local AI Assistant",
+      "model": "ollama:llama3",
+      "fallback": "ollama:llama2",
+      "expertise": [
+        "General Assistance",
+        "Code Review",
+        "Documentation",
+        "Offline Support",
+        "Quick Responses",
+        "Local Processing"
+      ],
+      "prompt_prefix": "You are a helpful AI assistant providing quick local responses.",
+      "temperature": 0.5,
+      "max_tokens": 2000
+    },
+    "architect": {
+      "name": "Solution Architect",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "System Architecture",
+        "Design Patterns",
+        "Scalability",
+        "Performance",
+        "Best Practices",
+        "Code Structure",
+        "Technology Selection",
+        "Architecture Decisions"
+      ],
+      "prompt_prefix": "You are a Solution Architect Expert focused on system design and architectural best practices.",
+      "temperature": 0.3,
+      "max_tokens": 3500
+    },
+    "devops": {
+      "name": "DevOps Specialist",
+      "model": "gpt-4o",
+      "fallback": "gpt-4o-mini",
+      "expertise": [
+        "CI/CD",
+        "Docker",
+        "Kubernetes",
+        "Deployment",
+        "Monitoring",
+        "Infrastructure",
+        "Cloud Services",
+        "Automation"
+      ],
+      "prompt_prefix": "You are a DevOps Expert specializing in deployment, automation, and infrastructure management.",
+      "temperature": 0.3,
+      "max_tokens": 2500
+    },
+    "flutter": {
+      "name": "Flutter Specialist",
+      "model": "gpt-4o",
+      "fallback": "gpt-4o-mini",
+      "expertise": [
+        "Flutter",
+        "Dart",
+        "Cross-Platform Mobile",
+        "Material Design",
+        "Cupertino Widgets",
+        "State Management (Riverpod, Provider, Bloc)",
+        "Flutter Navigation",
+        "Flutter Animation",
+        "Platform Channels",
+        "Firebase Integration",
+        "Flutter Web",
+        "GetX",
+        "Dio HTTP Client",
+        "Flutter Hooks"
+      ],
+      "prompt_prefix": "You are a Flutter Development Expert. You specialize in cross-platform mobile app development with Flutter and Dart. Provide modern, performant Flutter code with proper state management and best practices.",
+      "temperature": 0.4,
+      "max_tokens": 3500
+    },
+    "ios": {
+      "name": "iOS Swift Developer",
+      "model": "claude-3-5-sonnet-20241022",
+      "fallback": "gpt-4o",
+      "expertise": [
+        "Swift",
+        "SwiftUI",
+        "UIKit",
+        "Xcode",
+        "iOS SDK",
+        "CocoaPods",
+        "Swift Package Manager",
+        "Combine Framework",
+        "Core Data",
+        "URLSession",
+        "AVFoundation",
+        "MapKit",
+        "ARKit",
+        "HealthKit",
+        "iOS App Store",
+        "TestFlight",
+        "Xcode Cloud"
+      ],
+      "prompt_prefix": "You are an iOS Development Expert specializing in Swift and SwiftUI. You build native iOS applications following Apple's Human Interface Guidelines. Provide production-ready iOS code with modern Swift patterns.",
+      "temperature": 0.4,
+      "max_tokens": 3500
+    },
+    "android": {
+      "name": "Android Kotlin Developer",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "Kotlin",
+        "Java",
+        "Android SDK",
+        "Jetpack Compose",
+        "Android Studio",
+        "Material Design 3",
+        "Room Database",
+        "Retrofit",
+        "Coroutines",
+        "Flow",
+        "Hilt/Dagger",
+        "Navigation Component",
+        "ViewModel",
+        "LiveData",
+        "WorkManager",
+        "Firebase",
+        "Google Play Services",
+        "Gradle"
+      ],
+      "prompt_prefix": "You are an Android Development Expert specializing in Kotlin and Jetpack Compose. You build modern native Android applications following Material Design guidelines. Provide production-ready Android code with MVVM architecture.",
+      "temperature": 0.4,
+      "max_tokens": 3500
+    }
+  },
+  "collaboration_modes": {
+    "consensus": {
+      "description": "All agents provide input, best answer is selected",
+      "required_agents": ["frontend", "backend", "designer"],
+      "voting_enabled": true
+    },
+    "sequential": {
+      "description": "Agents work in sequence, passing results forward",
+      "order": ["architect", "frontend", "backend", "testing"]
+    },
+    "parallel": {
+      "description": "All agents work simultaneously on the same task",
+      "merge_results": true
+    },
+    "specialized": {
+      "description": "Route to most appropriate specialist based on task",
+      "auto_select": true
+    }
+  },
+  "task_routing": {
+    "ui_design": ["designer", "frontend"],
+    "api_development": ["backend", "architect"],
+    "full_stack": ["frontend", "backend", "architect"],
+    "testing": ["testing", "backend"],
+    "deployment": ["devops", "backend"],
+    "code_review": ["architect", "backend", "frontend"],
+    "bug_fix": ["testing", "backend", "frontend"],
+    "optimization": ["architect", "backend", "frontend"],
+    "documentation": ["local", "architect"],
+    "mobile_app": ["flutter", "designer"],
+    "ios_native": ["ios", "designer"],
+    "android_native": ["android", "designer"],
+    "cross_platform": ["flutter", "ios", "android"],
+    "mobile_ui": ["designer", "flutter"],
+    "mobile_backend": ["backend", "flutter"]
+  }
+}

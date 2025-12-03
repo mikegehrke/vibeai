@@ -11,7 +11,13 @@ import json
 # AI Clients
 import openai
 import anthropic
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY", ""))  # type: ignore
+    GENAI_AVAILABLE = True
+except (ImportError, AttributeError):
+    genai = None
+    GENAI_AVAILABLE = False
 
 load_dotenv()
 
@@ -24,9 +30,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure Google Gemini
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY", ""))
 
 
 class ChatRequest(BaseModel):
@@ -61,11 +64,12 @@ def build_messages(request: ChatRequest):
         messages.append({"role": "system", "content": request.system_prompt})
     
     # Add conversation history
-    for msg in request.conversation_history:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        if role in ["user", "assistant"] and content:
-            messages.append({"role": role, "content": content})
+    if request.conversation_history:
+        for msg in request.conversation_history:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ["user", "assistant"] and content:
+                messages.append({"role": role, "content": content})
     
     # Add current prompt
     if request.system_prompt and any(x in request.model.lower() for x in ["o1", "o3", "gpt-5"]):
@@ -127,7 +131,10 @@ async def stream_chat(request: ChatRequest):
         
         # Gemini Models
         elif "gemini" in model:
-            genai_model = genai.GenerativeModel(request.model)
+            if not GENAI_AVAILABLE or genai is None:
+                yield f"data: {{\"error\": \"Google Generative AI not available\", \"done\": true}}\n\n"
+                return
+            genai_model = genai.GenerativeModel(request.model)  # type: ignore
             response = genai_model.generate_content(request.prompt, stream=True)
             for chunk in response:
                 if chunk.text:
@@ -195,8 +202,13 @@ async def chat(request: ChatRequest):
                     {"role": "user", "content": request.prompt}
                 ]
             )
+            # Extract text from content blocks
+            response_text = ""
+            for block in message.content:
+                if hasattr(block, 'text') and hasattr(block, '__class__') and block.__class__.__name__ == 'TextBlock':
+                    response_text += block.text  # type: ignore
             return {
-                "response": message.content[0].text,
+                "response": response_text,
                 "model": request.model,
                 "agent": request.agent,
                 "provider": "Anthropic",
@@ -205,7 +217,12 @@ async def chat(request: ChatRequest):
         
         # Gemini Models (Google)
         elif "gemini" in model:
-            genai_model = genai.GenerativeModel(request.model)
+            if not GENAI_AVAILABLE or genai is None:
+                return {
+                    "error": "Google Generative AI not available. Install with: pip install google-generativeai",
+                    "success": False
+                }
+            genai_model = genai.GenerativeModel(request.model)  # type: ignore
             response = genai_model.generate_content(request.prompt)
             return {
                 "response": response.text,

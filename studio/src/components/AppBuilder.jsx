@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import GitPanel from './GitPanel';
 import InteractivePreview from './InteractivePreview';
+import PromptHelper from './PromptHelper';
 import { FiCheck, FiDownload, FiFolder, FiCode, FiEdit, FiEye, FiMessageSquare, FiZap } from 'react-icons/fi';
 import './AppBuilder.css';
 
@@ -1275,6 +1276,9 @@ const AppBuilder = () => {
           </div>
         </div>
       )}
+      
+      {/* Prompt Helper */}
+      <PromptHelper onInsertPrompt={(prompt) => setDescription(description + '\n' + prompt)} />
     </div>
   );
 };

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+from core.model_registry_v2 import ALL_MODELS, get_model_info, get_models_by_provider, get_all_model_ids
 
 load_dotenv()
 
@@ -128,8 +129,8 @@ MODEL_DATABASE = {
     },
     
     # O-Series Models
-    "o1-preview": {
-        "name": "O1 Preview",
+    "o1": {
+        "name": "O1",
         "type": "reasoning",
         "category": "reasoning",
         "max_tokens": 32768,
@@ -149,30 +150,87 @@ MODEL_DATABASE = {
 @model_router.get("/available", response_model=List[ModelInfo])
 async def get_available_models():
     """
-    Holt alle verfügbaren Modelle vom OpenAI API
+    Gibt alle 280+ verfügbaren Modelle zurück - MIT BESTEN CODING-MODELLEN ZUERST
     """
     try:
-        client = get_openai_client()
-        models = client.models.list()
-        
         available_models = []
-        for model in models.data:
-            model_id = model.id
-            
-            # Nur relevante Modelle für Chat/Code-Generation
-            if any(keyword in model_id.lower() for keyword in ['gpt', 'o1', 'claude']):
-                model_info = MODEL_DATABASE.get(model_id, {
-                    "name": model_id.title(),
-                    "type": "unknown",
-                    "category": "other",
-                    "description": f"Model: {model_id}"
-                })
+        
+        # BESTE CODING-MODELLE ZUERST (wie GitHub Copilot arbeitet)
+        best_coding_models = [
+            {
+                "id": "qwen2.5-coder:7b",
+                "name": "Qwen2.5-Coder 7B (Ollama LOKAL)",
+                "type": "chat",
+                "category": "premium",
+                "max_tokens": 32000,
+                "available": True,
+                "description": "💻 LOKAL & KOSTENLOS! Speziell für Coding optimiert"
+            },
+            {
+                "id": "gpt-4o",
+                "name": "GPT-4o (OpenAI)",
+                "type": "multimodal",
+                "category": "premium",
+                "max_tokens": 128000,
+                "available": True,
+                "description": "⭐ OpenAI Multimodal - Sehr gut für Coding"
+            },
+            {
+                "id": "github-gpt-4o",
+                "name": "GPT-4o (GitHub KOSTENLOS)",
+                "type": "multimodal",
+                "category": "premium",
+                "max_tokens": 128000,
+                "available": True,
+                "description": "🎁 KOSTENLOS mit GitHub Copilot!"
+            },
+            {
+                "id": "llama3.2:3b",
+                "name": "Llama 3.2 3B (Ollama LOKAL)",
+                "type": "chat",
+                "category": "general",
+                "max_tokens": 128000,
+                "available": True,
+                "description": "💻 LOKAL & KOSTENLOS! Klein und schnell"
+            },
+            {
+                "id": "github-Meta-Llama-3.1-405B-Instruct",
+                "name": "Llama 3.1 405B (GitHub KOSTENLOS)",
+                "type": "chat",
+                "category": "premium",
+                "max_tokens": 128000,
+                "available": True,
+                "description": "🎁 KOSTENLOS! Meta's größtes Modell"
+            },
+            {
+                "id": "github-Mistral-large-2407",
+                "name": "Mistral Large (GitHub KOSTENLOS)",
+                "type": "chat",
+                "category": "premium",
+                "max_tokens": 128000,
+                "available": True,
+                "description": "🎁 KOSTENLOS! Mistral's bestes"
+            }
+        ]
+        
+        for model_info in best_coding_models:
+            available_models.append(ModelInfo(**model_info))
+        
+        # Dann alle anderen Modelle
+        for model_id, info in ALL_MODELS.items():
+            # Skip wenn schon in best_coding_models
+            if any(m["id"] == model_id for m in best_coding_models):
+                continue
                 
-                available_models.append(ModelInfo(
-                    id=model_id,
-                    available=True,
-                    **model_info
-                ))
+            available_models.append(ModelInfo(
+                id=model_id,
+                name=model_id.replace("-", " ").replace("_", " ").title(),
+                type=info["type"],
+                category=info["category"],
+                max_tokens=info.get("context", 4096),
+                available=True,
+                description=f"{info['provider']} - {info['type']} model"
+            ))
         
         return available_models
         
@@ -296,10 +354,10 @@ async def get_best_model_for_task(task: str):
     
     # Task-spezifische Prioritäten
     task_priorities = {
-        "coding": ["gpt-5", "o1-preview", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo-16k"],
+        "coding": ["gpt-5", "o1", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo-16k"],
         "writing": ["gpt-5", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
-        "reasoning": ["o1-preview", "o1-mini", "gpt-5", "gpt-4o", "gpt-4"],
-        "analysis": ["gpt-5", "o1-preview", "gpt-4o", "gpt-4-turbo", "gpt-4"],
+        "reasoning": ["o1", "o1-mini", "gpt-5", "gpt-4o", "gpt-4"],
+        "analysis": ["gpt-5", "o1", "gpt-4o", "gpt-4-turbo", "gpt-4"],
         "creative": ["gpt-5", "gpt-4o", "gpt-4", "gpt-3.5-turbo"],
         "fast": ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-3.5-turbo-1106"],
         "cheap": ["gpt-3.5-turbo", "gpt-4o-mini", "gpt-3.5-turbo-1106"]
@@ -328,3 +386,38 @@ async def get_best_model_for_task(task: str):
         }
     
     raise HTTPException(status_code=404, detail="Keine Modelle verfügbar")
+
+
+@model_router.get("/list")
+async def list_all_models():
+    """
+    Gibt eine einfache Liste aller 280+ Model-IDs zurück
+    """
+    return {
+        "total": len(ALL_MODELS),
+        "models": get_all_model_ids(),
+        "by_provider": {
+            "openai": get_models_by_provider("openai"),
+            "anthropic": get_models_by_provider("anthropic"),
+            "google": get_models_by_provider("google"),
+            "github": get_models_by_provider("github"),
+            "github-azure": get_models_by_provider("github-azure"),
+            "ollama": get_models_by_provider("ollama"),
+            "stability": get_models_by_provider("stability")
+        }
+    }
+
+
+@model_router.get("/info/{model_id}")
+async def get_model_details(model_id: str):
+    """
+    Gibt Details zu einem spezifischen Model zurück
+    """
+    info = get_model_info(model_id)
+    if info.get("provider") == "unknown":
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    
+    return {
+        "id": model_id,
+        **info
+    }

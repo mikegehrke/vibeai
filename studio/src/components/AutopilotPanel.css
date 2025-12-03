@@ -1,0 +1,488 @@
+/* ============================================================
+   AUTOPILOT PANEL STYLING
+   ============================================================ */
+
+.autopilot-panel {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  color: white;
+}
+
+/* Header */
+.panel-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.panel-header h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  font-weight: bold;
+}
+
+.panel-header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-top: 10px;
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tabs button {
+  flex: 1;
+  min-width: 150px;
+  padding: 15px 25px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tabs button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.tabs button.active {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Tab Content */
+.tab-content {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  color: #333;
+  min-height: 500px;
+}
+
+.tab-content h2 {
+  color: #667eea;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.tab-content p {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+/* Form Section */
+.form-section {
+  margin-bottom: 30px;
+}
+
+.form-section label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  margin-top: 15px;
+}
+
+.form-section input[type="text"],
+.form-section textarea,
+.form-section select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s;
+}
+
+.form-section input[type="text"]:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-section input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+
+.form-section textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Button Group */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.form-section button,
+.button-group button {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.form-section button:hover,
+.button-group button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.form-section button:disabled,
+.button-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Team Selector */
+.team-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.team-selector button {
+  padding: 8px 16px;
+  background: #f0f0f0;
+  color: #333;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: capitalize;
+}
+
+.team-selector button:hover {
+  background: #e8e8e8;
+  border-color: #667eea;
+}
+
+.team-selector button.selected {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Memory Grid */
+.memory-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.memory-save,
+.memory-view {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+}
+
+.memory-save h3,
+.memory-view h3 {
+  margin-top: 0;
+  color: #667eea;
+}
+
+.memories-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 15px;
+}
+
+.memory-category {
+  margin-bottom: 20px;
+}
+
+.memory-category h4 {
+  color: #764ba2;
+  margin-bottom: 10px;
+  text-transform: capitalize;
+}
+
+.memory-category ul {
+  list-style: none;
+  padding: 0;
+}
+
+.memory-category li {
+  background: white;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
+}
+
+.memory-category li strong {
+  color: #667eea;
+  text-transform: capitalize;
+}
+
+.memory-category li small {
+  display: block;
+  color: #999;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+.memory-category .empty {
+  color: #999;
+  font-style: italic;
+}
+
+/* Result Section */
+.result-section {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.result-section h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+}
+
+.result-card {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+}
+
+.result-card p {
+  margin: 10px 0;
+}
+
+.result-card strong {
+  color: #333;
+}
+
+/* Collaboration Preview */
+.collaboration-preview {
+  margin-top: 20px;
+}
+
+.collaboration-preview h4 {
+  color: #764ba2;
+  margin-bottom: 15px;
+}
+
+.agent-contribution {
+  background: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.agent-contribution strong {
+  display: block;
+  color: #667eea;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.agent-contribution p {
+  color: #666;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Consensus */
+.consensus {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid #667eea;
+  margin: 15px 0;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Perspectives */
+.perspectives {
+  display: grid;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.perspective-card {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #764ba2;
+}
+
+.perspective-card strong {
+  display: block;
+  color: #764ba2;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.perspective-card p {
+  margin: 0;
+  color: #666;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Report Details */
+.report-details {
+  margin-top: 20px;
+}
+
+.report-details h4 {
+  color: #764ba2;
+  margin-bottom: 10px;
+}
+
+.report-details pre {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Recommendations */
+.recommendations {
+  margin-top: 20px;
+}
+
+.recommendations h4 {
+  color: #764ba2;
+  margin-bottom: 10px;
+}
+
+.recommendations ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations li {
+  background: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #10a37f;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-overlay p {
+  color: white;
+  font-size: 1.2rem;
+  margin-top: 20px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .memory-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tabs button {
+    width: 100%;
+  }
+}

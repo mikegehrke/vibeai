@@ -1,0 +1,465 @@
+/* ================================================================
+   VIBEAI – FLOW PANEL STYLES
+   ================================================================ */
+
+.flow-panel {
+  padding: 2rem;
+  max-width: 100%;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  min-height: 100vh;
+  color: #fff;
+  overflow-y: auto;
+}
+
+.flow-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(20, 184, 166, 0.3);
+}
+
+.flow-header h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  font-weight: 800;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.flow-header p {
+  font-size: 1.3rem;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+/* ========== CONTROLS ========== */
+
+.flow-controls {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.flow-section {
+  margin-bottom: 2.5rem;
+}
+
+.flow-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #14b8a6;
+  font-weight: 700;
+}
+
+/* ========== FRAMEWORK GRID ========== */
+
+.framework-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.framework-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(100, 255, 218, 0.3);
+  color: #fff;
+  padding: 1.2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  font-weight: 600;
+}
+
+.framework-btn span {
+  font-size: 1.5rem;
+}
+
+.framework-btn:hover {
+  background: rgba(20, 184, 166, 0.2);
+  border-color: #14b8a6;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
+}
+
+.framework-btn.active {
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  border-color: #06b6d4;
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.5);
+  transform: scale(1.05);
+}
+
+/* ========== FLOW TYPE GRID ========== */
+
+.flow-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.flow-type-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(100, 255, 218, 0.3);
+  border-radius: 15px;
+  padding: 1.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.flow-type-card h3 {
+  font-size: 1.4rem;
+  margin: 0 0 0.7rem 0;
+  color: #14b8a6;
+  font-weight: 700;
+}
+
+.flow-type-card p {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.flow-type-card:hover {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: #14b8a6;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4);
+}
+
+.flow-type-card.active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.3) 0%, rgba(6, 182, 212, 0.3) 100%);
+  border-color: #06b6d4;
+  box-shadow: 0 10px 40px rgba(20, 184, 166, 0.5);
+  transform: scale(1.08);
+}
+
+/* ========== GENERATE BUTTON ========== */
+
+.flow-generate-button {
+  width: 100%;
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  color: #fff;
+  border: none;
+  padding: 1.8rem;
+  border-radius: 15px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 40px rgba(20, 184, 166, 0.4);
+  margin-top: 2rem;
+}
+
+.flow-generate-button:hover:not(:disabled) {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 50px rgba(20, 184, 166, 0.6);
+}
+
+.flow-generate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ========== FLOW VISUALIZATION ========== */
+
+.flow-visualization {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.flow-canvas {
+  height: 600px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 15px;
+  border: 2px solid rgba(100, 255, 218, 0.2);
+  overflow: hidden;
+}
+
+/* ========== ANALYSIS ========== */
+
+.analysis-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.analysis-card {
+  background: rgba(30, 41, 59, 0.7);
+  border-radius: 15px;
+  padding: 2rem;
+  border: 2px solid rgba(100, 255, 218, 0.3);
+}
+
+.analysis-card.valid {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.analysis-card.invalid {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.analysis-status {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+}
+
+.metric {
+  text-align: center;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.metric-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #14b8a6;
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  display: block;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ========== ISSUES ========== */
+
+.issues-list {
+  margin-top: 2rem;
+}
+
+.issues-list h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.issue-item {
+  background: rgba(30, 41, 59, 0.7);
+  padding: 1.2rem;
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+  border-left: 4px solid;
+  font-size: 1rem;
+}
+
+.issue-item.error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.issue-item.warning {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+/* ========== GENERATED FILES ========== */
+
+.generated-files {
+  display: grid;
+  gap: 1rem;
+}
+
+.file-item {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: 10px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.file-item:hover {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: #14b8a6;
+  transform: translateX(5px);
+}
+
+.file-icon {
+  font-size: 1.8rem;
+}
+
+.file-path {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: #06b6d4;
+  font-weight: 600;
+}
+
+/* ========== FLOW DETAILS ========== */
+
+.flow-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.detail-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 2px solid rgba(100, 255, 218, 0.2);
+  border-radius: 15px;
+  padding: 2rem;
+}
+
+.detail-card h3 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem 0;
+  color: #14b8a6;
+  font-weight: 700;
+}
+
+.screen-list,
+.edge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.screen-item {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: 10px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.screen-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #14b8a6;
+}
+
+.screen-route {
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: #06b6d4;
+  background: rgba(6, 182, 212, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+}
+
+.auth-badge,
+.params-badge {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.auth-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.params-badge {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.edge-item {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1rem;
+}
+
+.edge-from,
+.edge-to {
+  font-weight: 700;
+  color: #14b8a6;
+}
+
+.edge-arrow {
+  font-size: 1.5rem;
+  color: #06b6d4;
+}
+
+.edge-action {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .flow-panel {
+    padding: 1rem;
+  }
+
+  .flow-header h1 {
+    font-size: 2rem;
+  }
+
+  .flow-header p {
+    font-size: 1rem;
+  }
+
+  .framework-grid-mini {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .flow-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-details {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-canvas {
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .framework-grid-mini {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+  }
+}

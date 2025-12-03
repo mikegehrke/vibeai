@@ -73,7 +73,7 @@ def get_best_available_model(task_type="coding"):
     # Prioritätsliste für Coding
     if task_type == "coding":
         priority_models = [
-            "o1-preview",
+            "o1",
             "o1-mini", 
             "gpt-4o",
             "gpt-4o-mini",

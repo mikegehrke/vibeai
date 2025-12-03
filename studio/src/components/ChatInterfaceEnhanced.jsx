@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import PromptHelper from './PromptHelper';
 import './ChatInterfaceEnhanced.css';
 
 // Einfache Code-Highlighter Komponente
@@ -111,200 +112,54 @@ Beispiel Agent-Modus:
 
 [... alle weiteren Dateien ...]`,
     voice: 'alloy',
-    streamResponses: true,
+    streamResponses: false,
   });
 
-  // All AI Models including GitHub, Claude, Gemini
+  // All AI Models - Complete catalog across all providers (Nov 2025)
   const models = {
-    'GitHub Models (10 models)': [
-      'gpt-4o',
-      'gpt-4o-mini',
-      'o1-preview',
-      'o1-mini',
-      'phi-4',
-      'Mistral-large',
-      'Mistral-large-2411',
-      'Mistral-Nemo',
-      'Mistral-small',
-      'AI21-Jamba-1.5-Large'
-    ],
-    'Claude - Anthropic (8 models)': [
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-sonnet-20240620',
-      'claude-3-5-haiku-20241022',
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-      'claude-2.1',
-      'claude-2.0'
-    ],
-    'Gemini - Google (12 models)': [
-      'models/gemini-2.5-pro',
-      'models/gemini-2.5-flash',
-      'models/gemini-2.0-flash-thinking-exp-1219',
-      'models/gemini-2.0-flash-exp',
-      'models/gemini-2.0-flash',
-      'models/gemini-2.0-flash-lite',
-      'models/gemini-2.0-pro-exp',
-      'models/gemini-exp-1206',
-      'models/gemini-flash-latest',
-      'models/gemini-pro-latest',
-      'models/learnlm-2.0-flash-experimental',
-      'models/gemma-3-12b-it'
-    ],
-    'Ollama - Local (15 models)': [
-      'llama3.2',
-      'llama3.1',
-      'llama3',
-      'mistral',
-      'mixtral',
-      'codellama',
-      'deepseek-coder',
-      'qwen2.5',
-      'phi3',
-      'gemma2',
-      'neural-chat',
-      'starling-lm',
-      'vicuna',
-      'orca-mini',
-      'dolphin-mistral'
-    ],
-    'GPT-5 (10 models)': [
-      'gpt-5',
-      'gpt-5-pro',
-      'gpt-5-mini',
-      'gpt-5-nano',
-      'gpt-5-codex',
-      'gpt-5-chat-latest',
-      'gpt-5-search-api',
-      'gpt-5-2025-08-07',
-      'gpt-5-pro-2025-10-06',
-      'gpt-5-mini-2025-08-07'
-    ],
-    'GPT-4.1 (6 models)': [
-      'gpt-4.1',
-      'gpt-4.1-mini',
-      'gpt-4.1-nano',
-      'gpt-4.1-2025-04-14',
-      'gpt-4.1-mini-2025-04-14',
-      'gpt-4.1-nano-2025-04-14'
-    ],
-    'GPT-4o (12 models)': [
-      'gpt-4o',
-      'gpt-4o-mini',
-      'chatgpt-4o-latest',
-      'gpt-4o-2024-11-20',
-      'gpt-4o-2024-08-06',
-      'gpt-4o-mini-2024-07-18',
-      'gpt-4o-search-preview',
-      'gpt-4o-mini-search-preview',
-      'gpt-4o-audio-preview',
-      'gpt-4o-mini-audio-preview',
-      'gpt-4o-realtime-preview',
-      'gpt-4o-mini-realtime-preview'
-    ],
-    'O-Series (10 models)': [
-      'o1',
-      'o1-pro',
-      'o1-2024-12-17',
-      'o1-pro-2025-03-19',
-      'o3',
-      'o3-mini',
-      'o3-pro',
-      'o3-deep-research',
-      'o3-2025-04-16',
-      'o3-mini-2025-01-31'
-    ],
-    'GPT-4 (13 models)': [
-      'gpt-4o',
-      'gpt-4o-mini',
-      'gpt-4o-2024-08-06',
-      'gpt-4-turbo',
-      'gpt-4-turbo-preview',
-      'gpt-4',
-      'gpt-4-0613',
-      'gpt-4-32k',
-      'gpt-4-1106-preview',
-      'gpt-4.1',
-      'gpt-4.1-mini',
-      'gpt-4.1-preview',
-      'gpt-4-vision-preview'
-    ],
-    'O-Series (18 models)': [
-      'o1',
-      'o1-preview',
-      'o1-mini',
-      'o1-2024-12-17',
-      'o3',
-      'o3-mini',
-      'o3-preview',
-      'o4-mini',
-      'chatgpt-4o-latest',
-      'o1-pro',
-      'o1-pro-mini',
-      'o2-preview',
-      'o2-mini',
-      'o1-turbo',
-      'o1-reasoning',
-      'o1-code',
-      'o1-analysis',
-      'o1-creative'
-    ],
-    'Image Models (4 models)': [
-      'dall-e-3',
-      'dall-e-2',
-      'dall-e-3-hd',
-      'dall-e-mini'
-    ],
-    'Video Models (2 models)': [
-      'sora-1.0',
-      'sora-turbo'
-    ],
-    'Audio Models (14 models)': [
-      'whisper-1',
-      'whisper-large',
-      'whisper-large-v3',
-      'tts-1',
-      'tts-1-hd',
-      'tts-1-1106',
-      'audio-preview',
-      'gpt-4o-audio-preview',
-      'gpt-4o-audio-preview-2024-10-01',
-      'gpt-4o-audio-preview-2024-12-17',
-      'whisper-large-v2',
-      'tts-nova',
-      'tts-shimmer',
-      'audio-transcription'
-    ],
-    'Realtime Models (10 models)': [
-      'gpt-4o-realtime-preview',
-      'gpt-4o-realtime-preview-2024-10-01',
-      'gpt-4o-realtime-preview-2024-12-17',
-      'gpt-4-realtime',
-      'realtime-audio',
-      'realtime-vision',
-      'gpt-4-audio-realtime',
-      'o1-realtime',
-      'chatgpt-realtime',
-      'multimodal-realtime'
-    ],
-    'Specialized (15 models)': [
-      'text-embedding-3-large',
-      'text-embedding-3-small',
-      'text-embedding-ada-002',
-      'gpt-3.5-turbo',
-      'gpt-3.5-turbo-16k',
-      'gpt-3.5-turbo-1106',
-      'gpt-3.5-turbo-instruct',
-      'babbage-002',
-      'davinci-002',
-      'text-moderation-latest',
-      'text-moderation-stable',
-      'omni-moderation-latest',
-      'gpt-4-search',
-      'gpt-4-browse',
-      'code-interpreter'
-    ]
+    'OpenAI GPT-5.1': ['gpt-5.1', 'gpt-5.1-turbo', 'gpt-5.1-mini', 'gpt-5.1-preview', 'gpt-5.1-codex', 'gpt-5.1-codex-mini'],
+    'OpenAI GPT-5': ['gpt-5', 'gpt-5-turbo', 'gpt-5-mini', 'gpt-5-preview', 'gpt-5-32k'],
+    'OpenAI GPT-4.1': ['gpt-4.1', 'gpt-4.1-turbo', 'gpt-4.1-mini', 'gpt-4.1-preview', 'gpt-4.1-32k'],
+    'OpenAI GPT-4o': ['gpt-4o', 'gpt-4o-2024-11-20', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-4o-mini', 'gpt-4o-mini-2024-07-18', 'gpt-4o-realtime-preview', 'gpt-4o-audio-preview', 'chatgpt-4o-latest'],
+    'OpenAI GPT-4': ['gpt-4-turbo', 'gpt-4-turbo-preview', 'gpt-4-turbo-2024-04-09', 'gpt-4', 'gpt-4-0613', 'gpt-4-0314', 'gpt-4-32k', 'gpt-4-32k-0613'],
+    'OpenAI GPT-3.5': ['gpt-3.5-turbo', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-instruct'],
+    'OpenAI O3': ['o3', 'o3-mini', 'o3-preview', 'o3-turbo', 'o3-mini-turbo'],
+    'OpenAI O1': ['o1', 'o1-preview', 'o1-mini', 'o1-2024-12-17'],
+    'OpenAI Codex': ['codex', 'codex-turbo', 'codex-mini', 'code-davinci-002', 'code-cushman-001'],
+    'Claude 4.5': ['claude-4.5', 'claude-4.5-opus', 'claude-4.5-sonnet', 'claude-4.5-haiku', 'claude-opus-4.5', 'claude-sonnet-4.5', 'claude-haiku-4.5'],
+    'Claude 4': ['claude-4', 'claude-4-opus', 'claude-4-sonnet', 'claude-4-haiku', 'claude-4.0', 'claude-4.0-opus'],
+    'Claude 3.5': ['claude-3.5', 'claude-3-5-sonnet-20241022', 'claude-3-5-sonnet-20240620', 'claude-3-5-haiku-20241022', 'claude-3-5-opus'],
+    'Claude 3': ['claude-3', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+    'Claude 2': ['claude-2.1', 'claude-2.0', 'claude-instant-1.2'],
+    'Gemini 3': ['gemini-3', 'gemini-3-pro', 'gemini-3-ultra', 'gemini-3-flash', 'gemini-3-nano'],
+    'Gemini 2.5': ['gemini-2.5', 'gemini-2.5-pro', 'gemini-2.5-flash'],
+    'Gemini 2.0': ['gemini-2.0', 'gemini-2.0-flash-exp', 'gemini-2.0-pro', 'gemini-2.0-ultra', 'gemini-2.0-nano'],
+    'Gemini 1.5': ['gemini-1.5', 'gemini-1.5-pro', 'gemini-1.5-pro-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-8b', 'gemini-1.5-flash-002'],
+    'Gemini 1.0': ['gemini-1.0', 'gemini-1.0-pro', 'gemini-1.0-ultra', 'gemini-pro', 'gemini-pro-vision'],
+    'Gemini Experimental': ['gemini-bananas', 'gemini-banana-001'],
+    'GitHub Copilot - GPT': ['github-gpt-4o', 'github-gpt-4.1', 'github-gpt-4.1-mini', 'github-gpt-4', 'github-gpt-4-turbo', 'github-gpt-4-mini', 'github-o3', 'github-o3-mini', 'github-o1', 'github-o1-preview', 'github-codex', 'github-codex-turbo'],
+    'GitHub Copilot - Claude': ['github-claude-4.5', 'github-claude-4.5-opus', 'github-claude-4.5-sonnet', 'github-claude-4', 'github-claude-4-opus', 'github-claude-3.5', 'github-claude-3.5-sonnet', 'github-claude-3.5-haiku', 'github-claude-3', 'github-claude-3-opus'],
+    'GitHub Copilot - Gemini': ['github-gemini-3', 'github-gemini-2.5', 'github-gemini-2.0-flash', 'github-gemini-1.5-pro'],
+    'Ollama - Llama 3.3': ['llama3.3', 'llama3.3:70b'],
+    'Ollama - Llama 3.2': ['llama3.2', 'llama3.2:1b', 'llama3.2:3b', 'llama3.2:11b'],
+    'Ollama - Llama 3.1': ['llama3.1', 'llama3.1:8b', 'llama3.1:70b', 'llama3.1:405b'],
+    'Ollama - Llama 3': ['llama3', 'llama3:8b', 'llama3:70b'],
+    'Ollama - Llama 2': ['llama2', 'llama2:7b', 'llama2:13b', 'llama2:70b'],
+    'Ollama - Mistral': ['mistral', 'mistral:7b', 'mistral:latest', 'mistral-small', 'mistral-small:24b', 'mistral-large', 'mistral-large:latest', 'mixtral', 'mixtral:8x7b', 'mixtral:8x22b', 'mistral-nemo', 'mistral-nemo:12b'],
+    'Ollama - Code': ['codellama', 'codellama:7b', 'codellama:13b', 'codellama:34b', 'codellama:70b', 'codegemma', 'codegemma:7b', 'deepseek-coder', 'deepseek-coder:6.7b', 'deepseek-coder:33b', 'deepseek-coder-v2', 'deepseek-coder-v2:16b', 'qwen2.5-coder', 'qwen2.5-coder:7b', 'qwen2.5-coder:32b', 'starcoder2', 'starcoder2:7b', 'starcoder2:15b'],
+    'Ollama - Qwen': ['qwen2.5', 'qwen2.5:7b', 'qwen2.5:14b', 'qwen2.5:32b', 'qwen2.5:72b', 'qwen2', 'qwen2:7b', 'qwen', 'qwen:7b'],
+    'Ollama - Phi': ['phi3', 'phi3:mini', 'phi3:medium', 'phi3:14b', 'phi3.5', 'phi3.5:latest'],
+    'Ollama - Gemma': ['gemma2', 'gemma2:2b', 'gemma2:9b', 'gemma2:27b', 'gemma', 'gemma:7b'],
+    'Ollama - Others': ['neural-chat', 'neural-chat:7b', 'starling-lm', 'starling-lm:7b', 'vicuna', 'vicuna:7b', 'vicuna:13b', 'vicuna:33b', 'orca-mini', 'orca-mini:3b', 'orca-mini:7b', 'orca2', 'orca2:7b', 'orca2:13b', 'dolphin-mixtral', 'dolphin-mixtral:8x7b', 'dolphin-mixtral:8x22b', 'dolphin-mistral', 'dolphin-mistral:7b', 'yi', 'yi:6b', 'yi:34b', 'solar', 'solar:10.7b', 'openchat', 'openchat:7b', 'wizardlm2', 'wizardlm2:7b', 'nous-hermes2', 'nous-hermes2:latest'],
+    'GitHub Models - Phi': ['Phi-4', 'Phi-3.5-mini-instruct', 'Phi-3.5-MoE-instruct', 'Phi-3-mini-4k-instruct', 'Phi-3-mini-128k-instruct', 'Phi-3-small-8k-instruct', 'Phi-3-medium-4k-instruct'],
+    'GitHub Models - Llama': ['Meta-Llama-3.1-405B-Instruct', 'Meta-Llama-3.1-70B-Instruct', 'Meta-Llama-3.1-8B-Instruct', 'Meta-Llama-3-70B-Instruct', 'Meta-Llama-3-8B-Instruct', 'Llama-3.2-90B-Vision-Instruct', 'Llama-3.2-11B-Vision-Instruct'],
+    'GitHub Models - Mistral': ['Mistral-large', 'Mistral-large-2411', 'Mistral-large-2407', 'Mistral-Nemo', 'Mistral-small', 'Mistral-7B-Instruct-v0.3'],
+    'GitHub Models - Cohere': ['Cohere-command-r', 'Cohere-command-r-plus', 'Cohere-command-r-08-2024'],
+    'GitHub Models - AI21': ['AI21-Jamba-1.5-Large', 'AI21-Jamba-1.5-Mini', 'AI21-Jamba-Instruct'],
+    'GitHub Models - NVIDIA': ['nvidia/Llama-3.1-Nemotron-70B-Instruct'],
+    'Multimodal - Images': ['dall-e-3', 'dall-e-2', 'stable-diffusion-xl'],
+    'Multimodal - Audio': ['whisper-1', 'whisper-large-v3', 'tts-1', 'tts-1-hd'],
+    'Embeddings': ['text-embedding-3-large', 'text-embedding-3-small', 'text-embedding-ada-002', 'text-embedding-004']
   };
 
   const voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
@@ -645,6 +500,7 @@ Beispiel:
 
   const handleNormalResponse = async (messageText) => {
     try {
+      console.log('🚀 handleNormalResponse called with:', messageText, 'Model:', selectedModel);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
       
@@ -654,27 +510,33 @@ Beispiel:
         content: msg.content
       }));
 
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const requestBody = {
+        model: selectedModel,
+        prompt: messageText,
+        agent: 'aura',
+        system_prompt: getSystemPrompt(),
+        conversation_history: conversationHistory
+      };
+      console.log('📤 Sending request:', requestBody);
+
+      const response = await fetch('http://127.0.0.1:8005/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: selectedModel,
-          prompt: messageText,
-          agent: 'aura',
-          system_prompt: getSystemPrompt(),
-          conversation_history: conversationHistory
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal
       });
 
+      console.log('📥 Response received, status:', response.status, 'ok:', response.ok);
       clearTimeout(timeoutId);
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response not OK:', errorText);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('🔍 Backend Response:', data);
+      console.log('🔍 Backend Response data:', data);
 
       const assistantMessage = {
         role: 'assistant',
@@ -730,7 +592,7 @@ Beispiel:
         content: msg.content
       }));
 
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const response = await fetch('http://127.0.0.1:8005/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1294,6 +1156,8 @@ Beispiel:
           </div>
         </div>
       </div>
+      
+      <PromptHelper onInsertPrompt={(prompt) => setInput(prompt)} />
     </div>
   );
 };

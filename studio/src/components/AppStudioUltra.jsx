@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import GitPanel from './GitPanel';
+import PromptHelper from './PromptHelper';
 import JSZip from 'jszip';
 import { FiPlay, FiDownload, FiCopy, FiCode, FiZap, FiPackage, FiFileText, FiCheckCircle, FiMessageSquare } from 'react-icons/fi';
 import './AppStudio.css';
@@ -587,6 +588,9 @@ ${new Date().toLocaleString()}
 
           {/* Git Panel */}
           <GitPanel projectPath={projectPath} projectName={`${template}-app`} />
+
+          {/* Prompt Helper */}
+          <PromptHelper onInsertPrompt={(prompt) => setDescription(description + '\n' + prompt)} />
         </div>
       </div>
     </div>

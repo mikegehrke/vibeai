@@ -21,6 +21,7 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.20.0",
     "react-syntax-highlighter": "^16.0.0",
+    "reactflow": "^11.10.1",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0"

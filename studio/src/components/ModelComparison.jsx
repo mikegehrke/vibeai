@@ -1,26 +1,226 @@
 import React, { useState, useEffect } from 'react';
+import PromptHelper from './PromptHelper';
 import './ModelComparison.css';
 
 const ModelComparison = () => {
-  const [selectedModels, setSelectedModels] = useState(['gpt-5', 'gpt-4o', 'o1']);
+  const [selectedModels, setSelectedModels] = useState(['gpt-4o', 'claude-3-5-sonnet-20241022', 'gemini-1.5-pro']);
   const [prompt, setPrompt] = useState('');
   const [results, setResults] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [compareMode, setCompareMode] = useState('speed'); // speed, quality, cost
 
   const availableModels = [
-    { id: 'gpt-5', name: 'GPT-5', category: 'gpt5', speed: 95, quality: 100, cost: 85 },
-    { id: 'gpt-5-pro', name: 'GPT-5 Pro', category: 'gpt5', speed: 80, quality: 100, cost: 70 },
-    { id: 'gpt-5-mini', name: 'GPT-5 Mini', category: 'gpt5', speed: 100, quality: 90, cost: 95 },
-    { id: 'gpt-4o', name: 'GPT-4o', category: 'gpt4', speed: 90, quality: 95, cost: 90 },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'gpt4', speed: 100, quality: 85, cost: 98 },
-    { id: 'gpt-4.1', name: 'GPT-4.1', category: 'gpt4', speed: 85, quality: 92, cost: 85 },
-    { id: 'o1', name: 'O1', category: 'reasoning', speed: 40, quality: 98, cost: 60 },
-    { id: 'o1-pro', name: 'O1 Pro', category: 'reasoning', speed: 30, quality: 100, cost: 50 },
-    { id: 'o1-mini', name: 'O1 Mini', category: 'reasoning', speed: 70, quality: 90, cost: 85 },
-    { id: 'o3', name: 'O3', category: 'reasoning', speed: 35, quality: 99, cost: 55 },
-    { id: 'o3-pro', name: 'O3 Pro', category: 'reasoning', speed: 25, quality: 100, cost: 45 },
-    { id: 'o3-mini', name: 'O3 Mini', category: 'reasoning', speed: 65, quality: 92, cost: 80 }
+    // ==================== OPENAI - GPT-5 SERIES ====================
+    { id: 'gpt-5.1', name: 'GPT-5.1', category: 'openai', speed: 95, quality: 100, cost: 75 },
+    { id: 'gpt-5.1-2025-10-14', name: 'GPT-5.1 Latest', category: 'openai', speed: 95, quality: 100, cost: 75 },
+    { id: 'gpt-5.1-mini', name: 'GPT-5.1 Mini', category: 'openai', speed: 100, quality: 95, cost: 92 },
+    { id: 'gpt-5.1-mini-2025-10-14', name: 'GPT-5.1 Mini Latest', category: 'openai', speed: 100, quality: 95, cost: 92 },
+    { id: 'gpt-5.1-nano', name: 'GPT-5.1 Nano', category: 'openai', speed: 100, quality: 90, cost: 98 },
+    { id: 'gpt-5.1-nano-2025-10-14', name: 'GPT-5.1 Nano Latest', category: 'openai', speed: 100, quality: 90, cost: 98 },
+    { id: 'gpt-5', name: 'GPT-5', category: 'openai', speed: 92, quality: 99, cost: 77 },
+    { id: 'gpt-5-search-api', name: 'GPT-5 Search API', category: 'openai', speed: 90, quality: 98, cost: 80 },
+    { id: 'gpt-5-search-api-2025-10-14', name: 'GPT-5 Search API Latest', category: 'openai', speed: 90, quality: 98, cost: 80 },
+    { id: 'gpt-5-2025-08-07', name: 'GPT-5 August', category: 'openai', speed: 92, quality: 99, cost: 77 },
+    { id: 'gpt-5-pro', name: 'GPT-5 Pro', category: 'openai', speed: 85, quality: 100, cost: 70 },
+    { id: 'gpt-5-pro-2025-10-06', name: 'GPT-5 Pro Latest', category: 'openai', speed: 85, quality: 100, cost: 70 },
+    { id: 'gpt-5-mini', name: 'GPT-5 Mini', category: 'openai', speed: 98, quality: 93, cost: 95 },
+    { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini August', category: 'openai', speed: 98, quality: 93, cost: 95 },
+    { id: 'gpt-5-nano', name: 'GPT-5 Nano', category: 'openai', speed: 100, quality: 88, cost: 98 },
+    { id: 'gpt-5-nano-2025-08-07', name: 'GPT-5 Nano August', category: 'openai', speed: 100, quality: 88, cost: 98 },
+    { id: 'gpt-5-codex', name: 'GPT-5 Codex', category: 'openai', speed: 90, quality: 97, cost: 85 },
+    { id: 'gpt-5-chat-latest', name: 'GPT-5 Chat Latest', category: 'openai', speed: 92, quality: 98, cost: 82 },
+    
+    // ==================== OPENAI - GPT-4.1 SERIES ====================
+    { id: 'gpt-4.1', name: 'GPT-4.1', category: 'openai', speed: 90, quality: 97, cost: 82 },
+    { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1 Latest', category: 'openai', speed: 90, quality: 97, cost: 82 },
+    { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', category: 'openai', speed: 98, quality: 92, cost: 93 },
+    { id: 'gpt-4.1-mini-2025-04-14', name: 'GPT-4.1 Mini Latest', category: 'openai', speed: 98, quality: 92, cost: 93 },
+    { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', category: 'openai', speed: 100, quality: 87, cost: 97 },
+    { id: 'gpt-4.1-nano-2025-04-14', name: 'GPT-4.1 Nano Latest', category: 'openai', speed: 100, quality: 87, cost: 97 },
+    
+    // ==================== OPENAI - GPT-4O SERIES ====================
+    { id: 'gpt-4o', name: 'GPT-4o', category: 'openai', speed: 95, quality: 98, cost: 85 },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'openai', speed: 100, quality: 90, cost: 98 },
+    { id: 'gpt-4o-2024-11-20', name: 'GPT-4o November', category: 'openai', speed: 95, quality: 98, cost: 85 },
+    { id: 'gpt-4o-2024-05-13', name: 'GPT-4o May', category: 'openai', speed: 94, quality: 97, cost: 84 },
+    { id: 'gpt-4o-2024-08-06', name: 'GPT-4o August', category: 'openai', speed: 94, quality: 97, cost: 84 },
+    { id: 'gpt-4o-mini-2024-07-18', name: 'GPT-4o Mini July', category: 'openai', speed: 100, quality: 90, cost: 98 },
+    { id: 'chatgpt-4o-latest', name: 'ChatGPT-4o Latest', category: 'openai', speed: 95, quality: 98, cost: 85 },
+    
+    // ==================== OPENAI - GPT-4 LEGACY ====================
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', category: 'openai', speed: 85, quality: 95, cost: 80 },
+    { id: 'gpt-4', name: 'GPT-4', category: 'openai', speed: 75, quality: 95, cost: 70 },
+    { id: 'gpt-4-32k', name: 'GPT-4 32K', category: 'openai', speed: 70, quality: 95, cost: 60 },
+    
+    // ==================== OPENAI - GPT-3.5 SERIES ====================
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', category: 'openai', speed: 100, quality: 82, cost: 98 },
+    { id: 'gpt-3.5-turbo-16k', name: 'GPT-3.5 Turbo 16K', category: 'openai', speed: 98, quality: 82, cost: 95 },
+    { id: 'gpt-3.5-turbo-instruct', name: 'GPT-3.5 Instruct', category: 'openai', speed: 100, quality: 80, cost: 97 },
+    
+    // ==================== OPENAI - O-SERIES (REASONING) ====================
+    { id: 'o1', name: 'O1', category: 'openai', speed: 65, quality: 99, cost: 73 },
+    { id: 'o1-2024-12-17', name: 'O1 December', category: 'openai', speed: 65, quality: 99, cost: 73 },
+    { id: 'o1-pro', name: 'O1 Pro', category: 'openai', speed: 55, quality: 100, cost: 65 },
+    { id: 'o1-pro-2025-03-19', name: 'O1 Pro Latest', category: 'openai', speed: 55, quality: 100, cost: 65 },
+    { id: 'o1-mini', name: 'O1 Mini', category: 'openai', speed: 80, quality: 92, cost: 88 },
+    { id: 'o1-mini-2024-09-12', name: 'O1 Mini September', category: 'openai', speed: 80, quality: 92, cost: 88 },
+    { id: 'o1-preview', name: 'O1 Preview', category: 'openai', speed: 60, quality: 100, cost: 70 },
+    
+    // ==================== OPENAI - O3 SERIES ====================
+    { id: 'o3', name: 'O3', category: 'openai', speed: 60, quality: 100, cost: 70 },
+    { id: 'o3-2025-04-16', name: 'O3 Latest', category: 'openai', speed: 60, quality: 100, cost: 70 },
+    { id: 'o3-pro', name: 'O3 Pro', category: 'openai', speed: 50, quality: 100, cost: 60 },
+    { id: 'o3-pro-2025-06-10', name: 'O3 Pro Latest', category: 'openai', speed: 50, quality: 100, cost: 60 },
+    { id: 'o3-mini', name: 'O3 Mini', category: 'openai', speed: 75, quality: 93, cost: 85 },
+    { id: 'o3-mini-2025-01-31', name: 'O3 Mini Latest', category: 'openai', speed: 75, quality: 93, cost: 85 },
+    { id: 'o3-deep-research', name: 'O3 Deep Research', category: 'openai', speed: 40, quality: 100, cost: 55 },
+    { id: 'o3-deep-research-2025-06-26', name: 'O3 Deep Research Latest', category: 'openai', speed: 40, quality: 100, cost: 55 },
+    
+    // ==================== OPENAI - O4 SERIES ====================
+    { id: 'o4-mini', name: 'O4 Mini', category: 'openai', speed: 78, quality: 94, cost: 87 },
+    { id: 'o4-mini-2025-04-16', name: 'O4 Mini Latest', category: 'openai', speed: 78, quality: 94, cost: 87 },
+    { id: 'o4-mini-deep-research', name: 'O4 Mini Deep Research', category: 'openai', speed: 45, quality: 98, cost: 60 },
+    { id: 'o4-mini-deep-research-2025-06-26', name: 'O4 Mini Deep Research Latest', category: 'openai', speed: 45, quality: 98, cost: 60 },
+    
+    // ==================== OPENAI - IMAGE GENERATION ====================
+    { id: 'dall-e-2', name: 'DALL-E 2', category: 'openai', speed: 70, quality: 85, cost: 80 },
+    { id: 'dall-e-3', name: 'DALL-E 3', category: 'openai', speed: 60, quality: 95, cost: 70 },
+    { id: 'gpt-image-1', name: 'GPT Image 1', category: 'openai', speed: 75, quality: 88, cost: 85 },
+    { id: 'gpt-image-1-mini', name: 'GPT Image 1 Mini', category: 'openai', speed: 90, quality: 82, cost: 93 },
+    
+    // ==================== OPENAI - VIDEO GENERATION ====================
+    { id: 'sora-2', name: 'SORA-2', category: 'openai', speed: 30, quality: 95, cost: 40 },
+    { id: 'sora-2-pro', name: 'SORA-2 Pro', category: 'openai', speed: 25, quality: 98, cost: 35 },
+    
+    // ==================== OPENAI - AUDIO & VOICE ====================
+    { id: 'tts-1', name: 'TTS-1', category: 'openai', speed: 95, quality: 85, cost: 90 },
+    { id: 'tts-1-hd', name: 'TTS-1 HD', category: 'openai', speed: 85, quality: 95, cost: 80 },
+    { id: 'whisper-1', name: 'Whisper-1', category: 'openai', speed: 90, quality: 95, cost: 88 },
+    
+    // ==================== OPENAI - EMBEDDING MODELS ====================
+    { id: 'text-embedding-3-large', name: 'Embedding 3 Large', category: 'openai', speed: 95, quality: 92, cost: 90 },
+    { id: 'text-embedding-3-small', name: 'Embedding 3 Small', category: 'openai', speed: 100, quality: 88, cost: 95 },
+    { id: 'text-embedding-ada-002', name: 'Embedding Ada 002', category: 'openai', speed: 98, quality: 85, cost: 93 },
+    
+    // ==================== ANTHROPIC - CLAUDE 4.5 SERIES ====================
+    { id: 'claude-4.5', name: 'Claude 4.5', category: 'claude', speed: 88, quality: 100, cost: 80 },
+    { id: 'claude-4.5-opus-20250514', name: 'Claude 4.5 Opus', category: 'claude', speed: 70, quality: 100, cost: 68 },
+    { id: 'claude-4.5-sonnet-20250514', name: 'Claude 4.5 Sonnet', category: 'claude', speed: 88, quality: 99, cost: 82 },
+    { id: 'claude-4.5-haiku-20250514', name: 'Claude 4.5 Haiku', category: 'claude', speed: 98, quality: 93, cost: 95 },
+    
+    // ==================== ANTHROPIC - CLAUDE 4 SERIES ====================
+    { id: 'claude-4', name: 'Claude 4', category: 'claude', speed: 85, quality: 99, cost: 78 },
+    { id: 'claude-4-opus-20250220', name: 'Claude 4 Opus', category: 'claude', speed: 68, quality: 99, cost: 70 },
+    { id: 'claude-4-sonnet-20250220', name: 'Claude 4 Sonnet', category: 'claude', speed: 85, quality: 98, cost: 83 },
+    { id: 'claude-4-haiku-20250220', name: 'Claude 4 Haiku', category: 'claude', speed: 97, quality: 92, cost: 94 },
+    
+    // ==================== ANTHROPIC - CLAUDE 3.5 SERIES ====================
+    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', category: 'claude', speed: 90, quality: 98, cost: 87 },
+    { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', category: 'claude', speed: 98, quality: 90, cost: 96 },
+    
+    // ==================== ANTHROPIC - CLAUDE 3 SERIES ====================
+    { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', category: 'claude', speed: 70, quality: 98, cost: 75 },
+    { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet', category: 'claude', speed: 85, quality: 95, cost: 87 },
+    { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', category: 'claude', speed: 98, quality: 88, cost: 96 },
+    
+    // ==================== ANTHROPIC - CLAUDE 2 SERIES ====================
+    { id: 'claude-2.1', name: 'Claude 2.1', category: 'claude', speed: 80, quality: 88, cost: 85 },
+    { id: 'claude-2.0', name: 'Claude 2.0', category: 'claude', speed: 75, quality: 85, cost: 83 },
+    
+    // ==================== GOOGLE - GEMINI 3 SERIES ====================
+    { id: 'gemini-3', name: 'Gemini 3', category: 'gemini', speed: 92, quality: 99, cost: 85 },
+    { id: 'gemini-3-pro', name: 'Gemini 3 Pro', category: 'gemini', speed: 82, quality: 100, cost: 78 },
+    { id: 'gemini-3-flash', name: 'Gemini 3 Flash', category: 'gemini', speed: 98, quality: 93, cost: 95 },
+    { id: 'gemini-3-nano', name: 'Gemini 3 Nano', category: 'gemini', speed: 100, quality: 88, cost: 98 },
+    
+    // ==================== GOOGLE - GEMINI 2.5 SERIES ====================
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', category: 'gemini', speed: 80, quality: 98, cost: 82 },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'gemini', speed: 96, quality: 91, cost: 93 },
+    
+    // ==================== GOOGLE - GEMINI 2.0 SERIES ====================
+    { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash Exp', category: 'gemini', speed: 100, quality: 92, cost: 100 },
+    { id: 'gemini-2.0-flash-thinking-exp-1219', name: 'Gemini 2.0 Flash Thinking', category: 'gemini', speed: 85, quality: 95, cost: 88 },
+    
+    // ==================== GOOGLE - GEMINI 1.5 SERIES ====================
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', category: 'gemini', speed: 85, quality: 95, cost: 90 },
+    { id: 'gemini-1.5-pro-exp-0827', name: 'Gemini 1.5 Pro Exp', category: 'gemini', speed: 83, quality: 94, cost: 88 },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', category: 'gemini', speed: 98, quality: 88, cost: 98 },
+    { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash 8B', category: 'gemini', speed: 100, quality: 85, cost: 99 },
+    { id: 'gemini-1.5-flash-002', name: 'Gemini 1.5 Flash 002', category: 'gemini', speed: 97, quality: 87, cost: 97 },
+    
+    // ==================== GOOGLE - GEMINI 1.0 SERIES ====================
+    { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro', category: 'gemini', speed: 82, quality: 90, cost: 92 },
+    
+    // ==================== GOOGLE - GEMINI EXPERIMENTAL ====================
+    { id: 'gemini-exp-1206', name: 'Gemini Exp 1206', category: 'gemini', speed: 88, quality: 93, cost: 90 },
+    { id: 'learnlm-1.5-pro-experimental', name: 'LearnLM 1.5 Pro Exp', category: 'gemini', speed: 85, quality: 91, cost: 88 },
+    
+    // ==================== OLLAMA - LLAMA SERIES ====================
+    { id: 'llama3.2:1b', name: 'Llama 3.2 1B', category: 'ollama', speed: 100, quality: 75, cost: 100 },
+    { id: 'llama3.2:3b', name: 'Llama 3.2 3B', category: 'ollama', speed: 100, quality: 80, cost: 100 },
+    { id: 'llama3.1:8b', name: 'Llama 3.1 8B', category: 'ollama', speed: 98, quality: 85, cost: 100 },
+    { id: 'llama3.1:70b', name: 'Llama 3.1 70B', category: 'ollama', speed: 75, quality: 92, cost: 100 },
+    
+    // ==================== OLLAMA - MISTRAL SERIES ====================
+    { id: 'mistral:7b', name: 'Mistral 7B', category: 'ollama', speed: 98, quality: 85, cost: 100 },
+    { id: 'mixtral:8x7b', name: 'Mixtral 8x7B', category: 'ollama', speed: 85, quality: 90, cost: 100 },
+    
+    // ==================== OLLAMA - CODE MODELS ====================
+    { id: 'codellama:7b', name: 'CodeLlama 7B', category: 'ollama', speed: 98, quality: 88, cost: 100 },
+    { id: 'codellama:13b', name: 'CodeLlama 13B', category: 'ollama', speed: 90, quality: 90, cost: 100 },
+    { id: 'deepseek-coder:6.7b', name: 'DeepSeek Coder 6.7B', category: 'ollama', speed: 95, quality: 90, cost: 100 },
+    
+    // ==================== OLLAMA - OTHER MODELS ====================
+    { id: 'qwen2.5:7b', name: 'Qwen 2.5 7B', category: 'ollama', speed: 95, quality: 85, cost: 100 },
+    { id: 'phi3:mini', name: 'Phi-3 Mini', category: 'ollama', speed: 100, quality: 80, cost: 100 },
+    { id: 'gemma2:9b', name: 'Gemma2 9B', category: 'ollama', speed: 95, quality: 83, cost: 100 },
+    
+    // ==================== GITHUB MODELS - OPENAI ====================
+    { id: 'gpt-5.1-preview', name: 'GitHub GPT-5.1 Preview', category: 'github', speed: 92, quality: 99, cost: 100 },
+    { id: 'gpt-5-turbo-2024-07-18', name: 'GitHub GPT-5 Turbo', category: 'github', speed: 95, quality: 97, cost: 100 },
+    { id: 'gpt-4o-mini', name: 'GitHub GPT-4o Mini', category: 'github', speed: 100, quality: 90, cost: 100 },
+    { id: 'gpt-4o', name: 'GitHub GPT-4o', category: 'github', speed: 95, quality: 98, cost: 100 },
+    
+    // ==================== GITHUB MODELS - ANTHROPIC ====================
+    { id: 'claude-4.5-sonnet', name: 'GitHub Claude 4.5 Sonnet', category: 'github', speed: 88, quality: 99, cost: 100 },
+    { id: 'claude-4-opus', name: 'GitHub Claude 4 Opus', category: 'github', speed: 68, quality: 99, cost: 100 },
+    { id: 'claude-3.5-sonnet', name: 'GitHub Claude 3.5 Sonnet', category: 'github', speed: 90, quality: 98, cost: 100 },
+    { id: 'claude-3-opus', name: 'GitHub Claude 3 Opus', category: 'github', speed: 70, quality: 98, cost: 100 },
+    
+    // ==================== GITHUB MODELS - GOOGLE ====================
+    { id: 'gemini-3-pro-latest', name: 'GitHub Gemini 3 Pro', category: 'github', speed: 82, quality: 100, cost: 100 },
+    { id: 'gemini-3-flash-latest', name: 'GitHub Gemini 3 Flash', category: 'github', speed: 98, quality: 93, cost: 100 },
+    { id: 'gemini-2.5-pro-latest', name: 'GitHub Gemini 2.5 Pro', category: 'github', speed: 80, quality: 98, cost: 100 },
+    { id: 'gemini-2.0-flash-exp', name: 'GitHub Gemini 2.0 Flash', category: 'github', speed: 100, quality: 92, cost: 100 },
+    
+    // ==================== GITHUB MODELS - MICROSOFT ====================
+    { id: 'Phi-4', name: 'Phi-4', category: 'github', speed: 95, quality: 88, cost: 100 },
+    
+    // ==================== GITHUB MODELS - META ====================
+    { id: 'Meta-Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B', category: 'github', speed: 78, quality: 94, cost: 100 },
+    { id: 'Meta-Llama-3.1-405B-Instruct', name: 'Llama 3.1 405B', category: 'github', speed: 60, quality: 95, cost: 100 },
+    { id: 'Meta-Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B', category: 'github', speed: 75, quality: 92, cost: 100 },
+    { id: 'Meta-Llama-3.1-8B-Instruct', name: 'Llama 3.1 8B', category: 'github', speed: 95, quality: 85, cost: 100 },
+    
+    // ==================== GITHUB MODELS - MISTRAL ====================
+    { id: 'Mistral-large-2411', name: 'Mistral Large', category: 'github', speed: 80, quality: 93, cost: 100 },
+    { id: 'Mistral-large', name: 'Mistral Large Latest', category: 'github', speed: 80, quality: 93, cost: 100 },
+    { id: 'Mistral-small', name: 'Mistral Small', category: 'github', speed: 90, quality: 85, cost: 100 },
+    { id: 'Mistral-Nemo', name: 'Mistral Nemo', category: 'github', speed: 93, quality: 87, cost: 100 },
+    
+    // ==================== GITHUB MODELS - COHERE ====================
+    { id: 'Cohere-command-r-plus-08-2024', name: 'Command R+ August', category: 'github', speed: 85, quality: 91, cost: 100 },
+    { id: 'Cohere-command-r-plus', name: 'Command R+', category: 'github', speed: 85, quality: 90, cost: 100 },
+    { id: 'Cohere-command-r-08-2024', name: 'Command R August', category: 'github', speed: 90, quality: 88, cost: 100 },
+    { id: 'Cohere-command-r', name: 'Command R', category: 'github', speed: 90, quality: 87, cost: 100 },
+    
+    // ==================== GITHUB MODELS - AI21 ====================
+    { id: 'AI21-Jamba-1.5-Large', name: 'Jamba 1.5 Large', category: 'github', speed: 88, quality: 88, cost: 100 },
+    { id: 'AI21-Jamba-1.5-Mini', name: 'Jamba 1.5 Mini', category: 'github', speed: 95, quality: 83, cost: 100 },
+    
+    // ==================== DEEPSEEK ====================
+    { id: 'deepseek-chat', name: 'DeepSeek Chat', category: 'deepseek', speed: 88, quality: 90, cost: 95 },
+    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', category: 'deepseek', speed: 70, quality: 95, cost: 88 }
   ];
 
   const comparisonPrompts = [
@@ -341,6 +541,9 @@ const ModelComparison = () => {
             </div>
           </div>
         )}
+
+        {/* Prompt Helper */}
+        <PromptHelper onInsertPrompt={(promptText) => setPrompt(prompt + '\n' + promptText)} />
       </div>
     </div>
   );
