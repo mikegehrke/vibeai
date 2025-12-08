@@ -1,6 +1,10 @@
 from datetime import datetime
+
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
 
 
 class BillingRecord(BaseModel):
@@ -24,26 +28,18 @@ class ReferralBonus(BaseModel):
     timestamp: datetime = datetime.utcnow()
 
 
-# -------------------------------------------------------------
-# VIBEAI – BILLING DATABASE MODELS (SQL & Pydantic)
-# -------------------------------------------------------------
-from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
-
-
 class BillingRecordDB(Base):
     """
     Datenbank-Modell für Billing Records.
     Speichert jeden AI-API-Call mit Kosten und Token-Verbrauch.
     """
+
     __tablename__ = "billing_records"
 
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    model = Column(String)                       # GPT / Claude / Gemini / Copilot / Ollama
-    provider = Column(String)                    # openai / anthropic / google / github / local
+    model = Column(String)  # GPT / Claude / Gemini / Copilot / Ollama
+    provider = Column(String)  # openai / anthropic / google / github / local
     tokens_used = Column(Integer)
     cost_usd = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -54,11 +50,12 @@ class SubscriptionDB(Base):
     Datenbank-Modell für Subscriptions.
     Verwaltet User-Tier (Free/Pro/Ultra/Enterprise).
     """
+
     __tablename__ = "subscriptions"
 
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    tier = Column(String)                        # free / pro / ultra / enterprise
+    tier = Column(String)  # free / pro / ultra / enterprise
     is_active = Column(Boolean, default=True)
     auto_renew = Column(Boolean, default=True)
     renewal_date = Column(DateTime)
@@ -71,23 +68,21 @@ class ReferralBonusDB(Base):
     Datenbank-Modell für Referral Bonuses.
     Tracked wer wen eingeladen hat und welche Boni vergeben wurden.
     """
+
     __tablename__ = "referral_bonus"
 
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
     referred_user_id = Column(String)
     bonus_tokens = Column(Integer)
-    status = Column(String, default="pending")   # pending / applied / expired
+    status = Column(String, default="pending")  # pending / applied / expired
     created_at = Column(DateTime, default=datetime.utcnow)
     applied_at = Column(DateTime, nullable=True)
 
 
-# -------------------------------------------------------------
-# Pydantic Response Models für API
-# -------------------------------------------------------------
-
 class BillingRecordResponse(BaseModel):
     """API Response für Billing Records"""
+
     id: str
     user_id: str
     model: str
@@ -102,6 +97,7 @@ class BillingRecordResponse(BaseModel):
 
 class SubscriptionResponse(BaseModel):
     """API Response für Subscriptions"""
+
     id: str
     user_id: str
     tier: str
@@ -116,6 +112,7 @@ class SubscriptionResponse(BaseModel):
 
 class ReferralBonusResponse(BaseModel):
     """API Response für Referral Bonuses"""
+
     id: str
     user_id: str
     referred_user_id: str
@@ -127,31 +124,20 @@ class ReferralBonusResponse(BaseModel):
         from_attributes = True
 
 
-# ============================================================
-# ⭐ VIBEAI – ADVANCED BILLING MODELS (2025)
-# ============================================================
-# ✔ Usage Tracking (per Provider/Model/Feature)
-# ✔ Payment Transactions (Stripe/PayPal)
-# ✔ Credits & Balance System
-# ✔ Feature Usage Limits (Chat/Builder/Studio)
-# ✔ Audit Logs
-# ✔ Invoice Generation
-# ============================================================
-
-
 class UsageRecordDB(Base):
     """
     Detailliertes Usage Tracking pro Feature.
     Tracks: Chat, Builder, Code Studio, App Studio, etc.
     """
+
     __tablename__ = "usage_records"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    feature = Column(String)                     # chat / builder / studio / code
-    operation = Column(String)                   # generate / build / compile / chat
-    provider = Column(String)                    # openai / anthropic / google / github
-    model = Column(String)                       # gpt-5 / claude-3.5 / gemini-2.0
+    feature = Column(String)  # chat / builder / studio / code
+    operation = Column(String)  # generate / build / compile / chat
+    provider = Column(String)  # openai / anthropic / google / github
+    model = Column(String)  # gpt-5 / claude-3.5 / gemini-2.0
     input_tokens = Column(Integer, default=0)
     output_tokens = Column(Integer, default=0)
     total_tokens = Column(Integer, default=0)
@@ -159,7 +145,7 @@ class UsageRecordDB(Base):
     latency_ms = Column(Integer, default=0)
     success = Column(Boolean, default=True)
     error_message = Column(String, nullable=True)
-    metadata = Column(String, nullable=True)     # JSON string for extra data
+    meta_data = Column(String, nullable=True)  # JSON string for extra data
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -167,19 +153,20 @@ class PaymentTransactionDB(Base):
     """
     Payment Transaction History (Stripe, PayPal, etc.).
     """
+
     __tablename__ = "payment_transactions"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    provider = Column(String)                    # stripe / paypal / crypto
+    provider = Column(String)  # stripe / paypal / crypto
     transaction_id = Column(String, unique=True)
     amount = Column(Float)
     currency = Column(String, default="USD")
-    status = Column(String)                      # pending / success / failed / refunded
-    payment_method = Column(String)              # card / paypal / bank
+    status = Column(String)  # pending / success / failed / refunded
+    payment_method = Column(String)  # card / paypal / bank
     invoice_id = Column(String, nullable=True)
     description = Column(String, nullable=True)
-    metadata = Column(String, nullable=True)
+    meta_data = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -189,12 +176,13 @@ class UserCreditsDB(Base):
     User Credit Balance System.
     Credits können gekauft, verdient (Referral) oder gewonnen werden.
     """
+
     __tablename__ = "user_credits"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, unique=True, index=True)
     credits = Column(Float, default=0.0)
-    bonus_credits = Column(Float, default=0.0)   # From referrals, promotions
+    bonus_credits = Column(Float, default=0.0)  # From referrals, promotions
     lifetime_credits = Column(Float, default=0.0)
     last_purchase_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -206,11 +194,12 @@ class FeatureUsageLimitDB(Base):
     Feature-specific Usage Limits (pro Tag/Monat).
     Z.B. Builder: max 50 projects/day, Code Studio: max 1000 ops/day
     """
+
     __tablename__ = "feature_usage_limits"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    feature = Column(String)                     # chat / builder / studio / code
+    feature = Column(String)  # chat / builder / studio / code
     daily_limit = Column(Integer)
     daily_used = Column(Integer, default=0)
     monthly_limit = Column(Integer)
@@ -226,12 +215,13 @@ class BillingAuditLogDB(Base):
     Audit Log für alle Billing-Events.
     WICHTIG für Compliance, Debugging, Fraud Detection.
     """
+
     __tablename__ = "billing_audit_log"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
-    event_type = Column(String)                  # charge / refund / upgrade / downgrade
-    event_data = Column(String)                  # JSON string
+    event_type = Column(String)  # charge / refund / upgrade / downgrade
+    event_data = Column(String)  # JSON string
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -241,8 +231,9 @@ class InvoiceDB(Base):
     """
     Invoice Generation für Pro/Ultra Users.
     """
+
     __tablename__ = "invoices"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True)
     invoice_number = Column(String, unique=True)
@@ -252,18 +243,15 @@ class InvoiceDB(Base):
     tax = Column(Float, default=0.0)
     total = Column(Float)
     currency = Column(String, default="USD")
-    status = Column(String)                      # draft / sent / paid / overdue
+    status = Column(String)  # draft / sent / paid / overdue
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     paid_at = Column(DateTime, nullable=True)
 
 
-# ============================================================
-# PYDANTIC RESPONSE MODELS (Extended)
-# ============================================================
-
 class UsageRecordResponse(BaseModel):
     """API Response für Usage Records"""
+
     id: str
     user_id: str
     feature: str
@@ -277,13 +265,14 @@ class UsageRecordResponse(BaseModel):
     latency_ms: int
     success: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class PaymentTransactionResponse(BaseModel):
     """API Response für Payment Transactions"""
+
     id: str
     user_id: str
     provider: str
@@ -292,24 +281,26 @@ class PaymentTransactionResponse(BaseModel):
     currency: str
     status: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class UserCreditsResponse(BaseModel):
     """API Response für User Credits"""
+
     user_id: str
     credits: float
     bonus_credits: float
     lifetime_credits: float
-    
+
     class Config:
         from_attributes = True
 
 
 class InvoiceResponse(BaseModel):
     """API Response für Invoices"""
+
     id: str
     user_id: str
     invoice_number: str
@@ -320,21 +311,12 @@ class InvoiceResponse(BaseModel):
     total: float
     status: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-def calculate_token_cost(
-    provider: str,
-    model: str,
-    input_tokens: int,
-    output_tokens: int
-) -> float:
+def calculate_token_cost(provider: str, model: str, input_tokens: int, output_tokens: int) -> float:
     """
     Berechnet Kosten basierend auf Provider/Model.
     Beispiel-Preise (echte Preise in pricing_rules.py).
@@ -357,17 +339,14 @@ def calculate_token_cost(
         },
         "ollama": {
             "default": {"input": 0.0, "output": 0.0},  # FREE (local)
-        }
+        },
     }
-    
+
     provider_pricing = pricing.get(provider, {})
     model_pricing = provider_pricing.get(model, {"input": 0.0, "output": 0.0})
-    
-    cost = (
-        input_tokens * model_pricing["input"] +
-        output_tokens * model_pricing["output"]
-    )
-    
+
+    cost = input_tokens * model_pricing["input"] + output_tokens * model_pricing["output"]
+
     return round(cost, 6)
 
 
@@ -400,7 +379,7 @@ def get_tier_limits(tier: str) -> dict:
             "monthly_tokens": 99999999,
             "builder_projects": 99999,
             "code_operations": 99999,
-        }
+        },
     }
-    
+
     return limits.get(tier, limits["free"])

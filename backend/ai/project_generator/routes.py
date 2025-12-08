@@ -12,20 +12,23 @@ Endpoints:
 - GET /generator/stats - Get statistics
 """
 
+from typing import Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, List
+
 from ai.project_generator.generator import project_generator
 
 router = APIRouter(prefix="/generator", tags=["Project Generator"])
-
 
 # ============================================================
 # REQUEST/RESPONSE MODELS
 # ============================================================
 
+
 class CreateProjectRequest(BaseModel):
     """Request to create new project."""
+
     project_id: str
     framework: str  # flutter | react | vue | nextjs | node
     project_name: str
@@ -43,13 +46,14 @@ class CreateProjectRequest(BaseModel):
                 "project_name": "My Awesome App",
                 "description": "A social media app",
                 "git_init": True,
-                "install_deps": False
+                "install_deps": False,
             }
         }
 
 
 class CreateProjectResponse(BaseModel):
     """Response after project creation."""
+
     success: bool
     project_path: Optional[str] = None
     framework: Optional[str] = None
@@ -61,6 +65,7 @@ class CreateProjectResponse(BaseModel):
 
 class ProjectInfo(BaseModel):
     """Project information."""
+
     project_id: str
     project_path: str
     framework: str
@@ -72,12 +77,14 @@ class ProjectInfo(BaseModel):
 
 class ProjectsList(BaseModel):
     """List of projects."""
+
     projects: List[Dict]
     total: int
 
 
 class GeneratorStats(BaseModel):
     """Generator statistics."""
+
     total_projects: int
     frameworks: Dict[str, int]
     total_size_mb: float
@@ -87,6 +94,7 @@ class GeneratorStats(BaseModel):
 # ============================================================
 # ENDPOINTS
 # ============================================================
+
 
 @router.post("/create", response_model=CreateProjectResponse)
 async def create_project(request: CreateProjectRequest):
@@ -111,14 +119,14 @@ async def create_project(request: CreateProjectRequest):
             "author": request.author,
             "git_init": request.git_init,
             "install_deps": request.install_deps,
-            "template_type": request.template_type
+            "template_type": request.template_type,
         }
 
         result = await project_generator.create_project(
             project_id=request.project_id,
             framework=request.framework,
             project_name=request.project_name,
-            options=options
+            options=options,
         )
 
         return CreateProjectResponse(**result)
@@ -137,10 +145,7 @@ async def list_projects():
     try:
         projects = project_generator.list_projects()
 
-        return ProjectsList(
-            projects=projects,
-            total=len(projects)
-        )
+        return ProjectsList(projects=projects, total=len(projects))
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -161,10 +166,7 @@ async def get_project_info(project_id: str):
         info = project_generator.get_project_info(project_id)
 
         if not info:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Project '{project_id}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
 
         return ProjectInfo(**info)
 
@@ -183,17 +185,11 @@ async def delete_project(project_id: str):
     """
     try:
         if not project_generator.project_exists(project_id):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Project '{project_id}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
 
         success = project_generator.delete_project(project_id)
 
-        return {
-            "success": success,
-            "message": f"Project '{project_id}' deleted"
-        }
+        return {"success": success, "message": f"Project '{project_id}' deleted"}
 
     except HTTPException:
         raise
@@ -233,36 +229,36 @@ async def get_supported_frameworks():
                 "name": "Flutter",
                 "description": "Google's UI toolkit for mobile, web & desktop",
                 "features": ["Cross-platform", "Hot reload", "Native performance"],
-                "build_types": ["APK", "Web", "Desktop"]
+                "build_types": ["APK", "Web", "Desktop"],
             },
             {
                 "id": "react",
                 "name": "React (Vite)",
                 "description": "Modern React with Vite tooling",
                 "features": ["Fast HMR", "Component-based", "Modern tooling"],
-                "build_types": ["Web"]
+                "build_types": ["Web"],
             },
             {
                 "id": "nextjs",
                 "name": "Next.js",
                 "description": "Full-stack React framework with SSR",
                 "features": ["SSR/SSG", "API routes", "File-based routing"],
-                "build_types": ["Web", "Static"]
+                "build_types": ["Web", "Static"],
             },
             {
                 "id": "vue",
                 "name": "Vue.js 3 (Vite)",
                 "description": "Progressive JavaScript framework",
                 "features": ["Composition API", "Fast HMR", "Lightweight"],
-                "build_types": ["Web"]
+                "build_types": ["Web"],
             },
             {
                 "id": "node",
                 "name": "Node.js (Express)",
                 "description": "Backend REST API server",
                 "features": ["Express.js", "CORS enabled", "JSON API"],
-                "build_types": ["Server"]
-            }
+                "build_types": ["Server"],
+            },
         ]
     }
 
@@ -270,8 +266,4 @@ async def get_supported_frameworks():
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "Project Generator",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "Project Generator", "version": "1.0.0"}

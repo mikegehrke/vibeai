@@ -1,0 +1,8 @@
+node_modules/
+.vscode-test/
+out/
+*.vsix
+.DS_Store
+.env
+.vibe-memory/
+.vibe-history/

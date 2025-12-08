@@ -1,18 +1,21 @@
 # -------------------------------------------------------------
 # VIBEAI – THEME ROUTES
 # -------------------------------------------------------------
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+
 from .theme_generator import theme_generator
 
 router = APIRouter(prefix="/theme", tags=["Theme Generator"])
 
-
 # ========== PYDANTIC MODELS ==========
+
 
 class GenerateThemeRequest(BaseModel):
     """Request model für Theme-Generierung"""
+
     framework: str = Field(..., description="Framework (flutter, react, css, tailwind, vuejs, angular)")
     colors: Optional[Dict[str, str]] = Field(None, description="Custom color palette")
     include_dark_mode: bool = Field(True, description="Include dark mode")
@@ -20,16 +23,19 @@ class GenerateThemeRequest(BaseModel):
 
 class ThemeColorsResponse(BaseModel):
     """Response model für Default Colors"""
+
     colors: Dict[str, str]
 
 
 class FrameworksResponse(BaseModel):
     """Response model für Frameworks"""
+
     frameworks: List[str]
 
 
 class GenerateThemeResponse(BaseModel):
     """Response model für Theme-Generierung"""
+
     success: bool
     framework: str
     files: List[str]
@@ -39,6 +45,7 @@ class GenerateThemeResponse(BaseModel):
 
 class ColorPaletteRequest(BaseModel):
     """Request model für Custom Palette"""
+
     name: str = Field(..., description="Palette Name")
     primary: str = Field(..., description="Primary Color (Hex)")
     secondary: str = Field(..., description="Secondary Color (Hex)")
@@ -50,17 +57,19 @@ class ColorPaletteRequest(BaseModel):
 
 class ColorPaletteResponse(BaseModel):
     """Response model für Palette"""
+
     name: str
     colors: Dict[str, str]
 
 
 # ========== ENDPOINTS ==========
 
+
 @router.post("/generate", response_model=GenerateThemeResponse)
 async def generate_theme(request: GenerateThemeRequest):
     """
     🔹 THEME GENERIEREN
-    
+
     Generiert Theme-Konfiguration für Framework:
     - Flutter: ThemeData, Colors, Provider
     - React: Theme Config, Context, Hook
@@ -73,28 +82,26 @@ async def generate_theme(request: GenerateThemeRequest):
         if request.framework not in theme_generator.frameworks:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported framework. Available: {', '.join(theme_generator.frameworks)}"
+                detail=f"Unsupported framework. Available: {', '.join(theme_generator.frameworks)}",
             )
-        
+
         options = {
             "colors": request.colors or {},
-            "include_dark_mode": request.include_dark_mode
+            "include_dark_mode": request.include_dark_mode,
         }
-        
+
         result = theme_generator.generate_theme(
-            base_path="/tmp/vibeai_theme",
-            framework=request.framework,
-            options=options
+            base_path="/tmp/vibeai_theme", framework=request.framework, options=options
         )
-        
+
         return GenerateThemeResponse(
             success=result["success"],
             framework=result["framework"],
             files=result["files"],
             theme_data=result["theme_data"],
-            message=f"Theme für {request.framework} erfolgreich generiert!"
+            message=f"Theme für {request.framework} erfolgreich generiert!",
         )
-    
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -105,7 +112,7 @@ async def generate_theme(request: GenerateThemeRequest):
 async def get_frameworks():
     """
     🔹 FRAMEWORKS
-    
+
     Gibt alle unterstützten Frameworks zurück
     """
     return FrameworksResponse(frameworks=theme_generator.frameworks)
@@ -115,7 +122,7 @@ async def get_frameworks():
 async def get_default_colors():
     """
     🔹 DEFAULT COLORS
-    
+
     Gibt Default Color Palette zurück
     """
     return ThemeColorsResponse(colors=theme_generator.default_colors)
@@ -125,14 +132,14 @@ async def get_default_colors():
 async def create_color_palette(request: ColorPaletteRequest):
     """
     🔹 CUSTOM PALETTE ERSTELLEN
-    
+
     Erstellt eine Custom Color Palette
     """
     colors = {
         "primary": request.primary,
         "secondary": request.secondary,
     }
-    
+
     if request.success:
         colors["success"] = request.success
     if request.warning:
@@ -141,18 +148,15 @@ async def create_color_palette(request: ColorPaletteRequest):
         colors["error"] = request.error
     if request.info:
         colors["info"] = request.info
-    
-    return ColorPaletteResponse(
-        name=request.name,
-        colors=colors
-    )
+
+    return ColorPaletteResponse(name=request.name, colors=colors)
 
 
 @router.get("/palette/presets")
 async def get_palette_presets():
     """
     🔹 PALETTE PRESETS
-    
+
     Gibt vordefinierte Color Palettes zurück
     """
     presets = [
@@ -164,8 +168,8 @@ async def get_palette_presets():
                 "success": "#10b981",
                 "warning": "#f59e0b",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
+                "info": "#3b82f6",
+            },
         },
         {
             "name": "Ocean Blue",
@@ -175,8 +179,8 @@ async def get_palette_presets():
                 "success": "#10b981",
                 "warning": "#f59e0b",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
+                "info": "#3b82f6",
+            },
         },
         {
             "name": "Forest Green",
@@ -186,8 +190,8 @@ async def get_palette_presets():
                 "success": "#22c55e",
                 "warning": "#f59e0b",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
+                "info": "#3b82f6",
+            },
         },
         {
             "name": "Sunset Orange",
@@ -197,8 +201,8 @@ async def get_palette_presets():
                 "success": "#10b981",
                 "warning": "#eab308",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
+                "info": "#3b82f6",
+            },
         },
         {
             "name": "Rose Pink",
@@ -208,8 +212,8 @@ async def get_palette_presets():
                 "success": "#10b981",
                 "warning": "#f59e0b",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
+                "info": "#3b82f6",
+            },
         },
         {
             "name": "Midnight Dark",
@@ -219,11 +223,11 @@ async def get_palette_presets():
                 "success": "#10b981",
                 "warning": "#f59e0b",
                 "error": "#ef4444",
-                "info": "#3b82f6"
-            }
-        }
+                "info": "#3b82f6",
+            },
+        },
     ]
-    
+
     return {"presets": presets}
 
 
@@ -231,7 +235,7 @@ async def get_palette_presets():
 async def health_check():
     """
     🔹 HEALTH CHECK
-    
+
     Prüft Theme-Generator-Status
     """
     return {
@@ -239,5 +243,5 @@ async def health_check():
         "service": "Theme Generator",
         "frameworks": len(theme_generator.frameworks),
         "default_colors": len(theme_generator.default_colors),
-        "version": "1.0.0"
+        "version": "1.0.0",
     }

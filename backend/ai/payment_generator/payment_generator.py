@@ -4,12 +4,13 @@ Unterstützt: Stripe, PayPal, Subscriptions, One-Time Payments
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class PaymentProvider(str, Enum):
     """Payment Provider"""
+
     STRIPE = "stripe"
     PAYPAL = "paypal"
     BOTH = "both"
@@ -17,6 +18,7 @@ class PaymentProvider(str, Enum):
 
 class PricingModel(str, Enum):
     """Pricing Models"""
+
     ONE_TIME = "one_time"
     SUBSCRIPTION = "subscription"
     USAGE_BASED = "usage_based"
@@ -25,6 +27,7 @@ class PricingModel(str, Enum):
 
 class Framework(str, Enum):
     """Unterstützte Frameworks"""
+
     FASTAPI = "fastapi"
     DJANGO = "django"
     FLASK = "flask"
@@ -38,6 +41,7 @@ class Framework(str, Enum):
 @dataclass
 class PaymentConfig:
     """Payment Konfiguration"""
+
     provider: PaymentProvider
     pricing_model: PricingModel
     currency: str = "usd"
@@ -53,6 +57,7 @@ class PaymentConfig:
 @dataclass
 class GeneratedCode:
     """Generierter Payment-Code"""
+
     backend_code: str
     frontend_code: str
     webhook_code: str
@@ -65,58 +70,56 @@ class PaymentGenerator:
     """
     Haupt-Engine für Payment Code-Generierung
     """
-    
+
     def __init__(self):
         pass
-    
+
     def generate_payment_system(
         self,
         config: PaymentConfig,
         backend_framework: Framework,
-        frontend_framework: Optional[Framework] = None
+        frontend_framework: Optional[Framework] = None,
     ) -> GeneratedCode:
         """
         Generiere komplettes Payment-System
-        
+
         Args:
             config: Payment Konfiguration
             backend_framework: Backend Framework
             frontend_framework: Frontend Framework (optional)
-            
+
         Returns:
             GeneratedCode mit Backend, Frontend, Webhooks
         """
         # Generate backend code
         backend_code = self._generate_backend(config, backend_framework)
-        
+
         # Generate frontend code
         frontend_code = ""
         if frontend_framework:
             frontend_code = self._generate_frontend(config, frontend_framework)
-        
+
         # Generate webhook handlers
         webhook_code = self._generate_webhooks(config, backend_framework)
-        
+
         # Environment variables
         env_vars = self._generate_env_variables(config)
-        
+
         # Installation commands
-        install_commands = self._generate_install_commands(
-            config, backend_framework, frontend_framework
-        )
-        
+        install_commands = self._generate_install_commands(config, backend_framework, frontend_framework)
+
         # Setup instructions
         setup_instructions = self._generate_setup_instructions(config)
-        
+
         return GeneratedCode(
             backend_code=backend_code,
             frontend_code=frontend_code,
             webhook_code=webhook_code,
             env_variables=env_vars,
             installation_commands=install_commands,
-            setup_instructions=setup_instructions
+            setup_instructions=setup_instructions,
         )
-    
+
     def _generate_backend(self, config: PaymentConfig, framework: Framework) -> str:
         """Generiere Backend Payment Code"""
         if framework == Framework.FASTAPI:
@@ -129,7 +132,7 @@ class PaymentGenerator:
             return self._generate_express_backend(config)
         else:
             return "# Unsupported backend framework"
-    
+
     def _generate_fastapi_backend(self, config: PaymentConfig) -> str:
         """Generiere FastAPI Payment Code"""
         if config.provider == PaymentProvider.STRIPE:
@@ -139,7 +142,7 @@ class PaymentGenerator:
         elif config.provider == PaymentProvider.BOTH:
             return self._generate_fastapi_stripe(config) + "\n\n" + self._generate_fastapi_paypal(config)
         return ""
-    
+
     def _generate_fastapi_stripe(self, config: PaymentConfig) -> str:
         """Generiere FastAPI + Stripe Code"""
         if config.pricing_model == PricingModel.SUBSCRIPTION:
@@ -159,24 +162,21 @@ router = APIRouter(prefix="/payments/stripe", tags=["Stripe Payments"])
 # Initialize Stripe
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-
 class CheckoutRequest(BaseModel):
     """Checkout session request"""
     price_id: str
     customer_email: Optional[str] = None
     trial_days: int = {config.trial_days}
 
-
 class PortalRequest(BaseModel):
     """Customer portal request"""
     customer_id: str
-
 
 @router.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     """
     Create Stripe Checkout Session for Subscription
-    
+
     Returns:
         - checkout_url: URL to redirect customer to
         - session_id: Stripe session ID
@@ -200,22 +200,21 @@ async def create_checkout_session(request: CheckoutRequest):
             allow_promotion_codes=True,
             billing_address_collection="auto"
         )
-        
+
         return {{
             "success": True,
             "checkout_url": session.url,
             "session_id": session.id
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/create-portal-session")
 async def create_portal_session(request: PortalRequest):
     """
     Create Customer Portal Session for Subscription Management
-    
+
     Returns:
         - portal_url: URL to customer portal
     """
@@ -224,21 +223,20 @@ async def create_portal_session(request: PortalRequest):
             customer=request.customer_id,
             return_url="{config.success_url}"
         )
-        
+
         return {{
             "success": True,
             "portal_url": session.url
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.get("/subscription/{{subscription_id}}")
 async def get_subscription(subscription_id: str):
     """
     Get subscription details
-    
+
     Returns:
         - status: active, canceled, past_due, etc.
         - current_period_end: Unix timestamp
@@ -246,7 +244,7 @@ async def get_subscription(subscription_id: str):
     """
     try:
         subscription = stripe.Subscription.retrieve(subscription_id)
-        
+
         return {{
             "success": True,
             "subscription": {{
@@ -257,16 +255,15 @@ async def get_subscription(subscription_id: str):
                 "customer": subscription.customer
             }}
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/subscription/{{subscription_id}}/cancel")
 async def cancel_subscription(subscription_id: str):
     """
     Cancel subscription at period end
-    
+
     Returns:
         - success: boolean
         - cancel_at_period_end: timestamp
@@ -276,18 +273,17 @@ async def cancel_subscription(subscription_id: str):
             subscription_id,
             cancel_at_period_end=True
         )
-        
+
         return {{
             "success": True,
             "message": "Subscription will be canceled at period end",
             "cancel_at_period_end": subscription.current_period_end
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 '''
         else:  # ONE_TIME payment
-            amount_cents = int(config.amount * 100) if config.amount else 1000
             return f'''"""
 Stripe One-Time Payment Integration
 Auto-generated by VibeAI Payment Generator
@@ -304,7 +300,6 @@ router = APIRouter(prefix="/payments/stripe", tags=["Stripe Payments"])
 # Initialize Stripe
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-
 class ProductItem(BaseModel):
     """Product line item"""
     name: str
@@ -312,19 +307,17 @@ class ProductItem(BaseModel):
     quantity: int = 1
     description: Optional[str] = None
 
-
 class CheckoutRequest(BaseModel):
     """Checkout request"""
     items: List[ProductItem]
     customer_email: Optional[str] = None
     currency: str = "{config.currency}"
 
-
 @router.post("/create-payment-intent")
 async def create_payment_intent(request: CheckoutRequest):
     """
     Create Payment Intent for one-time payment
-    
+
     Returns:
         - client_secret: For Stripe Elements
         - payment_intent_id: Payment Intent ID
@@ -332,7 +325,7 @@ async def create_payment_intent(request: CheckoutRequest):
     try:
         # Calculate total amount
         total_amount = sum(item.amount * item.quantity for item in request.items)
-        
+
         # Create payment intent
         intent = stripe.PaymentIntent.create(
             amount=total_amount,
@@ -343,23 +336,22 @@ async def create_payment_intent(request: CheckoutRequest):
                 "items": str([item.dict() for item in request.items])
             }}
         )
-        
+
         return {{
             "success": True,
             "client_secret": intent.client_secret,
             "payment_intent_id": intent.id,
             "amount": total_amount
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     """
     Create Stripe Checkout Session for one-time payment
-    
+
     Returns:
         - checkout_url: URL to redirect customer to
     """
@@ -379,7 +371,7 @@ async def create_checkout_session(request: CheckoutRequest):
             }}
             for item in request.items
         ]
-        
+
         session = stripe.checkout.Session.create(
             mode="payment",
             success_url="{config.success_url}?session_id={{{{CHECKOUT_SESSION_ID}}}}",
@@ -389,29 +381,28 @@ async def create_checkout_session(request: CheckoutRequest):
             allow_promotion_codes=True,
             billing_address_collection="required"
         )
-        
+
         return {{
             "success": True,
             "checkout_url": session.url,
             "session_id": session.id
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.get("/payment-intent/{{payment_intent_id}}")
 async def get_payment_intent(payment_intent_id: str):
     """
     Get payment intent status
-    
+
     Returns:
         - status: succeeded, processing, requires_payment_method, etc.
         - amount: Amount in cents
     """
     try:
         intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-        
+
         return {{
             "success": True,
             "status": intent.status,
@@ -419,11 +410,11 @@ async def get_payment_intent(payment_intent_id: str):
             "currency": intent.currency,
             "customer": intent.customer
         }}
-    
+
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 '''
-    
+
     def _generate_fastapi_paypal(self, config: PaymentConfig) -> str:
         """Generiere FastAPI + PayPal Code"""
         return f'''"""
@@ -449,7 +440,6 @@ PAYPAL_API_BASE = (
     else "https://api-m.paypal.com"
 )
 
-
 class OrderItem(BaseModel):
     """PayPal order item"""
     name: str
@@ -457,45 +447,42 @@ class OrderItem(BaseModel):
     quantity: int = 1
     description: Optional[str] = None
 
-
 class CreateOrderRequest(BaseModel):
     """Create PayPal order request"""
     items: List[OrderItem]
     currency: str = "{config.currency.upper()}"
 
-
 def get_paypal_access_token() -> str:
     """Get PayPal OAuth access token"""
     url = f"{{PAYPAL_API_BASE}}/v1/oauth2/token"
-    
+
     response = requests.post(
         url,
         headers={{"Accept": "application/json"}},
         auth=(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET),
         data={{"grant_type": "client_credentials"}}
     )
-    
+
     if response.status_code == 200:
         return response.json()["access_token"]
     else:
         raise HTTPException(status_code=500, detail="Failed to get PayPal access token")
 
-
 @router.post("/create-order")
 async def create_order(request: CreateOrderRequest):
     """
     Create PayPal order
-    
+
     Returns:
         - order_id: PayPal order ID
         - approval_url: URL for customer to approve payment
     """
     try:
         access_token = get_paypal_access_token()
-        
+
         # Calculate total
         total = sum(item.unit_amount * item.quantity for item in request.items)
-        
+
         # Create order payload
         order_data = {{
             "intent": "CAPTURE",
@@ -532,7 +519,7 @@ async def create_order(request: CreateOrderRequest):
                 "user_action": "PAY_NOW"
             }}
         }}
-        
+
         # Create order
         response = requests.post(
             f"{{PAYPAL_API_BASE}}/v2/checkout/orders",
@@ -542,13 +529,13 @@ async def create_order(request: CreateOrderRequest):
             }},
             json=order_data
         )
-        
+
         if response.status_code == 201:
             order = response.json()
             approval_url = next(
                 link["href"] for link in order["links"] if link["rel"] == "approve"
             )
-            
+
             return {{
                 "success": True,
                 "order_id": order["id"],
@@ -556,23 +543,22 @@ async def create_order(request: CreateOrderRequest):
             }}
         else:
             raise HTTPException(status_code=400, detail=response.json())
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/capture-order/{{order_id}}")
 async def capture_order(order_id: str):
     """
     Capture PayPal order after customer approval
-    
+
     Returns:
         - status: COMPLETED, FAILED, etc.
         - capture_id: PayPal capture ID
     """
     try:
         access_token = get_paypal_access_token()
-        
+
         response = requests.post(
             f"{{PAYPAL_API_BASE}}/v2/checkout/orders/{{order_id}}/capture",
             headers={{
@@ -580,10 +566,10 @@ async def capture_order(order_id: str):
                 "Authorization": f"Bearer {{access_token}}"
             }}
         )
-        
+
         if response.status_code == 201:
             capture = response.json()
-            
+
             return {{
                 "success": True,
                 "status": capture["status"],
@@ -591,33 +577,32 @@ async def capture_order(order_id: str):
             }}
         else:
             raise HTTPException(status_code=400, detail=response.json())
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/order/{{order_id}}")
 async def get_order(order_id: str):
     """
     Get PayPal order details
-    
+
     Returns:
         - status: CREATED, APPROVED, COMPLETED, etc.
         - amount: Order amount
     """
     try:
         access_token = get_paypal_access_token()
-        
+
         response = requests.get(
             f"{{PAYPAL_API_BASE}}/v2/checkout/orders/{{order_id}}",
             headers={{
                 "Authorization": f"Bearer {{access_token}}"
             }}
         )
-        
+
         if response.status_code == 200:
             order = response.json()
-            
+
             return {{
                 "success": True,
                 "order_id": order["id"],
@@ -627,26 +612,26 @@ async def get_order(order_id: str):
             }}
         else:
             raise HTTPException(status_code=400, detail=response.json())
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 '''
-    
+
     def _generate_webhooks(self, config: PaymentConfig, framework: Framework) -> str:
         """Generiere Webhook Handler"""
         if framework != Framework.FASTAPI:
             return "# Webhook handlers for other frameworks not yet implemented"
-        
+
         webhook_code = ""
-        
+
         if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
             webhook_code += self._generate_stripe_webhook()
-        
+
         if config.provider in [PaymentProvider.PAYPAL, PaymentProvider.BOTH]:
             webhook_code += "\n\n" + self._generate_paypal_webhook()
-        
+
         return webhook_code
-    
+
     def _generate_stripe_webhook(self) -> str:
         """Generiere Stripe Webhook Handler"""
         return '''"""
@@ -662,12 +647,11 @@ router = APIRouter(prefix="/webhooks/stripe", tags=["Stripe Webhooks"])
 
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
-
 @router.post("/")
 async def stripe_webhook(request: Request):
     """
     Handle Stripe webhooks
-    
+
     Events handled:
     - payment_intent.succeeded
     - payment_intent.payment_failed
@@ -679,7 +663,7 @@ async def stripe_webhook(request: Request):
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
-    
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
@@ -688,99 +672,99 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid payload")
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
-    
+
     # Handle the event
     event_type = event["type"]
     data = event["data"]["object"]
-    
+
     if event_type == "payment_intent.succeeded":
         # Payment succeeded
         payment_intent_id = data["id"]
         amount = data["amount"]
         customer = data.get("customer")
-        
+
         print(f"✅ Payment succeeded: {payment_intent_id} for ${amount/100}")
-        
+
         # TODO: Update your database
         # - Mark order as paid
         # - Send confirmation email
         # - Unlock premium features
-    
+
     elif event_type == "payment_intent.payment_failed":
         # Payment failed
         payment_intent_id = data["id"]
         error_message = data.get("last_payment_error", {}).get("message")
-        
+
         print(f"❌ Payment failed: {payment_intent_id} - {error_message}")
-        
+
         # TODO: Notify customer of failed payment
-    
+
     elif event_type == "customer.subscription.created":
         # New subscription
         subscription_id = data["id"]
         customer = data["customer"]
         status = data["status"]
-        
+
         print(f"🎉 New subscription: {subscription_id} - Status: {status}")
-        
+
         # TODO: Update database
         # - Create subscription record
         # - Activate premium features
         # - Send welcome email
-    
+
     elif event_type == "customer.subscription.updated":
         # Subscription updated
         subscription_id = data["id"]
         status = data["status"]
         cancel_at_period_end = data.get("cancel_at_period_end", False)
-        
+
         print(f"🔄 Subscription updated: {subscription_id} - Status: {status}")
-        
+
         if cancel_at_period_end:
             print(f"⚠️ Subscription will cancel at period end")
             # TODO: Send cancellation confirmation
-        
+
         # TODO: Update subscription in database
-    
+
     elif event_type == "customer.subscription.deleted":
         # Subscription canceled
         subscription_id = data["id"]
         customer = data["customer"]
-        
+
         print(f"🚫 Subscription canceled: {subscription_id}")
-        
+
         # TODO: Update database
         # - Deactivate premium features
         # - Send cancellation email
-    
+
     elif event_type == "invoice.payment_succeeded":
         # Invoice paid
         invoice_id = data["id"]
         subscription_id = data.get("subscription")
         amount_paid = data["amount_paid"]
-        
+
         print(f"💰 Invoice paid: {invoice_id} - ${amount_paid/100}")
-        
+
         # TODO: Update payment history
         # - Send receipt email
-    
+
     elif event_type == "invoice.payment_failed":
         # Invoice payment failed
         invoice_id = data["id"]
         subscription_id = data.get("subscription")
-        
+
         print(f"❌ Invoice payment failed: {invoice_id}")
-        
+
         # TODO: Handle failed payment
         # - Send payment failed notification
         # - Update subscription status
-    
+
     else:
         print(f"ℹ️ Unhandled event type: {event_type}")
-    
+
     return {"success": True}
 '''
-    
+
     def _generate_paypal_webhook(self) -> str:
         """Generiere PayPal Webhook Handler"""
         return '''"""
@@ -797,12 +781,11 @@ router = APIRouter(prefix="/webhooks/paypal", tags=["PayPal Webhooks"])
 
 PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID")
 
-
 @router.post("/")
 async def paypal_webhook(request: Request):
     """
     Handle PayPal webhooks
-    
+
     Events handled:
     - PAYMENT.CAPTURE.COMPLETED
     - PAYMENT.CAPTURE.DENIED
@@ -811,67 +794,67 @@ async def paypal_webhook(request: Request):
     - BILLING.SUBSCRIPTION.CANCELLED
     """
     payload = await request.json()
-    
+
     # Verify webhook signature (optional but recommended)
     # Note: PayPal webhook verification is more complex
     # For production, implement full webhook verification
-    
+
     event_type = payload.get("event_type")
     resource = payload.get("resource", {})
-    
+
     if event_type == "PAYMENT.CAPTURE.COMPLETED":
         # Payment captured
         capture_id = resource.get("id")
         amount = resource.get("amount", {}).get("value")
         currency = resource.get("amount", {}).get("currency_code")
-        
+
         print(f"✅ Payment captured: {capture_id} for {currency} {amount}")
-        
+
         # TODO: Update your database
         # - Mark order as paid
         # - Send confirmation email
-    
+
     elif event_type == "PAYMENT.CAPTURE.DENIED":
         # Payment denied
         capture_id = resource.get("id")
-        
+
         print(f"❌ Payment denied: {capture_id}")
-        
+
         # TODO: Handle denied payment
-    
+
     elif event_type == "CHECKOUT.ORDER.APPROVED":
         # Order approved by customer
         order_id = resource.get("id")
-        
+
         print(f"✅ Order approved: {order_id}")
-        
+
         # TODO: Capture the order automatically or wait for manual capture
-    
+
     elif event_type == "BILLING.SUBSCRIPTION.ACTIVATED":
         # Subscription activated
         subscription_id = resource.get("id")
-        
+
         print(f"🎉 Subscription activated: {subscription_id}")
-        
+
         # TODO: Update database
         # - Create subscription record
         # - Activate premium features
-    
+
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
         # Subscription cancelled
         subscription_id = resource.get("id")
-        
+
         print(f"🚫 Subscription cancelled: {subscription_id}")
-        
+
         # TODO: Update database
         # - Deactivate premium features
-    
+
     else:
         print(f"ℹ️ Unhandled event type: {event_type}")
-    
+
     return {"success": True}
 '''
-    
+
     def _generate_frontend(self, config: PaymentConfig, framework: Framework) -> str:
         """Generiere Frontend Payment Code"""
         if framework == Framework.REACT:
@@ -882,7 +865,7 @@ async def paypal_webhook(request: Request):
             return self._generate_react_native_frontend(config)
         else:
             return "// Unsupported frontend framework"
-    
+
     def _generate_react_frontend(self, config: PaymentConfig) -> str:
         """Generiere React Payment UI"""
         if config.provider == PaymentProvider.STRIPE:
@@ -891,10 +874,10 @@ async def paypal_webhook(request: Request):
             return self._generate_react_paypal()
         else:
             return self._generate_react_stripe() + "\n\n" + self._generate_react_paypal()
-    
+
     def _generate_react_stripe(self) -> str:
         """Generiere React Stripe Elements"""
-        return '''/**
+        return """/**
  * Stripe Payment Component
  * Uses Stripe Elements for secure payment processing
  */
@@ -984,9 +967,9 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
           }}
         />
       </div>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <button
         type="submit"
         disabled={!stripe || loading}
@@ -1011,7 +994,6 @@ const StripePayment = ({ amount, onSuccess, onError }) => {
 };
 
 export default StripePayment;
-
 
 /**
  * Stripe Checkout (Hosted Page) Component
@@ -1052,11 +1034,11 @@ export const StripeCheckout = ({ priceId, onError }) => {
     </button>
   );
 };
-'''
-    
+"""
+
     def _generate_react_paypal(self) -> str:
         """Generiere React PayPal Buttons"""
-        return '''/**
+        return """/**
  * PayPal Payment Component
  * Uses PayPal Smart Payment Buttons
  */
@@ -1135,11 +1117,11 @@ const PayPalButton = ({ amount, currency = 'USD', onSuccess, onError }) => {
 };
 
 export default PayPalButton;
-'''
-    
+"""
+
     def _generate_flutter_frontend(self, config: PaymentConfig) -> str:
         """Generiere Flutter Payment UI"""
-        return '''/**
+        return """/**
  * Flutter Stripe Payment Sheet
  * Uses flutter_stripe package
  */
@@ -1217,135 +1199,68 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 }
-'''
-    
+"""
+
     def _generate_env_variables(self, config: PaymentConfig) -> Dict[str, str]:
         """Generiere Environment Variables"""
         env_vars = {}
-        
+
         if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
-            env_vars.update({
-                "STRIPE_SECRET_KEY": "sk_test_...",
-                "STRIPE_PUBLISHABLE_KEY": "pk_test_...",
-                "STRIPE_WEBHOOK_SECRET": "whsec_..."
-            })
-        
+            env_vars.update(
+                {
+                    "STRIPE_SECRET_KEY": "sk_test_...",
+                    "STRIPE_PUBLISHABLE_KEY": "pk_test_...",
+                    "STRIPE_WEBHOOK_SECRET": "whsec_...",
+                }
+            )
+
         if config.provider in [PaymentProvider.PAYPAL, PaymentProvider.BOTH]:
-            env_vars.update({
-                "PAYPAL_CLIENT_ID": "YOUR_CLIENT_ID",
-                "PAYPAL_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
-                "PAYPAL_MODE": "sandbox",
-                "PAYPAL_WEBHOOK_ID": "YOUR_WEBHOOK_ID"
-            })
-        
+            env_vars.update(
+                {
+                    "PAYPAL_CLIENT_ID": "YOUR_CLIENT_ID",
+                    "PAYPAL_CLIENT_SECRET": "YOUR_CLIENT_SECRET",
+                    "PAYPAL_MODE": "sandbox",
+                    "PAYPAL_WEBHOOK_ID": "YOUR_WEBHOOK_ID",
+                }
+            )
+
         return env_vars
-    
+
     def _generate_install_commands(
         self,
         config: PaymentConfig,
         backend_framework: Framework,
-        frontend_framework: Optional[Framework]
+        frontend_framework: Optional[Framework],
     ) -> List[str]:
         """Generiere Installation Commands"""
         commands = []
-        
+
         # Backend dependencies
         if backend_framework == Framework.FASTAPI:
             if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
                 commands.append("pip install stripe")
             if config.provider in [PaymentProvider.PAYPAL, PaymentProvider.BOTH]:
                 commands.append("pip install requests")
-        
+
         # Frontend dependencies
         if frontend_framework == Framework.REACT:
             if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
                 commands.append("npm install @stripe/stripe-js @stripe/react-stripe-js")
-        
+
         elif frontend_framework == Framework.FLUTTER:
             if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
                 commands.append("flutter pub add flutter_stripe")
                 commands.append("flutter pub add http")
-        
+
         return commands
-    
+
     def _generate_setup_instructions(self, config: PaymentConfig) -> str:
         """Generiere Setup Instructions"""
         instructions = "# Payment System Setup Instructions\n\n"
-        
+
         if config.provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
             instructions += """## Stripe Setup
 
 1. Create Stripe account at https://stripe.com
 2. Get API keys from Dashboard → Developers → API keys
 3. Add keys to .env file:
-   ```
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_PUBLISHABLE_KEY=pk_test_...
-   ```
-4. Create webhook endpoint:
-   - Dashboard → Developers → Webhooks
-   - Add endpoint: https://yourapp.com/webhooks/stripe
-   - Select events: payment_intent.*, customer.subscription.*
-   - Copy webhook secret to .env
-
-5. Create products/prices:
-   - Dashboard → Products
-   - Create product with price
-   - Copy price ID (price_...)
-
-"""
-        
-        if config.provider in [PaymentProvider.PAYPAL, PaymentProvider.BOTH]:
-            instructions += """## PayPal Setup
-
-1. Create PayPal Developer account at https://developer.paypal.com
-2. Create App in Dashboard
-3. Get Client ID and Secret
-4. Add to .env file:
-   ```
-   PAYPAL_CLIENT_ID=YOUR_CLIENT_ID
-   PAYPAL_CLIENT_SECRET=YOUR_CLIENT_SECRET
-   PAYPAL_MODE=sandbox
-   ```
-5. Create webhook:
-   - Apps & Credentials → Your App → Webhooks
-   - Add webhook URL: https://yourapp.com/webhooks/paypal
-   - Subscribe to events: PAYMENT.*, BILLING.SUBSCRIPTION.*
-
-"""
-        
-        instructions += """## Testing
-
-### Stripe Test Cards
-- Success: 4242 4242 4242 4242
-- Declined: 4000 0000 0000 0002
-- Requires authentication: 4000 0025 0000 3155
-
-### PayPal Sandbox
-- Use sandbox.paypal.com test accounts
-- Create buyer/seller accounts in Developer Dashboard
-
-## Production Checklist
-- [ ] Replace test keys with live keys
-- [ ] Set PAYPAL_MODE=live
-- [ ] Verify webhook endpoints are accessible
-- [ ] Test payment flow end-to-end
-- [ ] Implement proper error handling
-- [ ] Add logging and monitoring
-- [ ] Review Stripe/PayPal compliance requirements
-"""
-        
-        return instructions
-    
-    # Helper methods for other frameworks
-    def _generate_django_backend(self, config: PaymentConfig) -> str:
-        return "# Django payment integration - coming soon"
-    
-    def _generate_flask_backend(self, config: PaymentConfig) -> str:
-        return "# Flask payment integration - coming soon"
-    
-    def _generate_express_backend(self, config: PaymentConfig) -> str:
-        return "# Express payment integration - coming soon"
-    
-    def _generate_react_native_frontend(self, config: PaymentConfig) -> str:
-        return "// React Native payment integration - coming soon"

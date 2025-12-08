@@ -3,17 +3,17 @@ Payment Generator API Routes
 Endpoints für automatische Payment-Code-Generierung
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-from enum import Enum
 
 from .payment_generator import (
+    Framework,
+    PaymentConfig,
     PaymentGenerator,
     PaymentProvider,
     PricingModel,
-    Framework,
-    PaymentConfig
 )
 
 router = APIRouter(prefix="/payment-gen", tags=["Payment Generator"])
@@ -24,6 +24,7 @@ generator = PaymentGenerator()
 
 class GenerateRequest(BaseModel):
     """Request für Payment Code Generation"""
+
     provider: PaymentProvider
     pricing_model: PricingModel
     backend_framework: Framework
@@ -40,7 +41,7 @@ class GenerateRequest(BaseModel):
 async def generate_payment_system(request: GenerateRequest):
     """
     Generiere komplettes Payment-System
-    
+
     Returns:
         - backend_code: Python/Node.js backend code
         - frontend_code: React/Flutter frontend code
@@ -59,16 +60,16 @@ async def generate_payment_system(request: GenerateRequest):
             subscription_interval=request.subscription_interval,
             trial_days=request.trial_days,
             success_url=request.success_url,
-            cancel_url=request.cancel_url
+            cancel_url=request.cancel_url,
         )
-        
+
         # Generate code
         result = generator.generate_payment_system(
             config=config,
             backend_framework=request.backend_framework,
-            frontend_framework=request.frontend_framework
+            frontend_framework=request.frontend_framework,
         )
-        
+
         return {
             "success": True,
             "backend_code": result.backend_code,
@@ -80,9 +81,9 @@ async def generate_payment_system(request: GenerateRequest):
             "provider": request.provider,
             "pricing_model": request.pricing_model,
             "backend_framework": request.backend_framework,
-            "frontend_framework": request.frontend_framework
+            "frontend_framework": request.frontend_framework,
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -91,7 +92,7 @@ async def generate_payment_system(request: GenerateRequest):
 async def generate_checkout(request: GenerateRequest):
     """
     Generiere nur Checkout Code
-    
+
     Returns:
         - checkout_code: Backend checkout endpoint
         - frontend_code: Frontend checkout UI
@@ -103,46 +104,40 @@ async def generate_checkout(request: GenerateRequest):
             currency=request.currency,
             amount=request.amount,
             success_url=request.success_url,
-            cancel_url=request.cancel_url
+            cancel_url=request.cancel_url,
         )
-        
+
         result = generator.generate_payment_system(
             config=config,
             backend_framework=request.backend_framework,
-            frontend_framework=request.frontend_framework
+            frontend_framework=request.frontend_framework,
         )
-        
+
         return {
             "success": True,
             "checkout_code": result.backend_code,
             "frontend_code": result.frontend_code,
-            "installation_commands": result.installation_commands
+            "installation_commands": result.installation_commands,
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/generate-webhook")
-async def generate_webhook(
-    provider: PaymentProvider,
-    backend_framework: Framework = Framework.FASTAPI
-):
+async def generate_webhook(provider: PaymentProvider, backend_framework: Framework = Framework.FASTAPI):
     """
     Generiere nur Webhook Handler
-    
+
     Returns:
         - webhook_code: Webhook handler code
         - events: List of handled events
     """
     try:
-        config = PaymentConfig(
-            provider=provider,
-            pricing_model=PricingModel.ONE_TIME
-        )
-        
+        config = PaymentConfig(provider=provider, pricing_model=PricingModel.ONE_TIME)
+
         webhook_code = generator._generate_webhooks(config, backend_framework)
-        
+
         # Event lists
         stripe_events = [
             "payment_intent.succeeded",
@@ -151,30 +146,30 @@ async def generate_webhook(
             "customer.subscription.updated",
             "customer.subscription.deleted",
             "invoice.payment_succeeded",
-            "invoice.payment_failed"
+            "invoice.payment_failed",
         ]
-        
+
         paypal_events = [
             "PAYMENT.CAPTURE.COMPLETED",
             "PAYMENT.CAPTURE.DENIED",
             "CHECKOUT.ORDER.APPROVED",
             "BILLING.SUBSCRIPTION.ACTIVATED",
-            "BILLING.SUBSCRIPTION.CANCELLED"
+            "BILLING.SUBSCRIPTION.CANCELLED",
         ]
-        
+
         events = []
         if provider in [PaymentProvider.STRIPE, PaymentProvider.BOTH]:
             events.extend(stripe_events)
         if provider in [PaymentProvider.PAYPAL, PaymentProvider.BOTH]:
             events.extend(paypal_events)
-        
+
         return {
             "success": True,
             "webhook_code": webhook_code,
             "events": events,
-            "provider": provider
+            "provider": provider,
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -185,11 +180,11 @@ async def generate_subscription(
     backend_framework: Framework = Framework.FASTAPI,
     frontend_framework: Optional[Framework] = Framework.REACT,
     interval: str = "month",
-    trial_days: int = 0
+    trial_days: int = 0,
 ):
     """
     Generiere Subscription Code
-    
+
     Returns:
         - backend_code: Subscription management endpoints
         - frontend_code: Subscription UI
@@ -199,24 +194,24 @@ async def generate_subscription(
             provider=provider,
             pricing_model=PricingModel.SUBSCRIPTION,
             subscription_interval=interval,
-            trial_days=trial_days
+            trial_days=trial_days,
         )
-        
+
         result = generator.generate_payment_system(
             config=config,
             backend_framework=backend_framework,
-            frontend_framework=frontend_framework
+            frontend_framework=frontend_framework,
         )
-        
+
         return {
             "success": True,
             "backend_code": result.backend_code,
             "frontend_code": result.frontend_code,
             "webhook_code": result.webhook_code,
             "interval": interval,
-            "trial_days": trial_days
+            "trial_days": trial_days,
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -225,7 +220,7 @@ async def generate_subscription(
 async def list_providers():
     """
     Liste alle Payment Provider
-    
+
     Returns:
         - providers: List of payment providers
     """
@@ -241,14 +236,14 @@ async def list_providers():
                     "Subscriptions",
                     "Invoices",
                     "Payment intents",
-                    "Strong customer authentication"
+                    "Strong customer authentication",
                 ],
                 "fees": "2.9% + $0.30 per transaction",
                 "test_cards": {
                     "success": "4242 4242 4242 4242",
                     "declined": "4000 0000 0000 0002",
-                    "requires_auth": "4000 0025 0000 3155"
-                }
+                    "requires_auth": "4000 0025 0000 3155",
+                },
             },
             {
                 "id": "paypal",
@@ -259,10 +254,10 @@ async def list_providers():
                     "Credit/Debit cards",
                     "Subscriptions",
                     "Smart Payment Buttons",
-                    "Express Checkout"
+                    "Express Checkout",
                 ],
                 "fees": "2.9% + $0.30 per transaction",
-                "sandbox": "https://sandbox.paypal.com"
+                "sandbox": "https://sandbox.paypal.com",
             },
             {
                 "id": "both",
@@ -271,10 +266,10 @@ async def list_providers():
                 "features": [
                     "Maximum payment coverage",
                     "Customer choice",
-                    "Fallback options"
-                ]
-            }
-        ]
+                    "Fallback options",
+                ],
+            },
+        ],
     }
 
 
@@ -282,7 +277,7 @@ async def list_providers():
 async def list_pricing_models():
     """
     Liste alle Pricing Models
-    
+
     Returns:
         - pricing_models: List of supported pricing models
     """
@@ -296,9 +291,9 @@ async def list_pricing_models():
                 "use_cases": [
                     "E-commerce purchases",
                     "Digital downloads",
-                    "One-time services"
+                    "One-time services",
                 ],
-                "example": "Buy premium theme - $49"
+                "example": "Buy premium theme - $49",
             },
             {
                 "id": "subscription",
@@ -307,22 +302,18 @@ async def list_pricing_models():
                 "use_cases": [
                     "SaaS products",
                     "Membership sites",
-                    "Streaming services"
+                    "Streaming services",
                 ],
                 "intervals": ["month", "year"],
                 "features": ["Trial periods", "Cancellation", "Plan upgrades"],
-                "example": "Premium Plan - $9.99/month"
+                "example": "Premium Plan - $9.99/month",
             },
             {
                 "id": "usage_based",
                 "name": "Usage-Based",
                 "description": "Pay for what you use",
-                "use_cases": [
-                    "API calls",
-                    "Storage",
-                    "Computing resources"
-                ],
-                "example": "API calls - $0.01 per request"
+                "use_cases": ["API calls", "Storage", "Computing resources"],
+                "example": "API calls - $0.01 per request",
             },
             {
                 "id": "tiered",
@@ -331,11 +322,11 @@ async def list_pricing_models():
                 "use_cases": [
                     "Volume discounts",
                     "Feature-based tiers",
-                    "User-based pricing"
+                    "User-based pricing",
                 ],
-                "example": "Starter ($9) → Pro ($29) → Enterprise ($99)"
-            }
-        ]
+                "example": "Starter ($9) → Pro ($29) → Enterprise ($99)",
+            },
+        ],
     }
 
 
@@ -343,7 +334,7 @@ async def list_pricing_models():
 async def list_frameworks():
     """
     Liste alle unterstützten Frameworks
-    
+
     Returns:
         - backend_frameworks: Supported backend frameworks
         - frontend_frameworks: Supported frontend frameworks
@@ -356,26 +347,26 @@ async def list_frameworks():
                 "name": "FastAPI",
                 "language": "Python",
                 "status": "fully_supported",
-                "features": ["Async/await", "Type hints", "Auto docs"]
+                "features": ["Async/await", "Type hints", "Auto docs"],
             },
             {
                 "id": "django",
                 "name": "Django",
                 "language": "Python",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "flask",
                 "name": "Flask",
                 "language": "Python",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "express",
                 "name": "Express.js",
                 "language": "JavaScript/TypeScript",
-                "status": "coming_soon"
-            }
+                "status": "coming_soon",
+            },
         ],
         "frontend_frameworks": [
             {
@@ -383,28 +374,28 @@ async def list_frameworks():
                 "name": "React",
                 "language": "JavaScript/TypeScript",
                 "status": "fully_supported",
-                "libraries": ["@stripe/react-stripe-js", "PayPal SDK"]
+                "libraries": ["@stripe/react-stripe-js", "PayPal SDK"],
             },
             {
                 "id": "flutter",
                 "name": "Flutter",
                 "language": "Dart",
                 "status": "fully_supported",
-                "packages": ["flutter_stripe"]
+                "packages": ["flutter_stripe"],
             },
             {
                 "id": "react_native",
                 "name": "React Native",
                 "language": "JavaScript/TypeScript",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "nextjs",
                 "name": "Next.js",
                 "language": "JavaScript/TypeScript",
-                "status": "coming_soon"
-            }
-        ]
+                "status": "coming_soon",
+            },
+        ],
     }
 
 
@@ -412,7 +403,7 @@ async def list_frameworks():
 async def get_template(provider: str):
     """
     Get code template für Provider
-    
+
     Returns:
         - template: Code template
         - examples: Usage examples
@@ -425,26 +416,26 @@ async def get_template(provider: str):
                 "one_time_payment": {
                     "backend": "FastAPI + Stripe Payment Intent",
                     "frontend": "React + Stripe Elements",
-                    "lines": 120
+                    "lines": 120,
                 },
                 "subscription": {
                     "backend": "FastAPI + Stripe Subscriptions",
                     "frontend": "React + Checkout Session",
-                    "lines": 180
+                    "lines": 180,
                 },
                 "webhook": {
                     "backend": "FastAPI + Webhook Handler",
                     "events": 7,
-                    "lines": 150
-                }
+                    "lines": 150,
+                },
             },
             "examples": [
                 "Monthly SaaS subscription with 7-day trial",
                 "One-time product purchase",
-                "Usage-based API billing"
-            ]
+                "Usage-based API billing",
+            ],
         }
-    
+
     elif provider == "paypal":
         return {
             "success": True,
@@ -453,26 +444,26 @@ async def get_template(provider: str):
                 "one_time_payment": {
                     "backend": "FastAPI + PayPal Orders API",
                     "frontend": "React + Smart Payment Buttons",
-                    "lines": 140
+                    "lines": 140,
                 },
                 "subscription": {
                     "backend": "FastAPI + PayPal Subscriptions",
                     "frontend": "React + Subscription Buttons",
-                    "lines": 160
+                    "lines": 160,
                 },
                 "webhook": {
                     "backend": "FastAPI + Webhook Verification",
                     "events": 5,
-                    "lines": 120
-                }
+                    "lines": 120,
+                },
             },
             "examples": [
                 "E-commerce checkout",
                 "Digital product purchase",
-                "Membership subscription"
-            ]
+                "Membership subscription",
+            ],
         }
-    
+
     else:
         raise HTTPException(status_code=404, detail="Provider not found")
 
@@ -481,33 +472,33 @@ async def get_template(provider: str):
 async def validate_config(request: GenerateRequest):
     """
     Validiere Payment Config
-    
+
     Returns:
         - valid: boolean
         - issues: List of configuration issues
     """
     issues = []
-    
+
     # Validate amount for one-time payments
     if request.pricing_model == PricingModel.ONE_TIME and not request.amount:
         issues.append("Amount is required for one-time payments")
-    
+
     # Validate subscription interval
     if request.pricing_model == PricingModel.SUBSCRIPTION:
         if request.subscription_interval not in ["month", "year"]:
             issues.append("Subscription interval must be 'month' or 'year'")
-    
+
     # Validate URLs
     if not request.success_url.startswith("http"):
         issues.append("Success URL must start with http:// or https://")
     if not request.cancel_url.startswith("http"):
         issues.append("Cancel URL must start with http:// or https://")
-    
+
     # Validate framework compatibility
     if request.frontend_framework == Framework.FLUTTER:
         if request.provider == PaymentProvider.PAYPAL:
             issues.append("PayPal is not yet supported for Flutter (coming soon)")
-    
+
     return {
         "success": True,
         "valid": len(issues) == 0,
@@ -516,8 +507,8 @@ async def validate_config(request: GenerateRequest):
             "provider": request.provider,
             "pricing_model": request.pricing_model,
             "backend_framework": request.backend_framework,
-            "frontend_framework": request.frontend_framework
-        }
+            "frontend_framework": request.frontend_framework,
+        },
     }
 
 
@@ -525,7 +516,7 @@ async def validate_config(request: GenerateRequest):
 async def get_stats():
     """
     Payment Generator Statistics
-    
+
     Returns:
         - total_providers: Number of providers
         - total_pricing_models: Number of pricing models
@@ -540,12 +531,12 @@ async def get_stats():
             "frontend_frameworks": 4,  # React, Flutter, React Native, Next.js
             "fully_supported": {
                 "backend": ["fastapi"],
-                "frontend": ["react", "flutter"]
+                "frontend": ["react", "flutter"],
             },
             "coming_soon": {
                 "backend": ["django", "flask", "express"],
-                "frontend": ["react_native", "nextjs"]
-            }
+                "frontend": ["react_native", "nextjs"],
+            },
         },
         "features": [
             "Stripe checkout sessions",
@@ -555,6 +546,6 @@ async def get_stats():
             "Webhook handlers",
             "Frontend components",
             "Test mode support",
-            "Security best practices"
-        ]
+            "Security best practices",
+        ],
     }

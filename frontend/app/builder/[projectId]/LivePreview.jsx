@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from "react";
 import DeviceFrame, { DeviceSelector } from "./DeviceFrame";
+import { initPreviewBridge } from "./utils/preview-bridge";
 
 export default function LivePreview({ projectId }) {
     const [url, setUrl] = useState("");
@@ -27,6 +28,9 @@ export default function LivePreview({ projectId }) {
 
     useEffect(() => {
         startPreview();
+
+        // ⭐ Initialisiere Preview Bridge für Live-Updates
+        initPreviewBridge();
     }, [projectId]);
 
     async function startPreview() {
@@ -34,8 +38,8 @@ export default function LivePreview({ projectId }) {
             setLoading(true);
             setError(null);
 
-            const endpoint = previewType === "web" 
-                ? "/preview/start_web" 
+            const endpoint = previewType === "web"
+                ? "/preview/start_web"
                 : "/preview/start_flutter";
 
             const res = await fetch(`http://localhost:8000${endpoint}`, {
@@ -43,8 +47,8 @@ export default function LivePreview({ projectId }) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ 
-                    project_id: projectId 
+                body: JSON.stringify({
+                    project_id: projectId
                 })
             });
 
@@ -53,7 +57,7 @@ export default function LivePreview({ projectId }) {
             }
 
             const data = await res.json();
-            
+
             if (data.preview_url) {
                 setUrl(data.preview_url);
             } else {
@@ -87,9 +91,9 @@ export default function LivePreview({ projectId }) {
                 <div className="preview-title">
                     🔴 Live Preview
                 </div>
-                
+
                 <div className="preview-controls">
-                    <select 
+                    <select
                         className="preview-btn"
                         value={previewType}
                         onChange={(e) => {
@@ -101,16 +105,16 @@ export default function LivePreview({ projectId }) {
                         <option value="web">Web</option>
                         <option value="flutter">Flutter</option>
                     </select>
-                    
-                    <button 
+
+                    <button
                         className="preview-btn"
                         onClick={refreshPreview}
                         title="Refresh"
                     >
                         🔄
                     </button>
-                    
-                    <button 
+
+                    <button
                         className="preview-btn"
                         onClick={openInNewTab}
                         title="Open in new tab"
@@ -139,7 +143,7 @@ export default function LivePreview({ projectId }) {
                         <div style={{ fontSize: '11px', marginTop: '5px', color: '#888' }}>
                             {error}
                         </div>
-                        <button 
+                        <button
                             className="btn"
                             style={{ marginTop: '15px' }}
                             onClick={startPreview}

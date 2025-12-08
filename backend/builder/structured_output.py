@@ -10,8 +10,8 @@
 # -------------------------------------------------------------
 
 import json
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List
 
 
 class StructuredOutput:
@@ -26,11 +26,11 @@ class StructuredOutput:
         files: List[Dict],
         errors: List[Dict] = None,
         warnings: List[Dict] = None,
-        metadata: Dict = None
+        metadata: Dict = None,
     ) -> Dict[str, Any]:
         """
         Erstellt strukturierte Projekt-Ausgabe.
-        
+
         Args:
             project_name: Projektname
             framework: Framework/Plattform
@@ -38,7 +38,7 @@ class StructuredOutput:
             errors: Fehler-Liste
             warnings: Warnungen-Liste
             metadata: Zusätzliche Metadaten
-        
+
         Returns:
             Strukturiertes Dictionary für JSON-Serialisierung
         """
@@ -47,22 +47,22 @@ class StructuredOutput:
                 "name": project_name,
                 "framework": framework,
                 "created_at": datetime.now().isoformat(),
-                "metadata": metadata or {}
+                "metadata": metadata or {},
             },
             "files": files,
             "statistics": {
                 "total_files": len(files),
                 "total_lines": sum(f.get("lines", 0) for f in files),
-                "file_types": self._count_file_types(files)
+                "file_types": self._count_file_types(files),
             },
             "quality": {
                 "errors": errors or [],
                 "warnings": warnings or [],
                 "error_count": len(errors) if errors else 0,
                 "warning_count": len(warnings) if warnings else 0,
-                "has_critical_errors": bool(errors)
+                "has_critical_errors": bool(errors),
             },
-            "status": "success" if not errors else "completed_with_errors"
+            "status": "success" if not errors else "completed_with_errors",
         }
 
     def create_file_info(
@@ -71,11 +71,11 @@ class StructuredOutput:
         content: str,
         language: str,
         size: int = None,
-        errors: List[Dict] = None
+        errors: List[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Erstellt strukturierte Datei-Information.
-        
+
         Returns:
             {
                 "path": str,
@@ -89,16 +89,16 @@ class StructuredOutput:
             }
         """
         lines = content.count("\n") + 1 if content else 0
-        
+
         return {
             "path": path,
             "name": path.split("/")[-1],
             "language": language,
-            "size": size or len(content.encode('utf-8')),
+            "size": size or len(content.encode("utf-8")),
             "lines": lines,
             "content": content,
             "has_errors": bool(errors),
-            "errors": errors or []
+            "errors": errors or [],
         }
 
     def create_build_status(
@@ -108,11 +108,11 @@ class StructuredOutput:
         current_step: str,
         steps: List[str],
         logs: List[str] = None,
-        errors: List[str] = None
+        errors: List[str] = None,
     ) -> Dict[str, Any]:
         """
         Erstellt Build-Status für Live-Updates.
-        
+
         Args:
             status: "pending", "building", "success", "failed"
             progress: 0.0 - 1.0
@@ -120,7 +120,7 @@ class StructuredOutput:
             steps: Alle Schritte
             logs: Build-Logs
             errors: Fehler-Logs
-        
+
         Returns:
             Status-Dictionary
         """
@@ -133,39 +133,30 @@ class StructuredOutput:
             "steps": steps,
             "logs": logs or [],
             "errors": errors or [],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     def create_error_report(
-        self,
-        errors: List[Dict],
-        file_path: str = None,
-        severity_filter: str = None
+        self, errors: List[Dict], file_path: str = None, severity_filter: str = None
     ) -> Dict[str, Any]:
         """
         Erstellt detaillierten Fehler-Report.
-        
+
         Args:
             errors: Liste von Fehlern
             file_path: Optional Datei-Filter
             severity_filter: "error", "warning", "info"
-        
+
         Returns:
             Fehler-Report
         """
         filtered_errors = errors
-        
+
         if file_path:
-            filtered_errors = [
-                e for e in filtered_errors
-                if e.get("file") == file_path
-            ]
-        
+            filtered_errors = [e for e in filtered_errors if e.get("file") == file_path]
+
         if severity_filter:
-            filtered_errors = [
-                e for e in filtered_errors
-                if e.get("severity") == severity_filter
-            ]
+            filtered_errors = [e for e in filtered_errors if e.get("severity") == severity_filter]
 
         error_count = len([e for e in filtered_errors if e.get("severity") == "error"])
         warning_count = len([e for e in filtered_errors if e.get("severity") == "warning"])
@@ -176,29 +167,25 @@ class StructuredOutput:
                 "total": len(filtered_errors),
                 "errors": error_count,
                 "warnings": warning_count,
-                "info": info_count
+                "info": info_count,
             },
             "details": filtered_errors,
             "grouped_by_file": self._group_errors_by_file(filtered_errors),
-            "grouped_by_type": self._group_errors_by_type(filtered_errors)
+            "grouped_by_type": self._group_errors_by_type(filtered_errors),
         }
 
     def create_generation_log(
-        self,
-        action: str,
-        details: str,
-        status: str = "info",
-        data: Dict = None
+        self, action: str, details: str, status: str = "info", data: Dict = None
     ) -> Dict[str, Any]:
         """
         Erstellt Log-Eintrag für Generation-Process.
-        
+
         Args:
             action: "file_created", "error_detected", "formatted", etc.
             details: Beschreibung
             status: "info", "success", "warning", "error"
             data: Zusätzliche Daten
-        
+
         Returns:
             Log-Eintrag
         """
@@ -207,7 +194,7 @@ class StructuredOutput:
             "action": action,
             "status": status,
             "details": details,
-            "data": data or {}
+            "data": data or {},
         }
 
     def to_json(self, data: Dict, pretty: bool = True) -> str:

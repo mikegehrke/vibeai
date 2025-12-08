@@ -14,7 +14,7 @@ Generates:
 - Test Fixtures
 - Coverage Reports
 """
-from .test_generator import test_generator
-from .test_routes import router
+from .test_generator import TestGenerator
+from .test_routes import Router
 
-__all__ = ["test_generator", "router"]
+__all__ = ["TestGenerator", "Router"]

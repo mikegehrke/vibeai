@@ -3,19 +3,19 @@ Realtime Generator API Routes
 Endpoints für Chat & Voice Code-Generierung
 """
 
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
-from enum import Enum
 
 from .realtime_generator import (
-    RealtimeGenerator,
-    ChatFeature,
-    VoiceFeature,
-    RealtimeProtocol,
-    Framework,
     ChatConfig,
-    VoiceConfig
+    ChatFeature,
+    Framework,
+    RealtimeGenerator,
+    RealtimeProtocol,
+    VoiceConfig,
+    VoiceFeature,
 )
 
 router = APIRouter(prefix="/realtime-gen", tags=["Realtime Generator"])
@@ -26,6 +26,7 @@ generator = RealtimeGenerator()
 
 class GenerateChatRequest(BaseModel):
     """Request für Chat System Generation"""
+
     chat_features: List[ChatFeature]
     backend_framework: Framework
     frontend_framework: Optional[Framework] = None
@@ -39,6 +40,7 @@ class GenerateChatRequest(BaseModel):
 
 class GenerateVoiceRequest(BaseModel):
     """Request für Voice System Generation"""
+
     voice_features: List[VoiceFeature]
     backend_framework: Framework
     frontend_framework: Optional[Framework] = None
@@ -52,7 +54,7 @@ class GenerateVoiceRequest(BaseModel):
 async def generate_chat_system(request: GenerateChatRequest):
     """
     Generiere komplettes Chat-System
-    
+
     Returns:
         - backend_code: Backend code mit WebSocket
         - websocket_code: WebSocket/Socket.io server
@@ -71,17 +73,17 @@ async def generate_chat_system(request: GenerateChatRequest):
             max_file_size_mb=request.max_file_size_mb,
             ai_model=request.ai_model,
             translation_enabled=request.translation_enabled,
-            enable_encryption=request.enable_encryption
+            enable_encryption=request.enable_encryption,
         )
-        
+
         # Generate code
         result = generator.generate_chat_system(
             config=config,
             backend_framework=request.backend_framework,
             frontend_framework=request.frontend_framework,
-            protocol=request.protocol
+            protocol=request.protocol,
         )
-        
+
         return {
             "success": True,
             "backend_code": result.backend_code,
@@ -95,9 +97,9 @@ async def generate_chat_system(request: GenerateChatRequest):
             "features": [f.value for f in request.chat_features],
             "protocol": request.protocol.value,
             "backend_framework": request.backend_framework.value,
-            "frontend_framework": request.frontend_framework.value if request.frontend_framework else None
+            "frontend_framework": (request.frontend_framework.value if request.frontend_framework else None),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -106,7 +108,7 @@ async def generate_chat_system(request: GenerateChatRequest):
 async def generate_voice_system(request: GenerateVoiceRequest):
     """
     Generiere komplettes Voice/Video Call System
-    
+
     Returns:
         - backend_code: Backend code
         - signaling_code: WebRTC signaling server
@@ -124,16 +126,16 @@ async def generate_voice_system(request: GenerateVoiceRequest):
             max_participants=request.max_participants,
             tts_provider=request.tts_provider,
             stt_provider=request.stt_provider,
-            video_quality=request.video_quality
+            video_quality=request.video_quality,
         )
-        
+
         # Generate code
         result = generator.generate_voice_system(
             config=config,
             backend_framework=request.backend_framework,
-            frontend_framework=request.frontend_framework
+            frontend_framework=request.frontend_framework,
         )
-        
+
         return {
             "success": True,
             "backend_code": result.backend_code,
@@ -146,9 +148,9 @@ async def generate_voice_system(request: GenerateVoiceRequest):
             "setup_instructions": result.setup_instructions,
             "features": [f.value for f in request.voice_features],
             "backend_framework": request.backend_framework.value,
-            "frontend_framework": request.frontend_framework.value if request.frontend_framework else None
+            "frontend_framework": (request.frontend_framework.value if request.frontend_framework else None),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -157,7 +159,7 @@ async def generate_voice_system(request: GenerateVoiceRequest):
 async def list_chat_features():
     """
     Liste alle Chat Features
-    
+
     Returns:
         - features: List of available chat features
     """
@@ -168,66 +170,66 @@ async def list_chat_features():
                 "id": "basic_messaging",
                 "name": "Basic Messaging",
                 "description": "Send and receive text messages",
-                "required": True
+                "required": True,
             },
             {
                 "id": "group_chat",
                 "name": "Group Chat",
                 "description": "Multi-user chat rooms",
-                "required": False
+                "required": False,
             },
             {
                 "id": "file_sharing",
                 "name": "File Sharing",
                 "description": "Upload and share files",
                 "max_file_size": "50MB",
-                "required": False
+                "required": False,
             },
             {
                 "id": "typing_indicator",
                 "name": "Typing Indicator",
                 "description": "Show when users are typing",
-                "required": False
+                "required": False,
             },
             {
                 "id": "read_receipts",
                 "name": "Read Receipts",
                 "description": "Track message read status",
-                "required": False
+                "required": False,
             },
             {
                 "id": "message_reactions",
                 "name": "Message Reactions",
                 "description": "React to messages with emojis",
-                "required": False
+                "required": False,
             },
             {
                 "id": "ai_assistant",
                 "name": "AI Assistant",
                 "description": "Integrated AI chatbot",
                 "requires": "OpenAI API key",
-                "required": False
+                "required": False,
             },
             {
                 "id": "live_translation",
                 "name": "Live Translation",
                 "description": "Translate messages to multiple languages",
                 "languages": ["es", "fr", "de", "zh-CN", "ja"],
-                "required": False
+                "required": False,
             },
             {
                 "id": "message_search",
                 "name": "Message Search",
                 "description": "Search through message history",
-                "required": False
+                "required": False,
             },
             {
                 "id": "voice_messages",
                 "name": "Voice Messages",
                 "description": "Send voice recordings",
-                "required": False
-            }
-        ]
+                "required": False,
+            },
+        ],
     }
 
 
@@ -235,7 +237,7 @@ async def list_chat_features():
 async def list_voice_features():
     """
     Liste alle Voice/Video Features
-    
+
     Returns:
         - features: List of available voice features
     """
@@ -246,68 +248,68 @@ async def list_voice_features():
                 "id": "audio_call",
                 "name": "Audio Call",
                 "description": "Voice-only calls",
-                "required": True
+                "required": True,
             },
             {
                 "id": "video_call",
                 "name": "Video Call",
                 "description": "Video calling with webcam",
                 "qualities": ["sd", "hd", "fhd", "4k"],
-                "required": False
+                "required": False,
             },
             {
                 "id": "screen_share",
                 "name": "Screen Share",
                 "description": "Share your screen",
-                "required": False
+                "required": False,
             },
             {
                 "id": "recording",
                 "name": "Call Recording",
                 "description": "Record calls for later playback",
-                "required": False
+                "required": False,
             },
             {
                 "id": "live_translation",
                 "name": "Live Translation",
                 "description": "Real-time speech translation",
                 "pipeline": "STT → Translation → TTS",
-                "required": False
+                "required": False,
             },
             {
                 "id": "noise_cancellation",
                 "name": "Noise Cancellation",
                 "description": "Remove background noise",
-                "required": False
+                "required": False,
             },
             {
                 "id": "background_blur",
                 "name": "Background Blur",
                 "description": "Blur video background",
-                "required": False
+                "required": False,
             },
             {
                 "id": "ai_transcription",
                 "name": "AI Transcription",
                 "description": "Live call transcription",
                 "requires": "OpenAI Whisper",
-                "required": False
+                "required": False,
             },
             {
                 "id": "avatar_voice",
                 "name": "Avatar Voice",
                 "description": "Synthetic voice avatars",
                 "providers": ["OpenAI TTS", "ElevenLabs"],
-                "required": False
+                "required": False,
             },
             {
                 "id": "voice_effects",
                 "name": "Voice Effects",
                 "description": "Apply voice filters",
                 "effects": ["robot", "echo", "pitch"],
-                "required": False
-            }
-        ]
+                "required": False,
+            },
+        ],
     }
 
 
@@ -315,7 +317,7 @@ async def list_voice_features():
 async def list_protocols():
     """
     Liste alle unterstützten Realtime Protocols
-    
+
     Returns:
         - protocols: List of realtime protocols
     """
@@ -327,7 +329,7 @@ async def list_protocols():
                 "name": "WebSocket",
                 "description": "Native WebSocket protocol",
                 "use_case": "Simple realtime apps",
-                "browser_support": "All modern browsers"
+                "browser_support": "All modern browsers",
             },
             {
                 "id": "socket_io",
@@ -335,7 +337,7 @@ async def list_protocols():
                 "description": "Full-featured realtime framework",
                 "use_case": "Advanced chat apps",
                 "features": ["Auto-reconnect", "Rooms", "Broadcasting"],
-                "browser_support": "All browsers (with fallbacks)"
+                "browser_support": "All browsers (with fallbacks)",
             },
             {
                 "id": "webrtc",
@@ -343,16 +345,16 @@ async def list_protocols():
                 "description": "Peer-to-peer audio/video",
                 "use_case": "Voice/Video calls",
                 "features": ["P2P", "Low latency", "High quality"],
-                "browser_support": "Chrome, Firefox, Safari, Edge"
+                "browser_support": "Chrome, Firefox, Safari, Edge",
             },
             {
                 "id": "sse",
                 "name": "Server-Sent Events",
                 "description": "One-way server-to-client streaming",
                 "use_case": "Live updates, notifications",
-                "browser_support": "All modern browsers"
-            }
-        ]
+                "browser_support": "All modern browsers",
+            },
+        ],
     }
 
 
@@ -360,7 +362,7 @@ async def list_protocols():
 async def list_frameworks():
     """
     Liste alle unterstützten Frameworks
-    
+
     Returns:
         - backend_frameworks: Supported backend frameworks
         - frontend_frameworks: Supported frontend frameworks
@@ -373,27 +375,27 @@ async def list_frameworks():
                 "name": "FastAPI",
                 "language": "Python",
                 "status": "fully_supported",
-                "features": ["WebSocket", "Async", "Type hints"]
+                "features": ["WebSocket", "Async", "Type hints"],
             },
             {
                 "id": "django",
                 "name": "Django Channels",
                 "language": "Python",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "flask",
                 "name": "Flask-SocketIO",
                 "language": "Python",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "express",
                 "name": "Express.js",
                 "language": "JavaScript/TypeScript",
                 "status": "coming_soon",
-                "features": ["Socket.io", "WebSocket"]
-            }
+                "features": ["Socket.io", "WebSocket"],
+            },
         ],
         "frontend_frameworks": [
             {
@@ -401,28 +403,28 @@ async def list_frameworks():
                 "name": "React",
                 "language": "JavaScript/TypeScript",
                 "status": "fully_supported",
-                "libraries": ["socket.io-client", "simple-peer"]
+                "libraries": ["socket.io-client", "simple-peer"],
             },
             {
                 "id": "flutter",
                 "name": "Flutter",
                 "language": "Dart",
                 "status": "coming_soon",
-                "packages": ["web_socket_channel", "flutter_webrtc"]
+                "packages": ["web_socket_channel", "flutter_webrtc"],
             },
             {
                 "id": "react_native",
                 "name": "React Native",
                 "language": "JavaScript/TypeScript",
-                "status": "coming_soon"
+                "status": "coming_soon",
             },
             {
                 "id": "nextjs",
                 "name": "Next.js",
                 "language": "JavaScript/TypeScript",
-                "status": "coming_soon"
-            }
-        ]
+                "status": "coming_soon",
+            },
+        ],
     }
 
 
@@ -430,7 +432,7 @@ async def list_frameworks():
 async def get_chat_templates():
     """
     Get Chat System Templates
-    
+
     Returns:
         - templates: Pre-configured chat templates
     """
@@ -441,7 +443,7 @@ async def get_chat_templates():
                 "name": "Basic Chat",
                 "description": "Simple one-on-one chat",
                 "features": ["basic_messaging", "typing_indicator"],
-                "complexity": "simple"
+                "complexity": "simple",
             },
             {
                 "name": "Team Chat",
@@ -452,9 +454,9 @@ async def get_chat_templates():
                     "typing_indicator",
                     "read_receipts",
                     "message_reactions",
-                    "message_search"
+                    "message_search",
                 ],
-                "complexity": "medium"
+                "complexity": "medium",
             },
             {
                 "name": "AI Support Chat",
@@ -463,9 +465,9 @@ async def get_chat_templates():
                     "basic_messaging",
                     "ai_assistant",
                     "file_sharing",
-                    "typing_indicator"
+                    "typing_indicator",
                 ],
-                "complexity": "medium"
+                "complexity": "medium",
             },
             {
                 "name": "Global Chat",
@@ -474,11 +476,11 @@ async def get_chat_templates():
                     "group_chat",
                     "live_translation",
                     "message_reactions",
-                    "typing_indicator"
+                    "typing_indicator",
                 ],
-                "complexity": "advanced"
-            }
-        ]
+                "complexity": "advanced",
+            },
+        ],
     }
 
 
@@ -486,7 +488,7 @@ async def get_chat_templates():
 async def get_voice_templates():
     """
     Get Voice Call Templates
-    
+
     Returns:
         - templates: Pre-configured voice call templates
     """
@@ -498,18 +500,14 @@ async def get_voice_templates():
                 "description": "Simple voice call",
                 "features": ["audio_call"],
                 "max_participants": 2,
-                "complexity": "simple"
+                "complexity": "simple",
             },
             {
                 "name": "Video Conference",
                 "description": "Multi-party video call",
-                "features": [
-                    "video_call",
-                    "screen_share",
-                    "noise_cancellation"
-                ],
+                "features": ["video_call", "screen_share", "noise_cancellation"],
                 "max_participants": 10,
-                "complexity": "medium"
+                "complexity": "medium",
             },
             {
                 "name": "Interview Platform",
@@ -518,10 +516,10 @@ async def get_voice_templates():
                     "video_call",
                     "recording",
                     "ai_transcription",
-                    "screen_share"
+                    "screen_share",
                 ],
                 "max_participants": 4,
-                "complexity": "advanced"
+                "complexity": "advanced",
             },
             {
                 "name": "Global Meeting",
@@ -530,12 +528,12 @@ async def get_voice_templates():
                     "video_call",
                     "live_translation",
                     "ai_transcription",
-                    "recording"
+                    "recording",
                 ],
                 "max_participants": 20,
-                "complexity": "advanced"
-            }
-        ]
+                "complexity": "advanced",
+            },
+        ],
     }
 
 
@@ -543,27 +541,27 @@ async def get_voice_templates():
 async def validate_config(request: GenerateChatRequest):
     """
     Validiere Chat Config
-    
+
     Returns:
         - valid: boolean
         - issues: List of configuration issues
     """
     issues = []
-    
+
     # Validate required features
     if ChatFeature.BASIC_MESSAGING not in request.chat_features:
         issues.append("basic_messaging is required")
-    
+
     # Validate AI assistant
     if ChatFeature.AI_ASSISTANT in request.chat_features:
         if not request.ai_model:
             issues.append("ai_model is required when ai_assistant is enabled")
-    
+
     # Validate file sharing
     if ChatFeature.FILE_SHARING in request.chat_features:
         if request.max_file_size_mb > 100:
             issues.append("max_file_size_mb should be <= 100")
-    
+
     return {
         "success": True,
         "valid": len(issues) == 0,
@@ -572,8 +570,8 @@ async def validate_config(request: GenerateChatRequest):
             "features": [f.value for f in request.chat_features],
             "protocol": request.protocol.value,
             "backend_framework": request.backend_framework.value,
-            "frontend_framework": request.frontend_framework.value if request.frontend_framework else None
-        }
+            "frontend_framework": (request.frontend_framework.value if request.frontend_framework else None),
+        },
     }
 
 
@@ -581,7 +579,7 @@ async def validate_config(request: GenerateChatRequest):
 async def get_stats():
     """
     Realtime Generator Statistics
-    
+
     Returns:
         - total_chat_features: Number of chat features
         - total_voice_features: Number of voice features
@@ -596,14 +594,11 @@ async def get_stats():
             "protocols": 4,
             "backend_frameworks": 4,
             "frontend_frameworks": 4,
-            "fully_supported": {
-                "backend": ["fastapi"],
-                "frontend": ["react"]
-            },
+            "fully_supported": {"backend": ["fastapi"], "frontend": ["react"]},
             "coming_soon": {
                 "backend": ["django", "flask", "express"],
-                "frontend": ["flutter", "react_native", "nextjs"]
-            }
+                "frontend": ["flutter", "react_native", "nextjs"],
+            },
         },
         "capabilities": [
             "WebSocket chat",
@@ -617,6 +612,6 @@ async def get_stats():
             "Message reactions",
             "Call recording",
             "Screen sharing",
-            "AI transcription"
-        ]
+            "AI transcription",
+        ],
     }

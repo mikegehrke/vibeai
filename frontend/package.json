@@ -10,10 +10,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@monaco-editor/react": "^4.6.0"
+    "react-icons": "^5.5.0",
+    "react-syntax-highlighter": "^16.1.0"
   },
   "devDependencies": {
     "eslint": "^8.55.0",

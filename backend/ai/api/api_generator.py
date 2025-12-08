@@ -2,7 +2,7 @@
 # VIBEAI – API CONNECTOR GENERATOR (REST + GraphQL + WebSockets)
 # -------------------------------------------------------------
 import os
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, Optional
 
 
 class APIConnectorGenerator:
@@ -23,30 +23,30 @@ class APIConnectorGenerator:
         framework: str,
         protocol: str,
         base_path: str,
-        options: Optional[Dict] = None
+        options: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Generiert API-Client Code
-        
+
         Args:
             framework: flutter, react, nextjs, vue, nodejs
             protocol: rest, graphql, websocket
             base_path: Ziel-Verzeichnis
             options: Optionale Konfiguration (base_url, auth_type, timeout, etc.)
-        
+
         Returns:
             Dict mit success, files, framework, protocol, features
         """
         if framework not in self.supported_frameworks:
             return {
                 "success": False,
-                "error": f"Framework '{framework}' nicht unterstützt. Verfügbar: {self.supported_frameworks}"
+                "error": f"Framework '{framework}' nicht unterstützt. Verfügbar: {self.supported_frameworks}",
             }
 
         if protocol not in self.supported_protocols:
             return {
                 "success": False,
-                "error": f"Protokoll '{protocol}' nicht unterstützt. Verfügbar: {self.supported_protocols}"
+                "error": f"Protokoll '{protocol}' nicht unterstützt. Verfügbar: {self.supported_protocols}",
             }
 
         options = options or {}
@@ -62,7 +62,7 @@ class APIConnectorGenerator:
                 return self._generate_flutter_graphql(base_path, base_url, auth_type)
             elif protocol == "websocket":
                 return self._generate_flutter_websocket(base_path, base_url)
-        
+
         elif framework == "react":
             if protocol == "rest":
                 return self._generate_react_rest(base_path, base_url, auth_type, timeout)
@@ -70,7 +70,7 @@ class APIConnectorGenerator:
                 return self._generate_react_graphql(base_path, base_url, auth_type)
             elif protocol == "websocket":
                 return self._generate_react_websocket(base_path, base_url)
-        
+
         elif framework == "nextjs":
             if protocol == "rest":
                 return self._generate_nextjs_rest(base_path, base_url, auth_type, timeout)
@@ -78,7 +78,7 @@ class APIConnectorGenerator:
                 return self._generate_nextjs_graphql(base_path, base_url, auth_type)
             elif protocol == "websocket":
                 return self._generate_nextjs_websocket(base_path, base_url)
-        
+
         elif framework == "vue":
             if protocol == "rest":
                 return self._generate_vue_rest(base_path, base_url, auth_type, timeout)
@@ -86,7 +86,7 @@ class APIConnectorGenerator:
                 return self._generate_vue_graphql(base_path, base_url, auth_type)
             elif protocol == "websocket":
                 return self._generate_vue_websocket(base_path, base_url)
-        
+
         elif framework == "nodejs":
             if protocol == "rest":
                 return self._generate_nodejs_rest(base_path, base_url, auth_type, timeout)
@@ -94,7 +94,7 @@ class APIConnectorGenerator:
                 return self._generate_nodejs_graphql(base_path, base_url, auth_type)
             elif protocol == "websocket":
                 return self._generate_nodejs_websocket(base_path, base_url)
-        
+
         return {"success": False, "error": "Ungültige Framework/Protokoll Kombination"}
 
     # ==================== FLUTTER ====================
@@ -104,7 +104,9 @@ class APIConnectorGenerator:
         files = {}
         api_dir = os.path.join(base_path, "lib", "api")
 
-        files["rest_client.dart"] = f'''// -------------------------------------------------------------
+        files[
+            "rest_client.dart"
+        ] = f"""// -------------------------------------------------------------
 // Flutter REST API Client
 // -------------------------------------------------------------
 import 'dart:convert';
@@ -205,9 +207,11 @@ class RestClient {{
     authToken = null;
   }}
 }}
-'''
+"""
 
-        files["api_service.dart"] = '''// -------------------------------------------------------------
+        files[
+            "api_service.dart"
+        ] = """// -------------------------------------------------------------
 // API Service Layer (Example)
 // -------------------------------------------------------------
 import 'rest_client.dart';
@@ -240,11 +244,11 @@ class ApiService {
       'email': email,
       'password': password,
     });
-    
+
     if (response['token'] != null) {
       RestClient.setAuthToken(response['token']);
     }
-    
+
     return response;
   }
 
@@ -252,19 +256,21 @@ class ApiService {
     RestClient.clearAuthToken();
   }
 }
-'''
+"""
 
-        files["pubspec.yaml"] = '''name: api_client
+        files[
+            "pubspec.yaml"
+        ] = """name: api_client
 dependencies:
   http: ^1.1.0
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -274,7 +280,7 @@ dependencies:
             "protocol": "rest",
             "files": created_files,
             "methods": ["GET", "POST", "PUT", "DELETE"],
-            "features": ["Auth Token", "Timeout", "Error Handling"]
+            "features": ["Auth Token", "Timeout", "Error Handling"],
         }
 
     def _generate_flutter_graphql(self, base_path: str, base_url: str, auth_type: str) -> Dict[str, Any]:
@@ -282,7 +288,9 @@ dependencies:
         files = {}
         api_dir = os.path.join(base_path, "lib", "api")
 
-        files["graphql_client.dart"] = f'''// -------------------------------------------------------------
+        files[
+            "graphql_client.dart"
+        ] = f"""// -------------------------------------------------------------
 // Flutter GraphQL Client
 // -------------------------------------------------------------
 import 'package:graphql_flutter/graphql_flutter.dart';
@@ -309,19 +317,21 @@ class GraphQLService {{
     return await client.mutate(options);
   }}
 }}
-'''
+"""
 
-        files["pubspec.yaml"] = '''name: graphql_client
+        files[
+            "pubspec.yaml"
+        ] = """name: graphql_client
 dependencies:
   graphql_flutter: ^5.1.0
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -331,7 +341,7 @@ dependencies:
             "protocol": "graphql",
             "files": created_files,
             "methods": ["Query", "Mutation"],
-            "features": ["Cache", "Link", "Error Handling"]
+            "features": ["Cache", "Link", "Error Handling"],
         }
 
     def _generate_flutter_websocket(self, base_path: str, base_url: str) -> Dict[str, Any]:
@@ -341,7 +351,9 @@ dependencies:
 
         ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://")
 
-        files["websocket_client.dart"] = f'''// -------------------------------------------------------------
+        files[
+            "websocket_client.dart"
+        ] = f"""// -------------------------------------------------------------
 // Flutter WebSocket Client
 // -------------------------------------------------------------
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -365,19 +377,21 @@ class WebSocketService {{
     channel?.sink.close();
   }}
 }}
-'''
+"""
 
-        files["pubspec.yaml"] = '''name: websocket_client
+        files[
+            "pubspec.yaml"
+        ] = """name: websocket_client
 dependencies:
   web_socket_channel: ^2.4.0
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -387,7 +401,7 @@ dependencies:
             "protocol": "websocket",
             "files": created_files,
             "methods": ["Connect", "Send", "Stream", "Disconnect"],
-            "features": ["Real-time", "Channel"]
+            "features": ["Real-time", "Channel"],
         }
 
     # ==================== REACT ====================
@@ -397,7 +411,9 @@ dependencies:
         files = {}
         api_dir = os.path.join(base_path, "src", "api")
 
-        files["client.js"] = f'''// -------------------------------------------------------------
+        files[
+            "client.js"
+        ] = f"""// -------------------------------------------------------------
 // React REST API Client
 // -------------------------------------------------------------
 
@@ -430,11 +446,11 @@ export const api = {{
         method: "GET",
         headers: getHeaders()
       }});
-      
+
       if (!response.ok) {{
         throw new Error(`HTTP ${{response.status}}: ${{response.statusText}}`);
       }}
-      
+
       return await response.json();
     }} catch (error) {{
       console.error("GET Request failed:", error);
@@ -449,11 +465,11 @@ export const api = {{
         headers: getHeaders(),
         body: JSON.stringify(data)
       }});
-      
+
       if (!response.ok) {{
         throw new Error(`HTTP ${{response.status}}: ${{response.statusText}}`);
       }}
-      
+
       return await response.json();
     }} catch (error) {{
       console.error("POST Request failed:", error);
@@ -468,11 +484,11 @@ export const api = {{
         headers: getHeaders(),
         body: JSON.stringify(data)
       }});
-      
+
       if (!response.ok) {{
         throw new Error(`HTTP ${{response.status}}: ${{response.statusText}}`);
       }}
-      
+
       return await response.json();
     }} catch (error) {{
       console.error("PUT Request failed:", error);
@@ -486,11 +502,11 @@ export const api = {{
         method: "DELETE",
         headers: getHeaders()
       }});
-      
+
       if (!response.ok) {{
         throw new Error(`HTTP ${{response.status}}: ${{response.statusText}}`);
       }}
-      
+
       return await response.json();
     }} catch (error) {{
       console.error("DELETE Request failed:", error);
@@ -506,9 +522,11 @@ export const api = {{
     authToken = null;
   }}
 }};
-'''
+"""
 
-        files["apiService.js"] = '''// -------------------------------------------------------------
+        files[
+            "apiService.js"
+        ] = """// -------------------------------------------------------------
 // API Service Layer (Example)
 // -------------------------------------------------------------
 import { api } from './client';
@@ -529,14 +547,16 @@ export const authService = {
     }
     return response;
   },
-  
+
   logout: () => {
     api.clearAuthToken();
   }
 };
-'''
+"""
 
-        files["useApi.js"] = '''// -------------------------------------------------------------
+        files[
+            "useApi.js"
+        ] = """// -------------------------------------------------------------
 // React Hook for API Calls
 // -------------------------------------------------------------
 import { useState, useEffect } from 'react';
@@ -577,14 +597,14 @@ export function useApi(apiCall, dependencies = []) {
 
   return { data, loading, error };
 }
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -594,7 +614,7 @@ export function useApi(apiCall, dependencies = []) {
             "protocol": "rest",
             "files": created_files,
             "methods": ["GET", "POST", "PUT", "DELETE"],
-            "features": ["Auth Token", "Timeout", "React Hook", "Error Handling"]
+            "features": ["Auth Token", "Timeout", "React Hook", "Error Handling"],
         }
 
     def _generate_react_graphql(self, base_path: str, base_url: str, auth_type: str) -> Dict[str, Any]:
@@ -602,7 +622,9 @@ export function useApi(apiCall, dependencies = []) {
         files = {}
         api_dir = os.path.join(base_path, "src", "api")
 
-        files["graphqlClient.js"] = f'''// -------------------------------------------------------------
+        files[
+            "graphqlClient.js"
+        ] = f"""// -------------------------------------------------------------
 // React GraphQL Client (Apollo)
 // -------------------------------------------------------------
 import {{ ApolloClient, InMemoryCache, createHttpLink }} from '@apollo/client';
@@ -626,9 +648,11 @@ export const client = new ApolloClient({{
   link: authLink.concat(httpLink),
   cache: new InMemoryCache()
 }});
-'''
+"""
 
-        files["queries.js"] = '''// -------------------------------------------------------------
+        files[
+            "queries.js"
+        ] = """// -------------------------------------------------------------
 // GraphQL Queries & Mutations
 // -------------------------------------------------------------
 import { gql } from '@apollo/client';
@@ -662,22 +686,24 @@ export const CREATE_USER = gql`
     }
   }
 `;
-'''
+"""
 
-        files["package.json"] = '''{
+        files[
+            "package.json"
+        ] = """{
   "dependencies": {
     "@apollo/client": "^3.8.0",
     "graphql": "^16.8.0"
   }
 }
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -687,7 +713,7 @@ export const CREATE_USER = gql`
             "protocol": "graphql",
             "files": created_files,
             "methods": ["Query", "Mutation"],
-            "features": ["Apollo Client", "Cache", "Auth Link"]
+            "features": ["Apollo Client", "Cache", "Auth Link"],
         }
 
     def _generate_react_websocket(self, base_path: str, base_url: str) -> Dict[str, Any]:
@@ -697,7 +723,9 @@ export const CREATE_USER = gql`
 
         ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://")
 
-        files["websocketClient.js"] = f'''// -------------------------------------------------------------
+        files[
+            "websocketClient.js"
+        ] = f"""// -------------------------------------------------------------
 // React WebSocket Client
 // -------------------------------------------------------------
 
@@ -757,9 +785,11 @@ class WebSocketClient {{
 }}
 
 export const wsClient = new WebSocketClient();
-'''
+"""
 
-        files["useWebSocket.js"] = '''// -------------------------------------------------------------
+        files[
+            "useWebSocket.js"
+        ] = """// -------------------------------------------------------------
 // React WebSocket Hook
 // -------------------------------------------------------------
 import { useEffect, useState } from 'react';
@@ -787,14 +817,14 @@ export function useWebSocket() {
     send: wsClient.send.bind(wsClient)
   };
 }
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -804,7 +834,7 @@ export function useWebSocket() {
             "protocol": "websocket",
             "files": created_files,
             "methods": ["Connect", "Send", "On", "Disconnect"],
-            "features": ["Event Listeners", "React Hook", "Auto-reconnect"]
+            "features": ["Event Listeners", "React Hook", "Auto-reconnect"],
         }
 
     # ==================== NEXT.JS ====================
@@ -828,7 +858,9 @@ export function useWebSocket() {
         files = {}
         api_dir = os.path.join(base_path, "src", "api")
 
-        files["client.js"] = f'''// -------------------------------------------------------------
+        files[
+            "client.js"
+        ] = f"""// -------------------------------------------------------------
 // Vue 3 REST API Client
 // -------------------------------------------------------------
 import axios from 'axios';
@@ -848,9 +880,11 @@ client.interceptors.request.use(config => {{
 }});
 
 export default client;
-'''
+"""
 
-        files["apiService.js"] = '''// -------------------------------------------------------------
+        files[
+            "apiService.js"
+        ] = """// -------------------------------------------------------------
 // Vue API Service
 // -------------------------------------------------------------
 import client from './client';
@@ -861,21 +895,23 @@ export const api = {
   put: (path, data) => client.put(path, data).then(res => res.data),
   delete: (path) => client.delete(path).then(res => res.data)
 };
-'''
+"""
 
-        files["package.json"] = '''{
+        files[
+            "package.json"
+        ] = """{
   "dependencies": {
     "axios": "^1.6.0"
   }
 }
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -885,7 +921,7 @@ export const api = {
             "protocol": "rest",
             "files": created_files,
             "methods": ["GET", "POST", "PUT", "DELETE"],
-            "features": ["Axios", "Interceptors", "Auth Token"]
+            "features": ["Axios", "Interceptors", "Auth Token"],
         }
 
     def _generate_vue_graphql(self, base_path: str, base_url: str, auth_type: str) -> Dict[str, Any]:
@@ -903,7 +939,9 @@ export const api = {
         files = {}
         api_dir = os.path.join(base_path, "api")
 
-        files["client.js"] = f'''// -------------------------------------------------------------
+        files[
+            "client.js"
+        ] = f"""// -------------------------------------------------------------
 // Node.js REST API Client
 // -------------------------------------------------------------
 const axios = require('axios');
@@ -931,21 +969,23 @@ module.exports = {{
   setAuthToken: (token) => {{ authToken = token; }},
   clearAuthToken: () => {{ authToken = null; }}
 }};
-'''
+"""
 
-        files["package.json"] = '''{
+        files[
+            "package.json"
+        ] = """{
   "dependencies": {
     "axios": "^1.6.0"
   }
 }
-'''
+"""
 
         os.makedirs(api_dir, exist_ok=True)
-        
+
         created_files = []
         for filename, content in files.items():
             filepath = os.path.join(api_dir, filename)
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
             created_files.append(filepath)
 
@@ -955,7 +995,7 @@ module.exports = {{
             "protocol": "rest",
             "files": created_files,
             "methods": ["GET", "POST", "PUT", "DELETE"],
-            "features": ["Axios", "Interceptors", "Auth Token"]
+            "features": ["Axios", "Interceptors", "Auth Token"],
         }
 
     def _generate_nodejs_graphql(self, base_path: str, base_url: str, auth_type: str) -> Dict[str, Any]:
@@ -964,7 +1004,10 @@ module.exports = {{
 
     def _generate_nodejs_websocket(self, base_path: str, base_url: str) -> Dict[str, Any]:
         """Node.js WebSocket Client"""
-        return {"success": False, "error": "Node.js WebSocket kommt in nächster Version"}
+        return {
+            "success": False,
+            "error": "Node.js WebSocket kommt in nächster Version",
+        }
 
 
 api_connector_generator = APIConnectorGenerator()

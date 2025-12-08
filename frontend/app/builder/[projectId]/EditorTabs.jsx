@@ -15,8 +15,9 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import MonacoEditor from "@monaco-editor/react";
+import { useEffect, useRef, useState } from "react";
+import { updatePreviewDebounced } from "./utils/editor-bridge";
 
 export default function EditorTabs({ projectId }) {
     const [openFiles, setOpenFiles] = useState([]);
@@ -35,7 +36,7 @@ export default function EditorTabs({ projectId }) {
         };
 
         window.addEventListener('fileSelected', handleFileSelected);
-        
+
         return () => {
             window.removeEventListener('fileSelected', handleFileSelected);
         };
@@ -47,7 +48,7 @@ export default function EditorTabs({ projectId }) {
             if (!openFiles.includes(file)) {
                 setOpenFiles([...openFiles, file]);
             }
-            
+
             setActiveFile(file);
 
             const res = await fetch("http://localhost:8000/api/files/read", {
@@ -80,10 +81,10 @@ export default function EditorTabs({ projectId }) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ 
-                    projectId, 
-                    file: activeFile, 
-                    content 
+                body: JSON.stringify({
+                    projectId,
+                    file: activeFile,
+                    content
                 })
             });
 
@@ -101,11 +102,11 @@ export default function EditorTabs({ projectId }) {
 
     function closeFile(file) {
         setOpenFiles(openFiles.filter(f => f !== file));
-        
+
         if (activeFile === file) {
             const index = openFiles.indexOf(file);
             const nextFile = openFiles[index + 1] || openFiles[index - 1];
-            
+
             if (nextFile) {
                 openFile(nextFile);
             } else {
@@ -117,7 +118,7 @@ export default function EditorTabs({ projectId }) {
 
     function handleEditorDidMount(editor) {
         editorRef.current = editor;
-        
+
         // Auto-save on Cmd/Ctrl + S
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
             saveFile();
@@ -127,13 +128,19 @@ export default function EditorTabs({ projectId }) {
     function handleContentChange(value) {
         setContent(value);
         setHasChanges(true);
+
+        // ⭐ Live Preview Update - Sendet Code zum Preview iframe
+        if (activeFile && value) {
+            const language = getLanguage(activeFile);
+            updatePreviewDebounced(value, language);
+        }
     }
 
     function getLanguage(filename) {
         if (!filename) return "javascript";
-        
+
         const ext = filename.split('.').pop().toLowerCase();
-        
+
         const languageMap = {
             'js': 'javascript',
             'jsx': 'javascript',
@@ -148,7 +155,7 @@ export default function EditorTabs({ projectId }) {
             'yaml': 'yaml',
             'yml': 'yaml'
         };
-        
+
         return languageMap[ext] || 'plaintext';
     }
 
@@ -232,7 +239,7 @@ export default function EditorTabs({ projectId }) {
 
             if (data.success) {
                 setDetectedIssues(data.issues || []);
-                
+
                 if (data.has_errors) {
                     alert(`⚠️ Found ${data.issues.length} issues!\nCheck the issues panel.`);
                 } else {
@@ -332,13 +339,13 @@ export default function EditorTabs({ projectId }) {
             <div className="editor-header">
                 <div className="editor-tabs">
                     {openFiles.map(file => (
-                        <div 
+                        <div
                             key={file}
                             className={`editor-tab ${activeFile === file ? 'active' : ''}`}
                             onClick={() => openFile(file)}
                         >
                             {file.split('/').pop()}
-                            <span 
+                            <span
                                 style={{ marginLeft: 8, cursor: 'pointer' }}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -350,10 +357,10 @@ export default function EditorTabs({ projectId }) {
                         </div>
                     ))}
                 </div>
-                
+
                 <div className="editor-actions">
                     {/* ⭐ BLOCK 18: Auto-Fix Buttons */}
-                    <button 
+                    <button
                         className="btn btn-warning"
                         onClick={autoFixFile}
                         disabled={!activeFile || isAutoFixing}
@@ -361,8 +368,8 @@ export default function EditorTabs({ projectId }) {
                     >
                         {isAutoFixing ? '⏳ Fixing...' : '🔧 Auto-Fix'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         className="btn btn-info"
                         onClick={detectIssues}
                         disabled={!activeFile}
@@ -370,8 +377,8 @@ export default function EditorTabs({ projectId }) {
                     >
                         🔍 Detect Issues
                     </button>
-                    
-                    <button 
+
+                    <button
                         className="btn btn-secondary"
                         onClick={optimizeImports}
                         disabled={!activeFile}
@@ -379,8 +386,8 @@ export default function EditorTabs({ projectId }) {
                     >
                         📦 Optimize Imports
                     </button>
-                    
-                    <button 
+
+                    <button
                         className="btn btn-primary"
                         onClick={saveFile}
                         disabled={!hasChanges}
@@ -406,7 +413,7 @@ export default function EditorTabs({ projectId }) {
                                 ⚠️ Detected Issues ({detectedIssues.length})
                             </h4>
                             {detectedIssues.map((issue, i) => (
-                                <div 
+                                <div
                                     key={i}
                                     style={{
                                         padding: '6px 8px',
@@ -449,9 +456,9 @@ export default function EditorTabs({ projectId }) {
                     />
                 </>
             ) : (
-                <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     height: '100%',
                     color: '#666',

@@ -18,10 +18,12 @@ Integration:
 - Results flow between agents
 """
 
-from fastapi import APIRouter, Request, HTTPException
 from typing import Dict, Optional
-from agents.orchestrator import orchestrator, PipelineType
-from agents.multi_agent import AgentType, TaskStatus
+
+from fastapi import APIRouter, HTTPException, Request
+
+from agents.multi_agent import AgentType, TaskStatus, agent_registry
+from agents.orchestrator import PipelineType, orchestrator
 
 router = APIRouter(prefix="/agents", tags=["Multi-Agent System"])
 
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/agents", tags=["Multi-Agent System"])
 async def execute_task(request: Request) -> Dict:
     """
     Execute single agent task.
-    
+
     Request Body:
     {
         "task_type": "create_ui",
@@ -42,9 +44,9 @@ async def execute_task(request: Request) -> Dict:
             "framework": "flutter",
             "style": "material"
         },
-        "agent_type": "ui_agent"  // optional, auto-detect if not provided
+        "agent_type": "ui_agent"  # optional, auto-detect if not provided
     }
-    
+
     Response:
     {
         "success": true,
@@ -56,30 +58,26 @@ async def execute_task(request: Request) -> Dict:
     """
     try:
         body = await request.json()
-        
+
         task_type = body.get("task_type")
         params = body.get("params", {})
         agent_type = body.get("agent_type")
-        
+
         if not task_type:
             raise HTTPException(status_code=400, detail="Missing 'task_type'")
-        
+
         # Convert agent_type string to enum
         if agent_type:
             try:
                 agent_type = AgentType(agent_type)
             except ValueError:
                 raise HTTPException(status_code=400, detail=f"Invalid agent_type: {agent_type}")
-        
+
         # Execute
-        result = await orchestrator.execute_task(
-            task_type=task_type,
-            params=params,
-            agent_type=agent_type
-        )
-        
+        result = await orchestrator.execute_task(task_type=task_type, params=params, agent_type=agent_type)
+
         return result
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -93,7 +91,7 @@ async def execute_task(request: Request) -> Dict:
 async def execute_pipeline(request: Request) -> Dict:
     """
     Execute predefined pipeline.
-    
+
     Request Body:
     {
         "pipeline_type": "preview_screen",
@@ -104,14 +102,14 @@ async def execute_pipeline(request: Request) -> Dict:
             "project_path": "/path/to/project"
         }
     }
-    
+
     Pipeline Types:
     - create_ui: UI Agent only
     - generate_screen: UI → Code
     - preview_screen: UI → Code → Preview
     - build_app: UI → Code → Preview → Build
     - full_cycle: UI → Code → Preview → Build → Deploy
-    
+
     Response:
     {
         "success": true,
@@ -142,13 +140,13 @@ async def execute_pipeline(request: Request) -> Dict:
     """
     try:
         body = await request.json()
-        
+
         pipeline_type = body.get("pipeline_type")
         params = body.get("params", {})
-        
+
         if not pipeline_type:
             raise HTTPException(status_code=400, detail="Missing 'pipeline_type'")
-        
+
         # Convert to enum
         try:
             pipeline_type = PipelineType(pipeline_type)
@@ -156,17 +154,14 @@ async def execute_pipeline(request: Request) -> Dict:
             valid_types = [pt.value for pt in PipelineType]
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid pipeline_type. Valid types: {valid_types}"
+                detail=f"Invalid pipeline_type. Valid types: {valid_types}",
             )
-        
+
         # Execute pipeline
-        result = await orchestrator.execute_pipeline(
-            pipeline_type=pipeline_type,
-            params=params
-        )
-        
+        result = await orchestrator.execute_pipeline(pipeline_type=pipeline_type, params=params)
+
         return result
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -180,7 +175,7 @@ async def execute_pipeline(request: Request) -> Dict:
 async def route_prompt(request: Request) -> Dict:
     """
     Smart routing from natural language prompt.
-    
+
     Request Body:
     {
         "prompt": "Create a login screen with email and password, then preview it in Flutter",
@@ -190,13 +185,13 @@ async def route_prompt(request: Request) -> Dict:
             "project_path": "/path/to/project"
         }
     }
-    
+
     Examples:
     - "Create login screen" → CREATE_UI pipeline
     - "Generate React code for profile page" → GENERATE_SCREEN pipeline
     - "Build Flutter app and preview" → PREVIEW_SCREEN pipeline
     - "Build APK for e-commerce app" → BUILD_APP pipeline
-    
+
     Response:
     {
         "success": true,
@@ -208,21 +203,18 @@ async def route_prompt(request: Request) -> Dict:
     """
     try:
         body = await request.json()
-        
+
         prompt = body.get("prompt")
         context = body.get("context", {})
-        
+
         if not prompt:
             raise HTTPException(status_code=400, detail="Missing 'prompt'")
-        
+
         # Route and execute
-        result = await orchestrator.route_prompt(
-            prompt=prompt,
-            context=context
-        )
-        
+        result = await orchestrator.route_prompt(prompt=prompt, context=context)
+
         return result
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -236,7 +228,7 @@ async def route_prompt(request: Request) -> Dict:
 async def get_task_status(task_id: str) -> Dict:
     """
     Get task status.
-    
+
     Response:
     {
         "task_id": "abc-123",
@@ -249,10 +241,10 @@ async def get_task_status(task_id: str) -> Dict:
     }
     """
     task = orchestrator.get_task_status(task_id)
-    
+
     if not task:
         raise HTTPException(status_code=404, detail=f"Task not found: {task_id}")
-    
+
     return task
 
 
@@ -260,10 +252,10 @@ async def get_task_status(task_id: str) -> Dict:
 async def list_tasks(status: Optional[str] = None) -> Dict:
     """
     List all tasks (optionally filtered by status).
-    
+
     Query Params:
     - status: pending | in_progress | completed | failed
-    
+
     Response:
     {
         "tasks": [
@@ -287,15 +279,12 @@ async def list_tasks(status: Optional[str] = None) -> Dict:
             valid_statuses = [s.value for s in TaskStatus]
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid status. Valid statuses: {valid_statuses}"
+                detail=f"Invalid status. Valid statuses: {valid_statuses}",
             )
-    
+
     tasks = orchestrator.list_tasks(status=task_status)
-    
-    return {
-        "tasks": tasks,
-        "count": len(tasks)
-    }
+
+    return {"tasks": tasks, "count": len(tasks)}
 
 
 # -------------------------------------------------------------
@@ -305,7 +294,7 @@ async def list_tasks(status: Optional[str] = None) -> Dict:
 async def get_examples() -> Dict:
     """
     Get example requests for different use cases.
-    
+
     Response:
     {
         "examples": [
@@ -329,9 +318,9 @@ async def get_examples() -> Dict:
                     "params": {
                         "prompt": "Login screen with email and password",
                         "framework": "flutter",
-                        "style": "material"
-                    }
-                }
+                        "style": "material",
+                    },
+                },
             },
             {
                 "name": "Generate Flutter code",
@@ -339,14 +328,9 @@ async def get_examples() -> Dict:
                 "method": "POST",
                 "body": {
                     "task_type": "generate_flutter",
-                    "params": {
-                        "screen": {
-                            "name": "LoginScreen",
-                            "components": []
-                        }
-                    },
-                    "agent_type": "code_agent"
-                }
+                    "params": {"screen": {"name": "LoginScreen", "components": []}},
+                    "agent_type": "code_agent",
+                },
             },
             {
                 "name": "Preview screen pipeline",
@@ -357,9 +341,9 @@ async def get_examples() -> Dict:
                     "params": {
                         "prompt": "Profile page with avatar and bio",
                         "framework": "react",
-                        "project_path": "/path/to/project"
-                    }
-                }
+                        "project_path": "/path/to/project",
+                    },
+                },
             },
             {
                 "name": "Smart prompt routing",
@@ -367,11 +351,9 @@ async def get_examples() -> Dict:
                 "method": "POST",
                 "body": {
                     "prompt": "Create a Flutter login screen and preview it",
-                    "context": {
-                        "project_path": "/path/to/project"
-                    }
-                }
-            }
+                    "context": {"project_path": "/path/to/project"},
+                },
+            },
         ]
     }
 
@@ -383,7 +365,7 @@ async def get_examples() -> Dict:
 async def agents_health_check() -> Dict:
     """
     Health check for multi-agent system.
-    
+
     Response:
     {
         "status": "healthy",
@@ -396,8 +378,6 @@ async def agents_health_check() -> Dict:
         "active_tasks": 3
     }
     """
-    from agents.multi_agent import agent_registry
-    
     # Check agent availability
     agents_status = {}
     for agent_type in AgentType:
@@ -405,14 +385,14 @@ async def agents_health_check() -> Dict:
             continue
         agent = agent_registry.get_agent(agent_type)
         agents_status[agent_type.value] = "available" if agent else "unavailable"
-    
+
     # Count tasks
     all_tasks = orchestrator.list_tasks()
     active_tasks = orchestrator.list_tasks(status=TaskStatus.IN_PROGRESS)
-    
+
     return {
         "status": "healthy",
         "agents": agents_status,
         "total_tasks": len(all_tasks),
-        "active_tasks": len(active_tasks)
+        "active_tasks": len(active_tasks),
     }

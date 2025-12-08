@@ -20,10 +20,10 @@ Features:
 - REST API endpoints
 """
 
-from ai.code_generator.flutter_generator import flutter_generator
-from ai.code_generator.react_generator import react_generator
-from ai.code_generator.code_formatter import formatter
-from ai.code_generator.shared_templates import templates
+from .code_formatter import formatter
+from .flutter_generator import flutter_generator
+from .react_generator import react_generator
+from .shared_templates import templates
 
 __all__ = [
     "flutter_generator",

@@ -11,10 +11,11 @@ Capabilities:
 - Design patterns
 """
 
-from typing import Dict, Optional
-from openai import OpenAI
 import json
 import os
+from typing import Dict, Optional
+
+from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -22,11 +23,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 class UIAgent:
     """Agent for UI generation."""
 
-    async def create_ui(
-        self,
-        prompt: str,
-        context: Optional[Dict] = None
-    ) -> Dict:
+    async def create_ui(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """
         Generate UI structure from prompt.
 
@@ -81,23 +78,18 @@ Context:
 """
 
         try:
-            response = client.chat.completions.create(
+            response = client.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": user_prompt},
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.7
+                temperature=0.7,
             )
 
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response.choices[0].message['content'])
 
-            return {
-                "success": True,
-                "screen": result,
-                "framework": framework
-            }
+            return {"success": True, "screen": result, "framework": framework}
 
         except Exception as e:
             # Fallback: Simple structure
@@ -106,12 +98,10 @@ Context:
                 "screen": {
                     "name": "GeneratedScreen",
                     "title": "Screen",
-                    "components": [
-                        {"type": "text", "value": prompt}
-                    ]
+                    "components": [{"type": "text", "value": prompt}],
                 },
                 "framework": framework,
-                "note": f"Fallback mode: {str(e)}"
+                "note": f"Fallback mode: {str(e)}",
             }
 
     async def suggest_improvements(self, screen: Dict) -> Dict:
@@ -125,19 +115,18 @@ Analyze the UI structure and suggest improvements for:
 """
 
         try:
-            response = client.chat.completions.create(
+            response = client.ChatCompletion.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {
                         "role": "user",
-                        "content": f"Improve this UI: {json.dumps(screen)}"
-                    }
+                        "content": f"Improve this UI: {json.dumps(screen)}",
+                    },
                 ],
-                response_format={"type": "json_object"}
             )
 
-            return json.loads(response.choices[0].message.content)
+            return json.loads(response.choices[0].message['content'])
 
         except Exception as e:
             return {"error": str(e)}

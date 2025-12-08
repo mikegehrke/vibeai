@@ -18,12 +18,7 @@ from typing import Dict, Optional
 class BuildAgent:
     """Agent for build management."""
 
-    async def start_build(
-        self,
-        user_id: str,
-        project_id: str,
-        prompt: str
-    ) -> Dict:
+    async def start_build(self, user_id: str, project_id: str, prompt: str) -> Dict:
         """
         Start build process.
 
@@ -57,7 +52,7 @@ class BuildAgent:
         if not project_path:
             return {
                 "success": False,
-                "error": "No project path configured. Create project first."
+                "error": "No project path configured. Create project first.",
             }
 
         # Detect build type from prompt
@@ -71,7 +66,7 @@ class BuildAgent:
                 "project_path": project_path,
                 "framework": framework,
                 "build_type": build_type,
-                "build_mode": "release"
+                "build_mode": "release",
             }
 
             # Start build via build system
@@ -85,8 +80,8 @@ class BuildAgent:
                     {
                         "build_id": result.get("build_id"),
                         "last_build_type": build_type,
-                        "last_build_status": result.get("status")
-                    }
+                        "last_build_status": result.get("status"),
+                    },
                 )
 
             return {
@@ -95,7 +90,7 @@ class BuildAgent:
                 "status": result.get("status", "started"),
                 "build_type": build_type,
                 "framework": framework,
-                "project_path": project_path
+                "project_path": project_path,
             }
 
         except Exception as e:
@@ -103,7 +98,7 @@ class BuildAgent:
                 "success": False,
                 "error": str(e),
                 "build_type": build_type,
-                "framework": framework
+                "framework": framework,
             }
 
     def _detect_build_type(self, prompt: str, framework: str) -> str:
@@ -127,10 +122,7 @@ class BuildAgent:
             return "web"
 
         # Desktop build
-        if any(word in p for word in [
-            "desktop", "windows", "mac", "linux",
-            "app", "application"
-        ]):
+        if any(word in p for word in ["desktop", "windows", "mac", "linux", "app", "application"]):
             return "desktop"
 
         # Default based on framework
@@ -159,7 +151,7 @@ class BuildAgent:
             "project_path": project_path,
             "build_mode": "release",
             "user_id": config.get("user_id"),
-            "project_id": config.get("project_id")
+            "project_id": config.get("project_id"),
         }
 
         try:
@@ -167,13 +159,10 @@ class BuildAgent:
             return {
                 "success": True,
                 "build_id": result.get("build_id"),
-                "status": result.get("status", "started")
+                "status": result.get("status", "started"),
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"Build failed: {str(e)}"
-            }
+            return {"success": False, "error": f"Build failed: {str(e)}"}
 
     def _map_build_type(self, framework: str, build_type: str) -> str:
         """Map build type to build system format."""
@@ -181,18 +170,14 @@ class BuildAgent:
             "flutter": {
                 "apk": "flutter_apk",
                 "web": "flutter_web",
-                "desktop": "flutter_desktop"
+                "desktop": "flutter_desktop",
             },
             "react": {
                 "web": "react_web",
                 "apk": "react_web",  # Fallback to web
-                "desktop": "react_web"
+                "desktop": "react_web",
             },
-            "vue": {
-                "web": "vue_web",
-                "apk": "vue_web",
-                "desktop": "vue_web"
-            }
+            "vue": {"web": "vue_web", "apk": "vue_web", "desktop": "vue_web"},
         }
 
         framework_mapping = mapping.get(framework, mapping["flutter"])
@@ -208,7 +193,7 @@ class BuildAgent:
             "success": True,
             "build_id": build_id,
             "status": "simulated",
-            "note": "Build system not available, simulated build"
+            "note": "Build system not available, simulated build",
         }
 
     async def get_build_status(self, build_id: str) -> Dict:
@@ -227,26 +212,20 @@ class BuildAgent:
         try:
             from buildsystem.build_manager import build_manager
 
-            status = build_manager.get_build_status(build_id)
+            status = await build_manager.get_build_status(build_id)
 
             return {
                 "success": True,
                 "build_id": build_id,
                 "status": status.get("status", "unknown"),
                 "progress": status.get("progress", 0),
-                "logs": status.get("logs", [])
+                "logs": status.get("logs", []),
             }
 
         except ImportError:
-            return {
-                "success": False,
-                "error": "Build system not available"
-            }
+            return {"success": False, "error": "Build system not available"}
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def cancel_build(self, build_id: str) -> Dict:
         """Cancel running build."""
@@ -255,17 +234,10 @@ class BuildAgent:
 
             await build_manager.cancel_build(build_id)
 
-            return {
-                "success": True,
-                "build_id": build_id,
-                "message": "Build cancelled"
-            }
+            return {"success": True, "build_id": build_id, "message": "Build cancelled"}
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def get_build_artifact(self, build_id: str) -> Optional[str]:
         """

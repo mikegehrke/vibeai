@@ -2,7 +2,8 @@
 # VIBEAI – DEPLOYMENT GENERATOR
 # -------------------------------------------------------------
 import os
-from typing import Dict, Any, Optional, List
+import json
+from typing import Any, Dict, Optional
 
 
 class DeployGenerator:
@@ -17,7 +18,7 @@ class DeployGenerator:
         self.supported_platforms = {
             "web": ["vercel", "netlify", "cloudflare"],
             "backend": ["railway", "render", "flyio", "docker"],
-            "mobile": ["github_actions", "fastlane"]
+            "mobile": ["github_actions", "fastlane"],
         }
 
     def generate_deployment(
@@ -25,22 +26,22 @@ class DeployGenerator:
         platform: str,
         project_type: str,
         base_path: str,
-        options: Optional[Dict[str, Any]] = None
+        options: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Generiert Deployment-Konfiguration für spezifische Plattform
-        
+
         Args:
             platform: vercel, netlify, railway, render, docker, etc.
             project_type: web, backend, mobile
             base_path: Projekt-Pfad
             options: Zusätzliche Optionen
-        
+
         Returns:
             Dict mit success, files, platform, features
         """
         options = options or {}
-        
+
         # Web Deployments
         if platform == "vercel":
             return self._generate_vercel(base_path, options)
@@ -48,7 +49,7 @@ class DeployGenerator:
             return self._generate_netlify(base_path, options)
         elif platform == "cloudflare":
             return self._generate_cloudflare(base_path, options)
-        
+
         # Backend Deployments
         elif platform == "railway":
             return self._generate_railway(base_path, options)
@@ -58,50 +59,40 @@ class DeployGenerator:
             return self._generate_flyio(base_path, options)
         elif platform == "docker":
             return self._generate_docker(base_path, options)
-        
+
         # Mobile Deployments
         elif platform == "github_actions":
             return self._generate_github_actions(base_path, options)
         elif platform == "fastlane":
             return self._generate_fastlane(base_path, options)
-        
-        return {
-            "success": False,
-            "error": f"Plattform '{platform}' nicht unterstützt"
-        }
+
+        return {"success": False, "error": f"Plattform '{platform}' nicht unterstützt"}
 
     # ===== WEB DEPLOYMENTS =====
 
-    def _generate_vercel(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_vercel(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Vercel-Konfiguration für Next.js"""
         files = []
-        
+
         # vercel.json
         vercel_config = {
             "version": 2,
-            "builds": [
-                {"src": "package.json", "use": "@vercel/next"}
-            ],
+            "builds": [{"src": "package.json", "use": "@vercel/next"}],
             "routes": [
                 {"src": "/api/(.*)", "dest": "/api/$1"},
-                {"src": "/(.*)", "dest": "/$1"}
-            ]
+                {"src": "/(.*)", "dest": "/$1"},
+            ],
         }
-        
+
         if options.get("env_vars"):
             vercel_config["env"] = options["env_vars"]
-        
+
         vercel_path = f"{base_path}/vercel.json"
         os.makedirs(os.path.dirname(vercel_path), exist_ok=True)
-        with open(vercel_path, "w") as f:
-            import json
+        with open(vercel_path, "w", encoding="utf-8") as f:
             json.dump(vercel_config, f, indent=2)
         files.append(vercel_path)
-        
+
         # .vercelignore
         vercelignore_content = """node_modules
 .next
@@ -110,10 +101,10 @@ class DeployGenerator:
 *.log
 """
         vercelignore_path = f"{base_path}/.vercelignore"
-        with open(vercelignore_path, "w") as f:
+        with open(vercelignore_path, "w", encoding="utf-8") as f:
             f.write(vercelignore_content)
         files.append(vercelignore_path)
-        
+
         # Deploy script
         deploy_script = """#!/bin/bash
 # Vercel Deployment Script
@@ -130,11 +121,11 @@ vercel --prod
 echo "✅ Deployment complete!"
 """
         deploy_path = f"{base_path}/deploy-vercel.sh"
-        with open(deploy_path, "w") as f:
+        with open(deploy_path, "w", encoding="utf-8") as f:
             f.write(deploy_script)
         os.chmod(deploy_path, 0o755)
         files.append(deploy_path)
-        
+
         return {
             "success": True,
             "platform": "vercel",
@@ -144,19 +135,15 @@ echo "✅ Deployment complete!"
                 "Edge Functions",
                 "Auto SSL",
                 "Global CDN",
-                "Preview Deployments"
+                "Preview Deployments",
             ],
-            "deploy_command": "vercel --prod"
+            "deploy_command": "vercel --prod",
         }
 
-    def _generate_netlify(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_netlify(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Netlify-Konfiguration"""
         files = []
-        
+
         # netlify.toml
         netlify_config = """[build]
   command = "npm run build"
@@ -177,10 +164,10 @@ echo "✅ Deployment complete!"
 """
         netlify_path = f"{base_path}/netlify.toml"
         os.makedirs(os.path.dirname(netlify_path), exist_ok=True)
-        with open(netlify_path, "w") as f:
+        with open(netlify_path, "w", encoding="utf-8") as f:
             f.write(netlify_config)
         files.append(netlify_path)
-        
+
         # _headers for security
         headers_content = """/*
   X-Frame-Options: DENY
@@ -190,10 +177,10 @@ echo "✅ Deployment complete!"
 """
         headers_path = f"{base_path}/public/_headers"
         os.makedirs(os.path.dirname(headers_path), exist_ok=True)
-        with open(headers_path, "w") as f:
+        with open(headers_path, "w", encoding="utf-8") as f:
             f.write(headers_content)
         files.append(headers_path)
-        
+
         return {
             "success": True,
             "platform": "netlify",
@@ -202,19 +189,15 @@ echo "✅ Deployment complete!"
                 "Continuous Deployment",
                 "Serverless Functions",
                 "Form Handling",
-                "Split Testing"
+                "Split Testing",
             ],
-            "deploy_command": "netlify deploy --prod"
+            "deploy_command": "netlify deploy --prod",
         }
 
-    def _generate_cloudflare(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_cloudflare(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Cloudflare Pages Konfiguration"""
         files = []
-        
+
         # wrangler.toml
         wrangler_config = """name = "vibeai-app"
 type = "webpack"
@@ -229,10 +212,10 @@ format = "service-worker"
 """
         wrangler_path = f"{base_path}/wrangler.toml"
         os.makedirs(os.path.dirname(wrangler_path), exist_ok=True)
-        with open(wrangler_path, "w") as f:
+        with open(wrangler_path, "w", encoding="utf-8") as f:
             f.write(wrangler_config)
         files.append(wrangler_path)
-        
+
         return {
             "success": True,
             "platform": "cloudflare",
@@ -241,22 +224,18 @@ format = "service-worker"
                 "Edge Computing",
                 "Workers",
                 "DDoS Protection",
-                "Global Network"
+                "Global Network",
             ],
-            "deploy_command": "wrangler publish"
+            "deploy_command": "wrangler publish",
         }
 
     # ===== BACKEND DEPLOYMENTS =====
 
-    def _generate_docker(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_docker(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Docker-Konfiguration"""
         files = []
         framework = options.get("framework", "fastapi")
-        
+
         # Dockerfile
         if framework == "fastapi":
             dockerfile_content = """FROM python:3.11-slim
@@ -311,13 +290,13 @@ COPY . .
 EXPOSE 8000
 CMD ["python", "main.py"]
 """
-        
+
         dockerfile_path = f"{base_path}/Dockerfile"
         os.makedirs(os.path.dirname(dockerfile_path), exist_ok=True)
-        with open(dockerfile_path, "w") as f:
+        with open(dockerfile_path, "w", encoding="utf-8") as f:
             f.write(dockerfile_content)
         files.append(dockerfile_path)
-        
+
         # .dockerignore
         dockerignore_content = """__pycache__
 *.pyc
@@ -335,10 +314,10 @@ node_modules
 npm-debug.log
 """
         dockerignore_path = f"{base_path}/.dockerignore"
-        with open(dockerignore_path, "w") as f:
+        with open(dockerignore_path, "w", encoding="utf-8") as f:
             f.write(dockerignore_content)
         files.append(dockerignore_path)
-        
+
         # docker-compose.yml
         compose_content = """version: '3.8'
 
@@ -351,7 +330,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
     restart: unless-stopped
-    
+
   db:
     image: postgres:15-alpine
     environment:
@@ -367,10 +346,10 @@ volumes:
   postgres_data:
 """
         compose_path = f"{base_path}/docker-compose.yml"
-        with open(compose_path, "w") as f:
+        with open(compose_path, "w", encoding="utf-8") as f:
             f.write(compose_content)
         files.append(compose_path)
-        
+
         return {
             "success": True,
             "platform": "docker",
@@ -379,44 +358,37 @@ volumes:
                 "Containerization",
                 "Health Checks",
                 "Multi-stage Build",
-                "Docker Compose"
+                "Docker Compose",
             ],
-            "deploy_command": "docker-compose up -d"
+            "deploy_command": "docker-compose up -d",
         }
 
-    def _generate_railway(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_railway(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Railway-Konfiguration"""
         files = []
-        
+
         # railway.json
         railway_config = {
-            "build": {
-                "builder": "NIXPACKS"
-            },
+            "build": {"builder": "NIXPACKS"},
             "deploy": {
                 "restartPolicyType": "ON_FAILURE",
-                "restartPolicyMaxRetries": 10
-            }
+                "restartPolicyMaxRetries": 10,
+            },
         }
-        
+
         railway_path = f"{base_path}/railway.json"
         os.makedirs(os.path.dirname(railway_path), exist_ok=True)
-        with open(railway_path, "w") as f:
-            import json
+        with open(railway_path, "w", encoding="utf-8") as f:
             json.dump(railway_config, f, indent=2)
         files.append(railway_path)
-        
+
         # Procfile
         procfile_content = "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n"
         procfile_path = f"{base_path}/Procfile"
-        with open(procfile_path, "w") as f:
+        with open(procfile_path, "w", encoding="utf-8") as f:
             f.write(procfile_content)
         files.append(procfile_path)
-        
+
         return {
             "success": True,
             "platform": "railway",
@@ -425,19 +397,15 @@ volumes:
                 "Instant Deploy",
                 "Auto Scaling",
                 "Database Support",
-                "Monitoring"
+                "Monitoring",
             ],
-            "deploy_command": "railway up"
+            "deploy_command": "railway up",
         }
 
-    def _generate_render(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_render(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Render-Konfiguration"""
         files = []
-        
+
         # render.yaml
         render_config = """services:
   - type: web
@@ -452,7 +420,7 @@ volumes:
         fromDatabase:
           name: vibeai-db
           property: connectionString
-    
+
 databases:
   - name: vibeai-db
     databaseName: vibeai
@@ -460,10 +428,10 @@ databases:
 """
         render_path = f"{base_path}/render.yaml"
         os.makedirs(os.path.dirname(render_path), exist_ok=True)
-        with open(render_path, "w") as f:
+        with open(render_path, "w", encoding="utf-8") as f:
             f.write(render_config)
         files.append(render_path)
-        
+
         return {
             "success": True,
             "platform": "render",
@@ -472,19 +440,15 @@ databases:
                 "Free SSL",
                 "Auto Deploy",
                 "Database Included",
-                "DDoS Protection"
+                "DDoS Protection",
             ],
-            "deploy_command": "render deploy"
+            "deploy_command": "render deploy",
         }
 
-    def _generate_flyio(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_flyio(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Fly.io Konfiguration"""
         files = []
-        
+
         # fly.toml
         fly_config = """app = "vibeai-api"
 primary_region = "ams"
@@ -520,10 +484,10 @@ primary_region = "ams"
 """
         fly_path = f"{base_path}/fly.toml"
         os.makedirs(os.path.dirname(fly_path), exist_ok=True)
-        with open(fly_path, "w") as f:
+        with open(fly_path, "w", encoding="utf-8") as f:
             f.write(fly_config)
         files.append(fly_path)
-        
+
         return {
             "success": True,
             "platform": "flyio",
@@ -532,21 +496,17 @@ primary_region = "ams"
                 "Edge Locations",
                 "Auto Scaling",
                 "Fast Boot",
-                "Global Network"
+                "Global Network",
             ],
-            "deploy_command": "fly deploy"
+            "deploy_command": "fly deploy",
         }
 
     # ===== MOBILE DEPLOYMENTS =====
 
-    def _generate_github_actions(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_github_actions(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert GitHub Actions für Mobile Deployment"""
         files = []
-        
+
         # iOS Workflow
         ios_workflow = """name: iOS Deploy
 
@@ -558,21 +518,21 @@ on:
 jobs:
   deploy:
     runs-on: macos-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build iOS
         run: flutter build ios --release --no-codesign
-      
+
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
@@ -583,10 +543,10 @@ jobs:
 """
         ios_path = f"{base_path}/.github/workflows/ios-deploy.yml"
         os.makedirs(os.path.dirname(ios_path), exist_ok=True)
-        with open(ios_path, "w") as f:
+        with open(ios_path, "w", encoding="utf-8") as f:
             f.write(ios_workflow)
         files.append(ios_path)
-        
+
         # Android Workflow
         android_workflow = """name: Android Deploy
 
@@ -598,30 +558,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build APK
         run: flutter build apk --release
-      
+
       - name: Build App Bundle
         run: flutter build appbundle --release
-      
+
       - name: Upload to Play Store
         uses: r0adkll/upload-google-play@v1
         with:
@@ -631,10 +591,10 @@ jobs:
           track: production
 """
         android_path = f"{base_path}/.github/workflows/android-deploy.yml"
-        with open(android_path, "w") as f:
+        with open(android_path, "w", encoding="utf-8") as f:
             f.write(android_workflow)
         files.append(android_path)
-        
+
         return {
             "success": True,
             "platform": "github_actions",
@@ -643,19 +603,15 @@ jobs:
                 "iOS TestFlight",
                 "Android Play Store",
                 "Automated CI/CD",
-                "Version Tagging"
+                "Version Tagging",
             ],
-            "deploy_command": "git push --tags"
+            "deploy_command": "git push --tags",
         }
 
-    def _generate_fastlane(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_fastlane(self, base_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
         """Generiert Fastlane-Konfiguration"""
         files = []
-        
+
         # Fastfile
         fastfile_content = """default_platform(:ios)
 
@@ -691,10 +647,10 @@ end
 """
         fastfile_path = f"{base_path}/fastlane/Fastfile"
         os.makedirs(os.path.dirname(fastfile_path), exist_ok=True)
-        with open(fastfile_path, "w") as f:
+        with open(fastfile_path, "w", encoding="utf-8") as f:
             f.write(fastfile_content)
         files.append(fastfile_path)
-        
+
         return {
             "success": True,
             "platform": "fastlane",
@@ -703,9 +659,9 @@ end
                 "iOS Automation",
                 "Android Automation",
                 "Screenshot Generation",
-                "Metadata Management"
+                "Metadata Management",
             ],
-            "deploy_command": "fastlane ios beta"
+            "deploy_command": "fastlane ios beta",
         }
 
 

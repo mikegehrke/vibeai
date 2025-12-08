@@ -16,10 +16,12 @@ Features:
 - Einfache API für Admin-Dashboard
 """
 
-from fastapi import APIRouter, HTTPException
 import os
 import shutil
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, HTTPException
+
 from buildsystem.build_manager import build_manager
 
 router = APIRouter(prefix="/admin/builds", tags=["Admin Builds"])
@@ -32,7 +34,7 @@ router = APIRouter(prefix="/admin/builds", tags=["Admin Builds"])
 def list_all_builds() -> List[Dict]:
     """
     Liste aller Builds von allen Usern.
-    
+
     Returns:
         List[Dict]: Alle Build-Metadaten
     """
@@ -44,10 +46,10 @@ def list_all_builds() -> List[Dict]:
 
     for user in os.listdir(base):
         user_path = os.path.join(base, user)
-        
+
         if not os.path.isdir(user_path):
             continue
-        
+
         for build_id in os.listdir(user_path):
             meta = build_manager.load_build(user, build_id)
             if meta:
@@ -57,7 +59,7 @@ def list_all_builds() -> List[Dict]:
 
     # Sortiere nach Timestamp (neueste zuerst)
     output.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
-    
+
     return output
 
 
@@ -68,11 +70,11 @@ def list_all_builds() -> List[Dict]:
 def delete_build(user: str, build_id: str) -> Dict[str, Any]:
     """
     Löscht einen Build eines Users.
-    
+
     Args:
         user: User-Email/ID
         build_id: Build-ID
-    
+
     Returns:
         {"success": True, "deleted": build_id}
     """
@@ -86,12 +88,8 @@ def delete_build(user: str, build_id: str) -> Dict[str, Any]:
         shutil.rmtree(build_path, ignore_errors=True)
     except Exception as e:
         raise HTTPException(500, f"Error deleting build: {str(e)}")
-    
-    return {
-        "success": True,
-        "deleted": build_id,
-        "user": user
-    }
+
+    return {"success": True, "deleted": build_id, "user": user}
 
 
 # -------------------------------------------------------------
@@ -101,25 +99,23 @@ def delete_build(user: str, build_id: str) -> Dict[str, Any]:
 def get_build_logs(user: str, build_id: str) -> Dict[str, str]:
     """
     Gibt Build-Logs für einen spezifischen Build zurück.
-    
+
     Args:
         user: User-Email/ID
         build_id: Build-ID
-    
+
     Returns:
         {"logs": "..."}
     """
-    log_path = os.path.join(
-        "build_artifacts", user, build_id, "logs", "build.log"
-    )
+    log_path = os.path.join("build_artifacts", user, build_id, "logs", "build.log")
 
     if not os.path.exists(log_path):
         return {"logs": "No logs found"}
 
     try:
-        with open(log_path, "r") as f:
+        with open(log_path, "r", encoding="utf-8") as f:
             data = f.read()
-        
+
         return {"logs": data}
     except Exception as e:
         raise HTTPException(500, f"Error reading logs: {str(e)}")
@@ -132,22 +128,22 @@ def get_build_logs(user: str, build_id: str) -> Dict[str, str]:
 def get_build_status(user: str, build_id: str) -> Dict:
     """
     Gibt Build-Status zurück.
-    
+
     Args:
         user: User-Email/ID
         build_id: Build-ID
-    
+
     Returns:
         Build-Metadaten
     """
     meta = build_manager.load_build(user, build_id)
-    
+
     if not meta:
         raise HTTPException(404, "Build not found")
-    
+
     # Ergänze User-Info
     meta["user"] = user
-    
+
     return meta
 
 
@@ -158,10 +154,10 @@ def get_build_status(user: str, build_id: str) -> Dict:
 def get_user_builds(user: str) -> List[Dict]:
     """
     Liste aller Builds eines bestimmten Users.
-    
+
     Args:
         user: User-Email/ID
-    
+
     Returns:
         List[Dict]: Alle Builds des Users
     """
@@ -179,7 +175,7 @@ def get_user_builds(user: str) -> List[Dict]:
 
     # Sortiere nach Timestamp
     output.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
-    
+
     return output
 
 
@@ -190,7 +186,7 @@ def get_user_builds(user: str) -> List[Dict]:
 def get_build_statistics() -> Dict[str, Any]:
     """
     Globale Build-Statistiken über alle User.
-    
+
     Returns:
         {
             "total_builds": 123,
@@ -200,27 +196,27 @@ def get_build_statistics() -> Dict[str, Any]:
         }
     """
     all_builds = list_all_builds()
-    
+
     total_builds = len(all_builds)
-    
+
     # Unique Users
     unique_users = set(b.get("user") for b in all_builds if b.get("user"))
-    
+
     # Builds nach Status
     builds_by_status = {}
     for build in all_builds:
         status = build.get("status", "UNKNOWN")
         builds_by_status[status] = builds_by_status.get(status, 0) + 1
-    
+
     # Builds nach Typ
     builds_by_type = {}
     for build in all_builds:
         build_type = build.get("build_type", "unknown")
         builds_by_type[build_type] = builds_by_type.get(build_type, 0) + 1
-    
+
     return {
         "total_builds": total_builds,
         "total_users": len(unique_users),
         "builds_by_status": builds_by_status,
-        "builds_by_type": builds_by_type
+        "builds_by_type": builds_by_type,
     }

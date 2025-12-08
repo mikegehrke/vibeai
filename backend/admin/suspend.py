@@ -1,71 +1,47 @@
 # -----------------------------------------------------------
 # PRODUKTIONSREIFE VERSION – ADMIN USER SUSPEND
 # -----------------------------------------------------------
-from fastapi import APIRouter, Depends, HTTPException, status
 import sys
 from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 # Add backend to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from db import get_db
 from auth import require_admin
+from db import get_db
 from models import User
 
-router = APIRouter(
-    prefix="/admin",
-    tags=["Admin"]
-)
+router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 @router.post("/suspend/{user_id}")
-async def suspend_user_account(
-    user_id: str,
-    db=Depends(get_db),
-    _=Depends(require_admin)
-):
+async def suspend_user_account(user_id: str, db=Depends(get_db), _=Depends(require_admin)):
     # Nutzer suchen
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Benutzer sperren
     user.is_suspended = True
     db.commit()
 
-    return {
-        "status": "success",
-        "user_id": user_id,
-        "suspended": True
-    }
+    return {"status": "success", "user_id": user_id, "suspended": True}
 
 
 @router.post("/unsuspend/{user_id}")
-async def unsuspend_user_account(
-    user_id: str,
-    db=Depends(get_db),
-    _=Depends(require_admin)
-):
+async def unsuspend_user_account(user_id: str, db=Depends(get_db), _=Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     user.is_suspended = False
     db.commit()
 
-    return {
-        "status": "success",
-        "user_id": user_id,
-        "suspended": False
-    }
+    return {"status": "success", "user_id": user_id, "suspended": False}
 
 
 # ✔ Original Suspend/Unsuspend Endpoints sind komplett:
@@ -91,14 +67,14 @@ async def unsuspend_user_account(
 # 👉 Das Original ist ein solider Basic Suspend/Unsuspend
 # 👉 Für Production brauchen wir Notifications + History + Audit
 
+from datetime import datetime, timedelta
 
 # -------------------------------------------------------------
 # VIBEAI – SUSPEND SYSTEM V2 (NOTIFICATIONS + AUDIT)
 # -------------------------------------------------------------
-from typing import Optional, List
-from datetime import datetime, timedelta
+from typing import List, Optional
+
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.orm import Session as DBSession
 
 # Import Notification Services
@@ -115,6 +91,7 @@ except ImportError:
 # ---------------------------------------------------------
 class SuspendRequest(BaseModel):
     """Suspend Request mit Begründung."""
+
     user_id: str
     reason: str
     duration_days: Optional[int] = None  # Auto-Unsuspend nach X Tagen
@@ -123,6 +100,7 @@ class SuspendRequest(BaseModel):
 
 class UnsuspendRequest(BaseModel):
     """Unsuspend Request."""
+
     user_id: str
     reason: Optional[str] = None
     notify_user: bool = True
@@ -130,6 +108,7 @@ class UnsuspendRequest(BaseModel):
 
 class SuspendHistory(BaseModel):
     """Suspend History Entry."""
+
     user_id: str
     action: str  # "suspended" or "unsuspended"
     reason: str
@@ -144,11 +123,11 @@ class SuspendHistory(BaseModel):
 async def suspend_user_v2(
     request: SuspendRequest,
     db: DBSession = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     """
     Suspend User mit Notifications & History.
-    
+
     Features:
     - Email an User
     - WebSocket Notification
@@ -157,57 +136,51 @@ async def suspend_user_v2(
     """
     # User finden
     user = db.query(User).filter(User.id == request.user_id).first()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     if user.is_suspended:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already suspended"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already suspended")
+
     # Suspend User
     user.is_suspended = True
     user.suspended_at = datetime.utcnow()
     user.suspend_reason = request.reason
-    
+
     # Auto-Unsuspend Date
     if request.duration_days:
         user.unsuspend_at = datetime.utcnow() + timedelta(days=request.duration_days)
-    
+
     db.commit()
-    
+
     # Email Notification
     if request.notify_user and mailer_v2:
-        await mailer_v2.send_account_suspended_notification(
-            user_email=user.email,
-            reason=request.reason
-        )
-    
+        await mailer_v2.send_account_suspended_notification(user_email=user.email, reason=request.reason)
+
     # WebSocket Notification (Admin Dashboard)
     if ws_manager_v2:
-        await ws_manager_v2.broadcast_to_role("admin", {
-            "type": "user_suspended",
-            "user_id": request.user_id,
-            "user_email": user.email,
-            "reason": request.reason,
-            "admin": admin.email if hasattr(admin, 'email') else 'unknown',
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    
+        await ws_manager_v2.broadcast_to_role(
+            "admin",
+            {
+                "type": "user_suspended",
+                "user_id": request.user_id,
+                "user_email": user.email,
+                "reason": request.reason,
+                "admin": admin.email if hasattr(admin, "email") else "unknown",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
     # TODO: Add to Suspend History Table (if exists)
-    
+
     return {
         "status": "success",
         "user_id": request.user_id,
         "suspended": True,
         "reason": request.reason,
         "duration_days": request.duration_days,
-        "email_sent": request.notify_user and mailer_v2 is not None
+        "email_sent": request.notify_user and mailer_v2 is not None,
     }
 
 
@@ -218,11 +191,11 @@ async def suspend_user_v2(
 async def unsuspend_user_v2(
     request: UnsuspendRequest,
     db: DBSession = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     """
     Unsuspend User mit Notifications.
-    
+
     Features:
     - Email an User (Account reactivated)
     - WebSocket Notification
@@ -230,27 +203,21 @@ async def unsuspend_user_v2(
     """
     # User finden
     user = db.query(User).filter(User.id == request.user_id).first()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     if not user.is_suspended:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not suspended"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not suspended")
+
     # Unsuspend User
     user.is_suspended = False
     user.suspended_at = None
     user.suspend_reason = None
     user.unsuspend_at = None
-    
+
     db.commit()
-    
+
     # Email Notification
     if request.notify_user and mailer_v2:
         await mailer_v2.send_email_async(
@@ -266,26 +233,29 @@ async def unsuspend_user_v2(
                     <p>You can now access all features again.</p>
                 </body>
             </html>
-            """
+            """,
         )
-    
+
     # WebSocket Notification
     if ws_manager_v2:
-        await ws_manager_v2.broadcast_to_role("admin", {
-            "type": "user_unsuspended",
-            "user_id": request.user_id,
-            "user_email": user.email,
-            "reason": request.reason,
-            "admin": admin.email if hasattr(admin, 'email') else 'unknown',
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    
+        await ws_manager_v2.broadcast_to_role(
+            "admin",
+            {
+                "type": "user_unsuspended",
+                "user_id": request.user_id,
+                "user_email": user.email,
+                "reason": request.reason,
+                "admin": admin.email if hasattr(admin, "email") else "unknown",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
     return {
         "status": "success",
         "user_id": request.user_id,
         "suspended": False,
         "reason": request.reason,
-        "email_sent": request.notify_user and mailer_v2 is not None
+        "email_sent": request.notify_user and mailer_v2 is not None,
     }
 
 
@@ -293,14 +263,10 @@ async def unsuspend_user_v2(
 # Check Suspend Status (Utility)
 # ---------------------------------------------------------
 @router.get("/suspend/check/{user_id}")
-async def check_suspend_status(
-    user_id: str,
-    db: DBSession = Depends(get_db),
-    _=Depends(require_admin)
-):
+async def check_suspend_status(user_id: str, db: DBSession = Depends(get_db), _=Depends(require_admin)):
     """
     Prüft Suspend-Status eines Users.
-    
+
     Returns:
         - is_suspended: bool
         - reason: str (if suspended)
@@ -308,20 +274,17 @@ async def check_suspend_status(
         - auto_unsuspend_at: datetime (optional)
     """
     user = db.query(User).filter(User.id == user_id).first()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     return {
         "user_id": user_id,
         "email": user.email,
         "is_suspended": user.is_suspended,
-        "reason": getattr(user, 'suspend_reason', None),
-        "suspended_at": getattr(user, 'suspended_at', None),
-        "auto_unsuspend_at": getattr(user, 'unsuspend_at', None)
+        "reason": getattr(user, "suspend_reason", None),
+        "suspended_at": getattr(user, "suspended_at", None),
+        "auto_unsuspend_at": getattr(user, "unsuspend_at", None),
     }
 
 
@@ -334,16 +297,16 @@ async def batch_suspend_users(
     reason: str,
     notify_users: bool = True,
     db: DBSession = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     """
     Suspend mehrere User gleichzeitig.
-    
+
     Args:
         user_ids: Liste von User IDs
         reason: Begründung
         notify_users: Email senden?
-    
+
     Returns:
         {
             "total": int,
@@ -354,69 +317,59 @@ async def batch_suspend_users(
     """
     results = []
     suspended_count = 0
-    
+
     for user_id in user_ids:
         try:
             user = db.query(User).filter(User.id == user_id).first()
-            
+
             if not user:
-                results.append({
-                    "user_id": user_id,
-                    "success": False,
-                    "error": "User not found"
-                })
+                results.append({"user_id": user_id, "success": False, "error": "User not found"})
                 continue
-            
+
             if user.is_suspended:
-                results.append({
-                    "user_id": user_id,
-                    "success": False,
-                    "error": "Already suspended"
-                })
+                results.append({"user_id": user_id, "success": False, "error": "Already suspended"})
                 continue
-            
+
             # Suspend
             user.is_suspended = True
             user.suspended_at = datetime.utcnow()
             user.suspend_reason = reason
             db.commit()
-            
+
             # Email
             if notify_users and mailer_v2:
-                await mailer_v2.send_account_suspended_notification(
-                    user_email=user.email,
-                    reason=reason
-                )
-            
+                await mailer_v2.send_account_suspended_notification(user_email=user.email, reason=reason)
+
             suspended_count += 1
-            results.append({
-                "user_id": user_id,
-                "success": True,
-                "email_sent": notify_users and mailer_v2 is not None
-            })
-            
+            results.append(
+                {
+                    "user_id": user_id,
+                    "success": True,
+                    "email_sent": notify_users and mailer_v2 is not None,
+                }
+            )
+
         except Exception as e:
-            results.append({
-                "user_id": user_id,
-                "success": False,
-                "error": str(e)
-            })
-    
+            results.append({"user_id": user_id, "success": False, "error": str(e)})
+
     # WebSocket Notification
     if ws_manager_v2:
-        await ws_manager_v2.broadcast_to_role("admin", {
-            "type": "batch_suspend_completed",
-            "total": len(user_ids),
-            "suspended": suspended_count,
-            "reason": reason,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    
+        await ws_manager_v2.broadcast_to_role(
+            "admin",
+            {
+                "type": "batch_suspend_completed",
+                "total": len(user_ids),
+                "suspended": suspended_count,
+                "reason": reason,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
     return {
         "total": len(user_ids),
         "suspended": suspended_count,
         "failed": len(user_ids) - suspended_count,
-        "results": results
+        "results": results,
     }
 
 
@@ -424,32 +377,33 @@ async def batch_suspend_users(
 # Auto-Unsuspend Cleanup
 # ---------------------------------------------------------
 @router.post("/suspend/cleanup-expired")
-async def cleanup_expired_suspensions(
-    db: DBSession = Depends(get_db),
-    _=Depends(require_admin)
-):
+async def cleanup_expired_suspensions(db: DBSession = Depends(get_db), _=Depends(require_admin)):
     """
     Hebt automatisch abgelaufene Suspendierungen auf.
-    
+
     Prüft alle User mit unsuspend_at < now und reaktiviert sie.
     """
     now = datetime.utcnow()
-    
+
     # Find expired suspensions
-    expired_users = db.query(User).filter(
-        User.is_suspended == True,
-        User.unsuspend_at != None,
-        User.unsuspend_at <= now
-    ).all()
-    
+    expired_users = (
+        db.query(User)
+        .filter(
+            User.is_suspended == True,
+            User.unsuspend_at != None,
+            User.unsuspend_at <= now,
+        )
+        .all()
+    )
+
     unsuspended_count = 0
-    
+
     for user in expired_users:
         user.is_suspended = False
         user.suspended_at = None
         user.suspend_reason = None
         user.unsuspend_at = None
-        
+
         # Email
         if mailer_v2:
             await mailer_v2.send_email_async(
@@ -464,15 +418,15 @@ async def cleanup_expired_suspensions(
                         <p>Your VibeAI account is now active again.</p>
                     </body>
                 </html>
-                """
+                """,
             )
-        
+
         unsuspended_count += 1
-    
+
     db.commit()
-    
+
     return {
         "status": "success",
         "unsuspended_count": unsuspended_count,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

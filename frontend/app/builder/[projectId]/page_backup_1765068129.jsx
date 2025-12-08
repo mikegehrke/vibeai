@@ -1,0 +1,1599 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Dynamic import für Monaco Editor (nur Client-Side)
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+
+export default function BuilderPage({ params }) {
+  const { projectId } = params;
+  const router = useRouter();
+
+  // STATE
+  const [files, setFiles] = useState([]);
+  const [activeFile, setActiveFile] = useState(null);
+  const [openTabs, setOpenTabs] = useState([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(250);
+  const [rightPanelWidth, setRightPanelWidth] = useState(400);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+  const [currentView, setCurrentView] = useState('files');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationLogs, setGenerationLogs] = useState([]);
+  const [previewDevice, setPreviewDevice] = useState('iphone15');
+  const [mvvmStructure, setMvvmStructure] = useState({ models: [], views: [], viewModels: [], controllers: [], other: [] });
+  const [isAutoFixing, setIsAutoFixing] = useState(false);
+  const [detectedIssues, setDetectedIssues] = useState([]);
+  
+  const chatEndRef = useRef(null);
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    loadProjectFiles();
+    initAIChat();
+    
+    // Preview Bridge wird direkt im iframe initialisiert
+    if (typeof window !== 'undefined') {
+      // Initialisiere Preview-Kommunikation
+      window.addEventListener('message', handlePreviewMessage);
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handlePreviewMessage);
+      }
+    };
+  }, [projectId]);
+  
+  const handlePreviewMessage = (event) => {
+    // Handle messages from preview iframe
+    if (event.data?.type === 'PREVIEW_READY') {
+      console.log('Preview is ready');
+    }
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  useEffect(() => {
+    if (activeFile?.content) {
+      updatePreview(activeFile.content, getLanguage(activeFile.name));
+    }
+  }, [activeFile?.content]);
+  
+  // Live Preview Update Funktion
+  const updatePreview = (code, language) => {
+    const frame = document.getElementById('preview-frame');
+    if (!frame) return;
+    
+    try {
+      let htmlContent = '';
+      
+      // HTML/JavaScript/CSS - Direkt rendern
+      if (language === 'html' || language === 'javascript' || language === 'jsx' || language === 'tsx') {
+        if (code.includes('<!DOCTYPE') || code.includes('<html')) {
+          // Vollständiges HTML
+          htmlContent = code;
+        } else if (code.includes('<')) {
+          // HTML Fragment
+          htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 20px; 
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                }
+              </style>
+            </head>
+            <body>
+              ${code}
+            </body>
+            </html>
+          `;
+        } else {
+          // JavaScript Code - Ausführen
+          htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>${code}</script>
+            </body>
+            </html>
+          `;
+        }
+      } 
+      // Dart/Flutter - Visuelle Simulation
+      else if (language === 'dart') {
+        htmlContent = generateFlutterPreview(code, activeFile?.name);
+      }
+      // Python - Ausgabe simulieren
+      else if (language === 'python') {
+        htmlContent = generatePythonPreview(code);
+      }
+      // Andere - Info-Ansicht
+      else {
+        htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body {
+                margin: 0;
+                padding: 30px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+              }
+              .card {
+                background: rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
+                padding: 40px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+              }
+              h2 { margin: 0 0 20px 0; font-size: 32px; }
+              p { font-size: 18px; opacity: 0.9; margin: 10px 0; }
+              .info { 
+                background: rgba(255,255,255,0.2); 
+                padding: 15px; 
+                border-radius: 10px; 
+                margin-top: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h2>📱 Live Preview</h2>
+              <p>📄 <strong>${activeFile?.name || 'Datei'}</strong></p>
+              <p>🔤 Sprache: <strong>${language}</strong></p>
+              <div class="info">
+                <p>💡 Tipp: Für Live-Preview HTML, CSS oder JavaScript verwenden</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+      }
+      
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      frame.src = url;
+      
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Preview update error:', error);
+    }
+  };
+  
+  // Flutter Preview Generator - ECHTE interaktive App-Simulation
+  const generateFlutterPreview = (dartCode, fileName) => {
+    // Extrahiere UI-Elemente
+    const hasScaffold = dartCode.includes('Scaffold');
+    const hasAppBar = dartCode.includes('AppBar');
+    const hasButton = dartCode.includes('Button') || dartCode.includes('ElevatedButton') || dartCode.includes('TextButton');
+    const hasCard = dartCode.includes('Card');
+    const hasListView = dartCode.includes('ListView');
+    const hasTextField = dartCode.includes('TextField');
+    const hasBottomNav = dartCode.includes('BottomNavigationBar');
+    const hasFloatingButton = dartCode.includes('FloatingActionButton');
+    
+    // Extrahiere Texte
+    let appTitle = 'VibeAI Flutter App';
+    const titleMatch = dartCode.match(/title:\s*['"]([^'"]+)['"]/);
+    if (titleMatch) appTitle = titleMatch[1];
+    
+    // Extrahiere Theme-Farbe
+    let primaryColor = '#673AB7';
+    if (dartCode.includes('Colors.blue')) primaryColor = '#2196F3';
+    if (dartCode.includes('Colors.red')) primaryColor = '#F44336';
+    if (dartCode.includes('Colors.green')) primaryColor = '#4CAF50';
+    if (dartCode.includes('Colors.purple')) primaryColor = '#9C27B0';
+    if (dartCode.includes('Colors.deepPurple')) primaryColor = '#673AB7';
+    if (dartCode.includes('Colors.orange')) primaryColor = '#FF9800';
+    if (dartCode.includes('Colors.teal')) primaryColor = '#009688';
+    
+    // Extrahiere Text-Inhalte
+    const textMatches = dartCode.match(/Text\(['"]([^'"]+)['"]\)/g) || [];
+    const texts = textMatches.map(t => t.match(/['"]([^'"]+)['"]/)?.[1] || '').filter(Boolean);
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+          }
+          .device-frame {
+            width: 375px;
+            height: 667px;
+            background: #000;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.5);
+            position: relative;
+          }
+          .device-notch {
+            width: 150px;
+            height: 25px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+          }
+          .screen {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          .status-bar {
+            height: 44px;
+            background: ${primaryColor};
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding-top: 8px;
+          }
+          .app-bar {
+            height: 56px;
+            background: ${primaryColor};
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            color: white;
+            font-size: 20px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          .content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f5f5f5;
+          }
+          .content-padding {
+            padding: 16px;
+          }
+          .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+          }
+          .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+          }
+          .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+          }
+          .card-subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+          }
+          .button {
+            background: ${primaryColor};
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            display: inline-block;
+          }
+          .button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+          }
+          .button:active {
+            transform: scale(0.98);
+          }
+          .text-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            margin: 8px 0;
+            transition: border-color 0.3s;
+          }
+          .text-field:focus {
+            outline: none;
+            border-color: ${primaryColor};
+          }
+          .list-item {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          .list-item:hover {
+            background: #f9f9f9;
+          }
+          .list-item:active {
+            background: #f0f0f0;
+          }
+          .icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: ${primaryColor}22;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 24px;
+          }
+          .bottom-nav {
+            height: 56px;
+            background: white;
+            display: flex;
+            border-top: 1px solid #e0e0e0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+          }
+          .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #757575;
+          }
+          .nav-item:hover {
+            color: ${primaryColor};
+            background: ${primaryColor}11;
+          }
+          .nav-item.active {
+            color: ${primaryColor};
+          }
+          .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+          }
+          .nav-label {
+            font-size: 12px;
+            font-weight: 500;
+          }
+          .fab {
+            position: absolute;
+            bottom: 72px;
+            right: 28px;
+            width: 56px;
+            height: 56px;
+            background: ${primaryColor};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+          }
+          .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+          }
+          .fab:active {
+            transform: scale(1.05) rotate(90deg);
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .card, .list-item {
+            animation: fadeIn 0.4s ease-out;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="device-frame">
+          <div class="device-notch"></div>
+          <div class="screen">
+            <div class="status-bar">
+              <span>9:41</span>
+              <span>📶 📡 🔋</span>
+            </div>
+            
+            ${hasAppBar ? `<div class="app-bar">${appTitle}</div>` : ''}
+            
+            <div class="content">
+              <div class="content-padding">
+                ${hasCard ? `
+                  <div class="card" onclick="this.style.background='${primaryColor}11'; setTimeout(() => this.style.background='white', 200)">
+                    <div class="card-title">🎯 ${texts[0] || 'Feature Card'}</div>
+                    <div class="card-subtitle">${texts[1] || 'Interaktive Material Design Card mit Elevation, Ripple-Effekt und Hover-Animation.'}</div>
+                  </div>
+                  <div class="card" onclick="this.style.background='${primaryColor}11'; setTimeout(() => this.style.background='white', 200)">
+                    <div class="card-title">✨ ${texts[2] || 'Moderne UI'}</div>
+                    <div class="card-subtitle">${texts[3] || 'Wunderschönes Design mit Flutter Material Components und smooth Animationen.'}</div>
+                  </div>
+                ` : ''}
+                
+                ${hasTextField ? `
+                  <input type="text" class="text-field" placeholder="Gebe etwas ein..." />
+                ` : ''}
+                
+                ${hasButton ? `
+                  <button class="button" onclick="alert('Button geklickt! 🚀')">🚀 ${texts.find(t => t.includes('Button') || t.length < 20) || 'Action Button'}</button>
+                  <button class="button" style="background: #757575;" onclick="alert('Secondary Action!')">⚡ Secondary Action</button>
+                ` : ''}
+                
+                ${hasListView ? `
+                  <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 16px;">
+                    <div class="list-item" onclick="this.style.background='${primaryColor}22'; setTimeout(() => this.style.background='white', 300)">
+                      <div class="icon-circle">🏋️</div>
+                      <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333;">Workout Tracking</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 4px;">Push-ups, Squats & Cardio</div>
+                      </div>
+                      <div style="color: ${primaryColor};">›</div>
+                    </div>
+                    <div class="list-item" onclick="this.style.background='${primaryColor}22'; setTimeout(() => this.style.background='white', 300)">
+                      <div class="icon-circle">🥗</div>
+                      <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333;">Ernährungsplan</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 4px;">Gesunde Rezepte & Kalorien</div>
+                      </div>
+                      <div style="color: ${primaryColor};">›</div>
+                    </div>
+                    <div class="list-item" onclick="this.style.background='${primaryColor}22'; setTimeout(() => this.style.background='white', 300)">
+                      <div class="icon-circle">📊</div>
+                      <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333;">Fortschritt & Stats</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 4px;">Deine Statistiken & Ziele</div>
+                      </div>
+                      <div style="color: ${primaryColor};">›</div>
+                    </div>
+                    <div class="list-item" onclick="this.style.background='${primaryColor}22'; setTimeout(() => this.style.background='white', 300)">
+                      <div class="icon-circle">⚙️</div>
+                      <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333;">Einstellungen</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 4px;">Profil & Präferenzen</div>
+                      </div>
+                      <div style="color: ${primaryColor};">›</div>
+                    </div>
+                  </div>
+                ` : ''}
+                
+                ${!hasCard && !hasButton && !hasListView ? `
+                  <div class="card">
+                    <div class="card-title">📱 ${appTitle}</div>
+                    <div class="card-subtitle">Deine Flutter App wird live hier gerendert. Füge Widgets wie Cards, Buttons oder ListViews hinzu!</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            
+            ${hasBottomNav ? `
+              <div class="bottom-nav">
+                <div class="nav-item active" onclick="this.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); this.classList.add('active');">
+                  <div class="nav-icon">🏠</div>
+                  <div class="nav-label">Home</div>
+                </div>
+                <div class="nav-item" onclick="this.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); this.classList.add('active');">
+                  <div class="nav-icon">🔍</div>
+                  <div class="nav-label">Search</div>
+                </div>
+                <div class="nav-item" onclick="this.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); this.classList.add('active');">
+                  <div class="nav-icon">❤️</div>
+                  <div class="nav-label">Favorites</div>
+                </div>
+                <div class="nav-item" onclick="this.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); this.classList.add('active');">
+                  <div class="nav-icon">👤</div>
+                  <div class="nav-label">Profile</div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          
+          ${hasFloatingButton ? `
+            <div class="fab" onclick="alert('Floating Action Button geklickt! ✨'); this.style.transform='scale(1.2) rotate(180deg)'; setTimeout(() => this.style.transform='scale(1) rotate(0deg)', 300)">+</div>
+          ` : ''}
+        </div>
+      </body>
+      </html>
+    `;
+  };
+  
+  // Python Preview Generator
+  const generatePythonPreview = (pythonCode) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+          }
+          .terminal {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+          }
+          .output { color: #4EC9B0; }
+        </style>
+      </head>
+      <body>
+        <div class="terminal">
+          <div>🐍 Python Code Preview</div>
+          <div class="output" style="margin-top: 20px;">
+            Ready to execute...
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isResizingLeft) {
+        setLeftPanelWidth(Math.max(200, Math.min(500, e.clientX)));
+      }
+      if (isResizingRight) {
+        setRightPanelWidth(Math.max(300, Math.min(800, window.innerWidth - e.clientX)));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingLeft, isResizingRight]);
+
+  const loadProjectFiles = () => {
+    try {
+      const projectData = localStorage.getItem(`project_${projectId}`);
+      if (projectData) {
+        const data = JSON.parse(projectData);
+        const formattedFiles = data.files.map((file, index) => ({
+          id: index + 1,
+          name: file.path.split('/').pop(),
+          path: file.path,
+          content: file.content || '',
+          language: detectLanguage(file.path),
+          type: 'file'
+        }));
+        
+        setFiles(formattedFiles);
+        analyzeMVVMStructure(formattedFiles);
+        
+        if (formattedFiles.length > 0) {
+          openFile(formattedFiles[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading project:', error);
+      addLog('❌ Fehler beim Laden', 'error');
+    }
+  };
+
+  const openFile = (file) => {
+    setActiveFile(file);
+    if (!openTabs.find(t => t.id === file.id)) {
+      setOpenTabs([...openTabs, file]);
+    }
+    setHasChanges(false);
+  };
+
+  const closeTab = (fileId) => {
+    const newTabs = openTabs.filter(t => t.id !== fileId);
+    setOpenTabs(newTabs);
+    if (activeFile?.id === fileId && newTabs.length > 0) {
+      setActiveFile(newTabs[0]);
+    } else if (newTabs.length === 0) {
+      setActiveFile(null);
+    }
+  };
+
+  const saveFile = async () => {
+    if (!activeFile) return;
+    
+    try {
+      const projectData = JSON.parse(localStorage.getItem(`project_${projectId}`));
+      const fileIndex = projectData.files.findIndex(f => f.path === activeFile.path);
+      if (fileIndex !== -1) {
+        projectData.files[fileIndex].content = activeFile.content;
+        localStorage.setItem(`project_${projectId}`, JSON.stringify(projectData));
+      }
+      
+      setHasChanges(false);
+      addLog(`✅ ${activeFile.name} gespeichert`, 'success');
+    } catch (error) {
+      addLog('❌ Speichern fehlgeschlagen', 'error');
+    }
+  };
+
+  const handleEditorChange = (value) => {
+    if (!activeFile) return;
+    
+    const updatedFile = { ...activeFile, content: value };
+    setActiveFile(updatedFile);
+    setHasChanges(true);
+    
+    // Update preview mit Debouncing
+    if (window.previewTimeout) clearTimeout(window.previewTimeout);
+    window.previewTimeout = setTimeout(() => {
+      updatePreview(value, getLanguage(activeFile.name));
+    }, 300);
+    
+    setOpenTabs(openTabs.map(t => t.id === activeFile.id ? { ...t, content: value } : t));
+  };
+
+  const analyzeMVVMStructure = (fileList) => {
+    const structure = {
+      models: [],
+      views: [],
+      viewModels: [],
+      controllers: [],
+      other: []
+    };
+
+    fileList.forEach(file => {
+      const path = file.path.toLowerCase();
+      const name = file.name;
+
+      if (path.includes('/models/') || name.includes('model')) {
+        structure.models.push(file);
+      } else if (path.includes('/views/') || name.includes('view') || name.includes('screen')) {
+        structure.views.push(file);
+      } else if (path.includes('/viewmodels/') || name.includes('viewmodel') || name.includes('provider')) {
+        structure.viewModels.push(file);
+      } else if (path.includes('/controllers/') || name.includes('controller') || name.includes('service')) {
+        structure.controllers.push(file);
+      } else {
+        structure.other.push(file);
+      }
+    });
+
+    setMvvmStructure(structure);
+  };
+
+  const initAIChat = () => {
+    setChatMessages([{
+      role: 'ai',
+      content: `🤖 **Live AI Assistant bereit!**
+
+Ich kann dir helfen mit:
+• 💡 Code-Verbesserungen & Optimierungen
+• 🎨 UI/UX Vorschläge & Design-Tipps
+• 🔧 Fehler fixen & debuggen
+• 📦 Neue Komponenten erstellen
+• 🔍 Code erklären & dokumentieren
+• ⚡ Performance-Optimierung
+
+**Beispiele:**
+- "Optimiere diesen Code"
+- "Erstelle eine Card-Komponente"
+- "Füge Animation hinzu"
+- "Erkläre mir diesen Code"
+
+Was möchtest du bauen?`,
+      timestamp: new Date().toISOString()
+    }]);
+  };
+  
+  // Auto-Scroll Chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMsg = {
+      role: 'user',
+      content: chatInput,
+      timestamp: new Date().toISOString()
+    };
+
+    setChatMessages([...chatMessages, userMsg]);
+    const prompt = chatInput;
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      // Versuche zuerst ChatGPT API
+      const res = await fetch('http://localhost:8000/chatgpt/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Du bist ein hilfreicher Coding-Assistent im VibeAI Builder.
+
+KONTEXT:
+- Aktuelles Projekt: ${projectId}
+- Aktuelle Datei: ${activeFile?.name || 'Keine'}
+- Sprache: ${activeFile ? getLanguage(activeFile.name) : 'Unbekannt'}
+
+USER FRAGE: ${prompt}
+
+Gebe eine hilfreiche, präzise Antwort. Wenn Code generiert wird, nutze Markdown Code-Blöcke.`,
+          model: 'gpt-4o'
+        })
+      });
+
+      let aiResponse = '';
+
+      if (res.ok) {
+        const data = await res.json();
+        aiResponse = data.response || data.message || 'Keine Antwort erhalten';
+      } else {
+        // Fallback: Lokale intelligente Antwort
+        aiResponse = getIntelligentResponse(prompt);
+      }
+      
+      const aiMsg = {
+        role: 'ai',
+        content: aiResponse,
+        timestamp: new Date().toISOString()
+      };
+
+      setChatMessages(prev => [...prev, aiMsg]);
+
+      // Wenn Code-Verbesserung angefragt, zeige Beispiel
+      if (prompt.toLowerCase().includes('optimier') || prompt.toLowerCase().includes('verbesser')) {
+        addLog('💡 AI-Vorschlag verfügbar', 'info');
+      }
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      // Fallback: Intelligente lokale Antwort
+      const fallbackMsg = {
+        role: 'ai',
+        content: getIntelligentResponse(prompt),
+        timestamp: new Date().toISOString()
+      };
+      
+      setChatMessages(prev => [...prev, fallbackMsg]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+  
+  // Intelligente Fallback-Antworten
+  const getIntelligentResponse = (prompt) => {
+    const lower = prompt.toLowerCase();
+    
+    if (lower.includes('optimier') || lower.includes('verbesser')) {
+      return `💡 **Code-Optimierungs-Tipps:**
+
+1. **Performance:**
+   - Verwende \`const\` statt \`var\`
+   - Nutze async/await für asynchrone Operationen
+   - Vermeide unnötige Re-Renders
+
+2. **Code-Struktur:**
+   - Extrahiere wiederholten Code in Funktionen
+   - Nutze sinnvolle Variablennamen
+   - Kommentiere komplexe Logik
+
+3. **Best Practices:**
+   - Folge dem MVVM-Pattern
+   - Nutze State Management (Provider, Bloc)
+   - Implementiere Error Handling
+
+Möchtest du spezifische Optimierungen für deinen aktuellen Code?`;
+    }
+    
+    if (lower.includes('komponente') || lower.includes('widget')) {
+      return `🎨 **Komponente erstellen:**
+
+Beispiel für eine wiederverwendbare Card-Komponente:
+
+\`\`\`dart
+class CustomCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const CustomCard({
+    Key? key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, size: 40, color: Theme.of(context).primaryColor),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+\`\`\`
+
+Möchtest du eine andere Art von Komponente?`;
+    }
+    
+    if (lower.includes('fehler') || lower.includes('error') || lower.includes('problem')) {
+      return `🔧 **Debugging-Tipps:**
+
+1. **Häufige Fehler:**
+   - Null Safety: Verwende \`?\` und \`??\` Operatoren
+   - Import-Fehler: Prüfe \`pubspec.yaml\` Dependencies
+   - Build-Fehler: Führe \`flutter clean\` aus
+
+2. **Debug-Tools:**
+   - \`print()\` für einfache Ausgaben
+   - \`debugPrint()\` für strukturierte Logs
+   - DevTools für Performance-Analyse
+
+3. **Error Handling:**
+   \`\`\`dart
+   try {
+     // Dein Code
+   } catch (e) {
+     debugPrint('Fehler: \$e');
+     // Fallback-Verhalten
+   }
+   \`\`\`
+
+Was genau funktioniert nicht?`;
+    }
+    
+    if (lower.includes('animation')) {
+      return `✨ **Animation hinzufügen:**
+
+\`\`\`dart
+class AnimatedButton extends StatefulWidget {
+  @override
+  _AnimatedButtonState createState() => _AnimatedButtonState();
+}
+
+class _AnimatedButtonState extends State<AnimatedButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text('Tap Me', style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+\`\`\`
+
+Welche Art von Animation brauchst du?`;
+    }
+    
+    // Default Response
+    return `🤖 Ich verstehe deine Frage!
+
+**Ich kann dir helfen mit:**
+- Code-Optimierung und Best Practices
+- Komponenten und Widgets erstellen
+- Fehler debuggen und fixen
+- Animationen implementieren
+- Performance verbessern
+
+**Frage mich zum Beispiel:**
+- "Optimiere diesen Code"
+- "Erstelle eine Button-Komponente"
+- "Füge eine Fade-Animation hinzu"
+- "Wie fixe ich diesen Fehler?"
+
+Was möchtest du genau machen?`;
+  };
+
+  const simulateLiveGeneration = async () => {
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setGenerationLogs([]);
+
+    const steps = [
+      { progress: 10, message: '📦 Abhängigkeiten konfigurieren...' },
+      { progress: 25, message: '🎯 Hauptdatei erstellen...' },
+      { progress: 40, message: '📊 Datenmodelle generieren...' },
+      { progress: 55, message: '🎨 UI Screens erstellen...' },
+      { progress: 70, message: '🔧 ViewModels implementieren...' },
+      { progress: 85, message: '🌐 API Services einrichten...' },
+      { progress: 95, message: '🧪 Tests generieren...' },
+      { progress: 100, message: '✅ Projekt erfolgreich generiert!' }
+    ];
+
+    for (const step of steps) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setGenerationProgress(step.progress);
+      addLog(step.message, step.progress === 100 ? 'success' : 'info');
+    }
+
+    setIsGenerating(false);
+    loadProjectFiles();
+  };
+
+  const autoFixFile = async () => {
+    if (!activeFile) return;
+    
+    setIsAutoFixing(true);
+    addLog('🔧 Auto-Fix wird ausgeführt...', 'info');
+
+    try {
+      const res = await fetch('http://localhost:8000/autofix/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          file_path: activeFile.path,
+          content: activeFile.content,
+          issue_type: 'general'
+        })
+      });
+
+      if (!res.ok) throw new Error('Auto-fix failed');
+
+      const data = await res.json();
+
+      if (data.success) {
+        setActiveFile({ ...activeFile, content: data.fixed_content });
+        setHasChanges(true);
+        addLog(`✅ Auto-Fix erfolgreich`, 'success');
+      }
+    } catch (error) {
+      addLog('❌ Auto-Fix fehlgeschlagen', 'error');
+    } finally {
+      setIsAutoFixing(false);
+    }
+  };
+
+  const detectIssues = async () => {
+    if (!activeFile) return;
+
+    try {
+      const res = await fetch('http://localhost:8000/autofix/detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          file_path: activeFile.path,
+          content: activeFile.content
+        })
+      });
+
+      if (!res.ok) throw new Error('Detection failed');
+
+      const data = await res.json();
+
+      if (data.success) {
+        setDetectedIssues(data.issues || []);
+        addLog(`🔍 ${data.issues.length} Probleme gefunden`, 'info');
+      }
+    } catch (error) {
+      addLog('❌ Problem-Erkennung fehlgeschlagen', 'error');
+    }
+  };
+
+  const detectLanguage = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase();
+    const map = {
+      'dart': 'dart', 'js': 'javascript', 'jsx': 'javascript',
+      'ts': 'typescript', 'tsx': 'typescript', 'json': 'json',
+      'yaml': 'yaml', 'yml': 'yaml', 'css': 'css', 'html': 'html',
+      'md': 'markdown', 'py': 'python', 'swift': 'swift', 'kt': 'kotlin'
+    };
+    return map[ext] || 'plaintext';
+  };
+
+  const getLanguage = (filename) => detectLanguage(filename);
+
+  const addLog = (message, type = 'info') => {
+    setGenerationLogs(prev => [...prev, {
+      message,
+      type,
+      timestamp: new Date().toLocaleTimeString()
+    }]);
+  };
+
+  const getFileIcon = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+      'dart': '🎯', 'js': '📜', 'jsx': '⚛️', 'ts': '📘',
+      'tsx': '⚛️', 'json': '📋', 'yaml': '⚙️', 'css': '🎨',
+      'html': '🌐', 'md': '📝', 'py': '🐍', 'swift': '🍎', 'kt': '🤖'
+    };
+    return icons[ext] || '📄';
+  };
+  
+  // Format Chat Messages mit Markdown-Support
+  const formatChatMessage = (content) => {
+    if (!content) return '';
+    
+    let formatted = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Code Blocks
+    formatted = formatted.replace(
+      /```([a-z]*)\n([\s\S]*?)```/g,
+      '<pre style="background: #1e1e1e; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; border: 1px solid #444;"><code style="color: #d4d4d4; font-family: Consolas, Monaco, monospace; font-size: 12px; line-height: 1.5;">$2</code></pre>'
+    );
+    
+    // Inline Code
+    formatted = formatted.replace(
+      /`([^`]+)`/g,
+      '<code style="background: #1e1e1e; padding: 2px 6px; border-radius: 3px; color: #4fc3f7; font-family: Consolas, Monaco, monospace; font-size: 12px;">$1</code>'
+    );
+    
+    // Bold
+    formatted = formatted.replace(
+      /\*\*([^*]+)\*\*/g,
+      '<strong style="color: #4fc3f7;">$1</strong>'
+    );
+    
+    // Bullet Points
+    formatted = formatted.replace(
+      /^[•\-]\s+(.+)$/gm,
+      '<div style="margin-left: 15px; margin-bottom: 5px;">• $1</div>'
+    );
+    
+    formatted = formatted.replace(/\n/g, '<br/>');
+    
+    return formatted;
+  };
+
+  const DEVICES = [
+    { id: 'iphone15', name: 'iPhone 15 Pro', icon: '📱' },
+    { id: 'pixel8', name: 'Pixel 8', icon: '🤖' },
+    { id: 'ipad', name: 'iPad Pro', icon: '📱' },
+    { id: 'desktop', name: 'Desktop', icon: '🖥️' }
+  ];
+
+  if (!files || files.length === 0) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#1e1e1e', color: '#fff', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ fontSize: '48px' }}>⏳</div>
+        <div>Projekt wird geladen...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1e1e1e', color: '#d4d4d4', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', overflow: 'hidden' }}>
+      
+      {/* TOP TOOLBAR */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: '#2d2d2d', borderBottom: '1px solid #444' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0098ff' }}>VibeAI Builder</div>
+          <div style={{ fontSize: '12px', color: '#888' }}>Project: {projectId}</div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={autoFixFile} disabled={!activeFile || isAutoFixing} style={{ padding: '6px 12px', background: isAutoFixing ? '#666' : '#ff6b6b', color: '#fff', border: 'none', borderRadius: '4px', cursor: isAutoFixing ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+            {isAutoFixing ? '⏳ Fixing...' : '🔧 Auto-Fix'}
+          </button>
+
+          <button onClick={detectIssues} disabled={!activeFile} style={{ padding: '6px 12px', background: '#ffa500', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+            🔍 Detect Issues
+          </button>
+
+          <button onClick={simulateLiveGeneration} disabled={isGenerating} style={{ padding: '6px 12px', background: isGenerating ? '#666' : '#00c853', color: '#fff', border: 'none', borderRadius: '4px', cursor: isGenerating ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+            {isGenerating ? `⏳ ${generationProgress}%` : '▶️ Test Live-Generierung'}
+          </button>
+
+          <button onClick={saveFile} disabled={!hasChanges} style={{ padding: '6px 12px', background: hasChanges ? '#0098ff' : '#444', color: '#fff', border: 'none', borderRadius: '4px', cursor: hasChanges ? 'pointer' : 'not-allowed', fontSize: '13px' }}>
+            💾 {hasChanges ? 'Speichern *' : 'Gespeichert'}
+          </button>
+
+          <button onClick={() => router.push('/builder')} style={{ padding: '6px 12px', background: '#444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+            ⬅️ Zurück
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        
+        {/* LEFT PANEL */}
+        <div style={{ width: leftPanelWidth, background: '#252526', borderRight: '1px solid #444', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '10px', borderBottom: '1px solid #444', fontWeight: 'bold', fontSize: '13px' }}>
+            📁 EXPLORER
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
+            {currentView === 'mvvm' ? (
+              <div>
+                {Object.entries(mvvmStructure).map(([category, filesList]) => (
+                  filesList.length > 0 && (
+                    <div key={category} style={{ marginBottom: '15px' }}>
+                      <div style={{ fontSize: '11px', color: '#888', marginBottom: '5px', textTransform: 'uppercase' }}>
+                        {category === 'models' && '📊 Models'}
+                        {category === 'views' && '🎨 Views'}
+                        {category === 'viewModels' && '🔧 ViewModels'}
+                        {category === 'controllers' && '🎛️ Controllers'}
+                        {category === 'other' && `📄 Other (${filesList.length})`}
+                      </div>
+                      {filesList.map(file => (
+                        <div key={file.id} onClick={() => openFile(file)} style={{ padding: '6px 10px', cursor: 'pointer', background: activeFile?.id === file.id ? '#094771' : 'transparent', borderRadius: '4px', marginBottom: '2px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{getFileIcon(file.name)}</span>
+                          <span>{file.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ))}
+              </div>
+            ) : (
+              files.map(file => (
+                <div key={file.id} onClick={() => openFile(file)} style={{ padding: '8px 10px', cursor: 'pointer', background: activeFile?.id === file.id ? '#094771' : 'transparent', borderRadius: '4px', marginBottom: '2px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{getFileIcon(file.name)}</span>
+                  <span>{file.name}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div style={{ padding: '10px', borderTop: '1px solid #444', display: 'flex', gap: '5px' }}>
+            <button onClick={() => setCurrentView('files')} style={{ flex: 1, padding: '5px', background: currentView === 'files' ? '#0098ff' : '#444', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>
+              📁 Files
+            </button>
+            <button onClick={() => setCurrentView('mvvm')} style={{ flex: 1, padding: '5px', background: currentView === 'mvvm' ? '#0098ff' : '#444', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' }}>
+              🏗️ MVVM
+            </button>
+          </div>
+        </div>
+
+        <div onMouseDown={() => setIsResizingLeft(true)} style={{ width: '4px', background: isResizingLeft ? '#0098ff' : 'transparent', cursor: 'ew-resize' }} />
+
+        {/* CENTER PANEL */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#2d2d2d', borderBottom: '1px solid #444', gap: '2px', padding: '5px 10px', overflowX: 'auto' }}>
+            {openTabs.map(tab => (
+              <div key={tab.id} onClick={() => setActiveFile(tab)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: activeFile?.id === tab.id ? '#1e1e1e' : '#2d2d2d', borderRadius: '4px 4px 0 0', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                <span>{getFileIcon(tab.name)}</span>
+                <span>{tab.name}</span>
+                <span onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }} style={{ cursor: 'pointer', opacity: 0.6 }}>✕</span>
+              </div>
+            ))}
+          </div>
+
+          {detectedIssues.length > 0 && (
+            <div style={{ padding: '10px', background: '#2a2a2a', borderBottom: '1px solid #444', maxHeight: '150px', overflowY: 'auto' }}>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ff6b6b', marginBottom: '8px' }}>
+                ⚠️ Detected Issues ({detectedIssues.length})
+              </div>
+              {detectedIssues.map((issue, i) => (
+                <div key={i} style={{ padding: '6px 8px', marginBottom: '4px', background: issue.type === 'error' ? '#ff6b6b22' : '#ffa50022', borderLeft: `3px solid ${issue.type === 'error' ? '#ff6b6b' : '#ffa500'}`, fontSize: '12px', borderRadius: '4px' }}>
+                  <strong>{issue.type === 'error' ? '❌' : '⚠️'}</strong> {issue.message}
+                  {issue.line && ` (Line ${issue.line})`}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeFile ? (
+            <MonacoEditor
+              language={getLanguage(activeFile.name)}
+              value={activeFile.content}
+              onChange={handleEditorChange}
+              onMount={(editor) => {
+                editorRef.current = editor;
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveFile);
+              }}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: true },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                wordWrap: 'on',
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                acceptSuggestionOnEnter: 'on',
+                snippetSuggestions: 'top'
+              }}
+            />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: '10px', color: '#666' }}>
+              <div style={{ fontSize: '48px' }}>📝</div>
+              <div>Wähle eine Datei zum Bearbeiten</div>
+            </div>
+          )}
+
+          <div style={{ height: '150px', background: '#1e1e1e', borderTop: '1px solid #444', overflowY: 'auto', padding: '10px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px' }}>📊 OUTPUT</div>
+            {generationLogs.map((log, i) => (
+              <div key={i} style={{ fontSize: '11px', padding: '4px 8px', marginBottom: '2px', color: log.type === 'error' ? '#ff6b6b' : log.type === 'success' ? '#00c853' : '#888', fontFamily: 'monospace' }}>
+                [{log.timestamp}] {log.message}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div onMouseDown={() => setIsResizingRight(true)} style={{ width: '4px', background: isResizingRight ? '#0098ff' : 'transparent', cursor: 'ew-resize' }} />
+
+        {/* RIGHT PANEL - Preview UND AI Chat Side-by-Side */}
+        <div style={{ width: rightPanelWidth, background: '#252526', display: 'flex', flexDirection: 'column' }}>
+          
+          {/* PREVIEW - Oben */}
+          <div style={{ height: '50%', display: 'flex', flexDirection: 'column', borderBottom: '1px solid #444' }}>
+            <div style={{ padding: '8px 12px', background: '#2d2d2d', borderBottom: '1px solid #444', fontSize: '12px', fontWeight: '600' }}>
+              📱 LIVE PREVIEW
+            </div>
+            
+            <div style={{ display: 'flex', gap: '4px', padding: '8px', background: '#2d2d2d', borderBottom: '1px solid #444' }}>
+              {DEVICES.map(device => (
+                <button key={device.id} onClick={() => setPreviewDevice(device.id)} style={{ flex: 1, padding: '4px', background: previewDevice === device.id ? '#0098ff' : '#444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }} title={device.name}>
+                  {device.icon}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e1e1e', padding: '10px' }}>
+              <iframe
+                id="preview-frame"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+                style={{ width: '100%', height: '100%', border: '1px solid #444', borderRadius: '8px', background: '#fff' }}
+              />
+            </div>
+          </div>
+
+          {/* AI CHAT - Unten (immer sichtbar) */}
+          <div style={{ height: '50%', display: 'flex', flexDirection: 'column', background: '#1e1e1e' }}>
+            {/* Chat Header */}
+            <div style={{ padding: '8px 12px', background: '#2d2d2d', borderBottom: '1px solid #444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '18px' }}>🤖</div>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '12px' }}>AI Assistant</div>
+                  <div style={{ fontSize: '10px', color: '#888' }}>GPT-4o • Live Agent</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button 
+                  onClick={() => setVoiceEnabled(!voiceEnabled)} 
+                  title={voiceEnabled ? "Voice Input ON" : "Voice Input OFF"}
+                  style={{ 
+                    padding: '4px 10px', 
+                    background: voiceEnabled ? '#00c853' : '#444', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '11px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {voiceEnabled ? '🎤 ON' : '🎤 OFF'}
+                </button>
+                <button 
+                  title="Clear Chat"
+                  onClick={() => setChatMessages([])}
+                  style={{ 
+                    padding: '4px 10px', 
+                    background: '#444', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '11px'
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {chatMessages.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>💬</div>
+                  <div style={{ fontSize: '13px', marginBottom: '8px' }}>Starte eine Konversation mit dem AI Agent</div>
+                  <div style={{ fontSize: '11px', color: '#555' }}>Frage nach Code-Verbesserungen, Komponenten oder Debugging-Hilfe</div>
+                </div>
+              )}
+              
+              {chatMessages.map((msg, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <div style={{ 
+                    width: '28px', 
+                    height: '28px', 
+                    borderRadius: '50%', 
+                    background: msg.role === 'user' ? '#0098ff' : '#00c853',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    flexShrink: 0
+                  }}>
+                    {msg.role === 'user' ? '👤' : '🤖'}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      marginBottom: '4px',
+                      color: msg.role === 'user' ? '#4fc3f7' : '#00c853',
+                      fontWeight: '600'
+                    }}>
+                      {msg.role === 'user' ? 'Du' : 'AI Assistant'}
+                      <span style={{ marginLeft: '6px', color: '#666', fontWeight: '400' }}>
+                        {new Date(msg.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div 
+                      style={{ 
+                        background: msg.role === 'user' ? '#094771' : '#2d2d2d',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        lineHeight: '1.5',
+                        color: '#d4d4d4'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: formatChatMessage(msg.content) }}
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              {isChatLoading && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <div style={{ 
+                    width: '28px', 
+                    height: '28px', 
+                    borderRadius: '50%', 
+                    background: '#00c853',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px'
+                  }}>
+                    🤖
+                  </div>
+                  <div style={{ 
+                    background: '#2d2d2d',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: '#888'
+                  }}>
+                    <div style={{ display: 'flex', gap: '3px' }}>
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#666', animation: 'pulse 1.4s infinite' }}></div>
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#666', animation: 'pulse 1.4s infinite 0.2s' }}></div>
+                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#666', animation: 'pulse 1.4s infinite 0.4s' }}></div>
+                    </div>
+                    <span>Denkt nach...</span>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat Input Area */}
+            <div style={{ padding: '12px', background: '#2d2d2d', borderTop: '1px solid #444' }}>
+              {/* Quick Actions */}
+              <div style={{ display: 'flex', gap: '4px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                {['💡 Optimiere Code', '🎨 Neue Komponente', '✨ Animation', '🔍 Erkläre Code'].map(action => (
+                  <button
+                    key={action}
+                    onClick={() => {
+                      setChatInput(action.substring(2));
+                      setTimeout(() => sendChatMessage(), 100);
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      background: '#444',
+                      color: '#aaa',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#555'}
+                    onMouseLeave={(e) => e.target.style.background = '#444'}
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input Field */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '6px', 
+                background: '#1e1e1e',
+                borderRadius: '8px',
+                padding: '2px',
+                border: '1px solid #444'
+              }}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendChatMessage();
+                    }
+                  }}
+                  placeholder="Frage den AI Assistant... (Enter = Senden)"
+                  disabled={isChatLoading}
+                  style={{ 
+                    flex: 1, 
+                    padding: '10px 12px', 
+                    background: 'transparent', 
+                    border: 'none', 
+                    color: '#d4d4d4', 
+                    fontSize: '12px', 
+                    outline: 'none'
+                  }}
+                />
+                <button 
+                  onClick={sendChatMessage} 
+                  disabled={!chatInput.trim() || isChatLoading} 
+                  style={{ 
+                    padding: '8px 16px', 
+                    background: chatInput.trim() && !isChatLoading ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#444', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: chatInput.trim() && !isChatLoading ? 'pointer' : 'not-allowed', 
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {isChatLoading ? '⏳' : '📤'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

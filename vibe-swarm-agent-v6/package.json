@@ -1,0 +1,87 @@
+{
+  "name": "vibe-swarm-agent-v6",
+  "displayName": "VIBE Auto-Dev SWARM v6.0",
+  "description": "First autonomous multi-agent software development swarm inside VS Code. Full GUI Builder. Full Project Generator. Multi-Agent Orchestration.",
+  "version": "6.0.0",
+  "publisher": "vibeai",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vibe.swarm",
+        "title": "VIBE Swarm: Auto Dev"
+      },
+      {
+        "command": "vibe.swarmAutopilot",
+        "title": "VIBE Swarm: Autopilot Mode"
+      },
+      {
+        "command": "vibe.guiBuilder",
+        "title": "VIBE GUI Builder"
+      },
+      {
+        "command": "vibe.projectGen",
+        "title": "VIBE Full Project Generator"
+      },
+      {
+        "command": "vibe.devConsole",
+        "title": "VIBE Dev Console"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "vibeSwarmSidebar",
+          "name": "VIBE SWARM"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "VIBE SWARM",
+      "properties": {
+        "vibe.swarm.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key for SWARM agents"
+        },
+        "vibe.swarm.model": {
+          "type": "string",
+          "default": "gpt-4o",
+          "enum": [
+            "gpt-4o",
+            "gpt-4-turbo",
+            "gpt-3.5-turbo"
+          ],
+          "description": "OpenAI model for agents"
+        },
+        "vibe.swarm.parallelAgents": {
+          "type": "number",
+          "default": 5,
+          "description": "Max parallel agents (1-10)"
+        },
+        "vibe.swarm.autopilot": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable full autopilot mode"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "openai": "^4.0.0",
+    "diff": "^7.0.0",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.4.0",
+    "simple-git": "^3.24.0",
+    "uuid": "^9.0.1",
+    "p-queue": "^7.4.1",
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -2,7 +2,7 @@
 # VIBEAI – THEME GENERATOR
 # -------------------------------------------------------------
 import os
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any, Dict, List, Optional
 
 
 class ThemeGenerator:
@@ -24,29 +24,26 @@ class ThemeGenerator:
             "success": "#10b981",
             "warning": "#f59e0b",
             "error": "#ef4444",
-            "info": "#3b82f6"
+            "info": "#3b82f6",
         }
 
     def generate_theme(
-        self,
-        base_path: str,
-        framework: str,
-        options: Optional[Dict[str, Any]] = None
+        self, base_path: str, framework: str, options: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Generiert Theme-Dateien für Framework
-        
+
         Args:
             base_path: Projekt-Pfad
             framework: flutter, react, css, tailwind, vuejs, angular
             options: Colors, modes, custom palettes
-        
+
         Returns:
             Dict mit success, files, theme_data
         """
         options = options or {}
         files = []
-        
+
         if framework == "flutter":
             files = self._generate_flutter_theme(base_path, options)
         elif framework == "react":
@@ -61,7 +58,7 @@ class ThemeGenerator:
             files = self._generate_angular_theme(base_path, options)
         else:
             raise ValueError(f"Unsupported framework: {framework}")
-        
+
         return {
             "success": True,
             "framework": framework,
@@ -69,8 +66,8 @@ class ThemeGenerator:
             "theme_data": {
                 "modes": ["light", "dark"],
                 "colors": self._get_colors(options),
-                "features": self._get_features(framework)
-            }
+                "features": self._get_features(framework),
+            },
         }
 
     def _get_colors(self, options: Dict[str, Any]) -> Dict[str, str]:
@@ -81,48 +78,45 @@ class ThemeGenerator:
     def _get_features(self, framework: str) -> List[str]:
         """Gibt Framework-spezifische Features zurück"""
         features = {
-            "flutter": ["Light/Dark ThemeData", "Material Design", "Cupertino", "Custom Colors"],
+            "flutter": [
+                "Light/Dark ThemeData",
+                "Material Design",
+                "Cupertino",
+                "Custom Colors",
+            ],
             "react": ["Context API", "Theme Provider", "CSS-in-JS", "Emotion/Styled"],
             "css": ["CSS Variables", "Media Queries", "Class Switching"],
             "tailwind": ["Dark Mode Class", "Custom Colors", "Extend Config"],
             "vuejs": ["Composables", "Provide/Inject", "CSS Variables"],
-            "angular": ["Material Theming", "Custom Palettes", "SCSS Variables"]
+            "angular": ["Material Theming", "Custom Palettes", "SCSS Variables"],
         }
         return features.get(framework, [])
 
     # ========== FLUTTER THEME ==========
 
-    def _generate_flutter_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_flutter_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert Flutter ThemeData"""
         files = []
         colors = self._get_colors(options)
-        
+
         # 1. Theme Configuration
         theme_file = self._create_flutter_theme_config(base_path, colors)
         files.append(theme_file)
-        
+
         # 2. Color Palette
         colors_file = self._create_flutter_colors(base_path, colors)
         files.append(colors_file)
-        
+
         # 3. Theme Provider
         provider_file = self._create_flutter_theme_provider(base_path)
         files.append(provider_file)
-        
+
         return files
 
-    def _create_flutter_theme_config(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_flutter_theme_config(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt Flutter theme.dart"""
         primary = colors.get("primary", "#667eea")
-        
+
         content = f"""import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
@@ -221,33 +215,27 @@ class AppTheme {{
   }}
 }}
 """
-        
+
         theme_path = f"{base_path}/lib/theme/theme.dart"
         os.makedirs(os.path.dirname(theme_path), exist_ok=True)
-        with open(theme_path, "w") as f:
+        with open(theme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return theme_path
 
-    def _create_flutter_colors(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_flutter_colors(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt Flutter app_colors.dart"""
-        
+
         color_defs = []
         for name, hex_color in colors.items():
             # Convert hex to Flutter Color
-            color_defs.append(
-                f"  static const Color {name} = Color(0xFF{hex_color.lstrip('#')});"
-            )
-        
+            color_defs.append(f"  static const Color {name} = Color(0xFF{hex_color.lstrip('#')});")
+
         content = f"""import 'package:flutter/material.dart';
 
 class AppColors {{
 {chr(10).join(color_defs)}
-  
+
   // Additional colors
   static const Color background = Color(0xFFFFFFFF);
   static const Color backgroundDark = Color(0xFF121212);
@@ -259,17 +247,17 @@ class AppColors {{
   static const Color textSecondaryDark = Color(0xFFAAAAAA);
 }}
 """
-        
+
         colors_path = f"{base_path}/lib/theme/app_colors.dart"
         os.makedirs(os.path.dirname(colors_path), exist_ok=True)
-        with open(colors_path, "w") as f:
+        with open(colors_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return colors_path
 
     def _create_flutter_theme_provider(self, base_path: str) -> str:
         """Erstellt Flutter theme_provider.dart"""
-        
+
         content = """import 'package:flutter/material.dart';
 
 class ThemeProvider extends ChangeNotifier {
@@ -294,53 +282,42 @@ class ThemeProvider extends ChangeNotifier {
   }
 }
 """
-        
+
         provider_path = f"{base_path}/lib/theme/theme_provider.dart"
         os.makedirs(os.path.dirname(provider_path), exist_ok=True)
-        with open(provider_path, "w") as f:
+        with open(provider_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return provider_path
 
     # ========== REACT THEME ==========
 
-    def _generate_react_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_react_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert React Theme Provider"""
         files = []
         colors = self._get_colors(options)
-        
+
         # 1. Theme Configuration
         theme_file = self._create_react_theme_config(base_path, colors)
         files.append(theme_file)
-        
+
         # 2. Theme Context
         context_file = self._create_react_theme_context(base_path)
         files.append(context_file)
-        
+
         # 3. Theme Hook
         hook_file = self._create_react_theme_hook(base_path)
         files.append(hook_file)
-        
+
         return files
 
-    def _create_react_theme_config(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_react_theme_config(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt React theme.js"""
-        
+
         # Convert colors to JS object
         light_colors = {k: v for k, v in colors.items()}
-        dark_colors = {
-            k: self._darken_color(v) if k not in ["primary", "secondary"] else v
-            for k, v in colors.items()
-        }
-        
+        dark_colors = {k: self._darken_color(v) if k not in ["primary", "secondary"] else v for k, v in colors.items()}
+
         content = f"""// Theme Configuration
 export const lightTheme = {{
   mode: 'light',
@@ -373,17 +350,17 @@ export const themes = {{
   dark: darkTheme,
 }};
 """
-        
+
         theme_path = f"{base_path}/src/theme/theme.js"
         os.makedirs(os.path.dirname(theme_path), exist_ok=True)
-        with open(theme_path, "w") as f:
+        with open(theme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return theme_path
 
     def _create_react_theme_context(self, base_path: str) -> str:
         """Erstellt React ThemeContext.jsx"""
-        
+
         content = """import React, { createContext, useState, useEffect } from 'react';
 import { lightTheme, darkTheme } from './theme';
 
@@ -417,17 +394,17 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 """
-        
+
         context_path = f"{base_path}/src/theme/ThemeContext.jsx"
         os.makedirs(os.path.dirname(context_path), exist_ok=True)
-        with open(context_path, "w") as f:
+        with open(context_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return context_path
 
     def _create_react_theme_hook(self, base_path: str) -> str:
         """Erstellt React useTheme.js Hook"""
-        
+
         content = """import { useContext } from 'react';
 import { ThemeContext } from './ThemeContext';
 
@@ -439,82 +416,74 @@ export const useTheme = () => {
   return context;
 };
 """
-        
+
         hook_path = f"{base_path}/src/theme/useTheme.js"
         os.makedirs(os.path.dirname(hook_path), exist_ok=True)
-        with open(hook_path, "w") as f:
+        with open(hook_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return hook_path
 
     # ========== CSS THEME ==========
 
-    def _generate_css_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_css_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert CSS Variables Theme"""
         files = []
         colors = self._get_colors(options)
-        
+
         # 1. CSS Variables
         css_file = self._create_css_variables(base_path, colors)
         files.append(css_file)
-        
+
         # 2. Theme Switcher JS
         js_file = self._create_css_theme_switcher(base_path)
         files.append(js_file)
-        
+
         return files
 
-    def _create_css_variables(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_css_variables(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt theme.css mit CSS Variables"""
-        
+
         color_vars_light = [f"  --color-{name}: {color};" for name, color in colors.items()]
         color_vars_dark = [
             f"  --color-{name}: {self._darken_color(color) if name not in ['primary', 'secondary'] else color};"
             for name, color in colors.items()
         ]
-        
+
         content = f"""/* Theme CSS Variables */
 
 :root {{
 {chr(10).join(color_vars_light)}
-  
+
   /* Background */
   --bg-primary: #ffffff;
   --bg-secondary: #f5f5f5;
-  
+
   /* Text */
   --text-primary: #000000;
   --text-secondary: #666666;
-  
+
   /* Border */
   --border-color: #e0e0e0;
-  
+
   /* Shadow */
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }}
 
 [data-theme="dark"] {{
 {chr(10).join(color_vars_dark)}
-  
+
   /* Background */
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
-  
+
   /* Text */
   --text-primary: #ffffff;
   --text-secondary: #aaaaaa;
-  
+
   /* Border */
   --border-color: #333333;
-  
+
   /* Shadow */
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }}
@@ -526,17 +495,17 @@ body {{
   transition: background-color 0.3s ease, color 0.3s ease;
 }}
 """
-        
+
         css_path = f"{base_path}/styles/theme.css"
         os.makedirs(os.path.dirname(css_path), exist_ok=True)
-        with open(css_path, "w") as f:
+        with open(css_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return css_path
 
     def _create_css_theme_switcher(self, base_path: str) -> str:
         """Erstellt theme-switcher.js"""
-        
+
         content = """// Theme Switcher
 class ThemeSwitcher {
   constructor() {
@@ -569,37 +538,29 @@ class ThemeSwitcher {
 const themeSwitcher = new ThemeSwitcher();
 export default themeSwitcher;
 """
-        
+
         js_path = f"{base_path}/scripts/theme-switcher.js"
         os.makedirs(os.path.dirname(js_path), exist_ok=True)
-        with open(js_path, "w") as f:
+        with open(js_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return js_path
 
     # ========== TAILWIND THEME ==========
 
-    def _generate_tailwind_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_tailwind_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert Tailwind Config"""
         files = []
         colors = self._get_colors(options)
-        
+
         config_file = self._create_tailwind_config(base_path, colors)
         files.append(config_file)
-        
+
         return files
 
-    def _create_tailwind_config(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_tailwind_config(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt tailwind.config.js"""
-        
+
         content = f"""/** @type {{import('tailwindcss').Config}} */
 module.exports = {{
   darkMode: 'class',
@@ -615,37 +576,32 @@ module.exports = {{
   plugins: [],
 }};
 """
-        
+
         config_path = f"{base_path}/tailwind.config.js"
-        os.makedirs(os.path.dirname(config_path) if os.path.dirname(config_path) else base_path, exist_ok=True)
-        with open(config_path, "w") as f:
+        os.makedirs(
+            os.path.dirname(config_path) if os.path.dirname(config_path) else base_path,
+            exist_ok=True,
+        )
+        with open(config_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return config_path
 
     # ========== VUE THEME ==========
 
-    def _generate_vue_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_vue_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert Vue Theme Composable"""
         files = []
         colors = self._get_colors(options)
-        
+
         composable_file = self._create_vue_theme_composable(base_path, colors)
         files.append(composable_file)
-        
+
         return files
 
-    def _create_vue_theme_composable(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_vue_theme_composable(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt useTheme.js Composable"""
-        
+
         content = f"""import {{ ref, computed, watch }} from 'vue';
 
 const theme = ref(localStorage.getItem('theme') || 'light');
@@ -655,7 +611,7 @@ const lightTheme = {self._dict_to_js({'colors': colors, 'background': '#ffffff',
 const darkTheme = {self._dict_to_js({'colors': colors, 'background': '#121212', 'text': '#ffffff'})};
 
 export function useTheme() {{
-  const currentTheme = computed(() => 
+  const currentTheme = computed(() =>
     theme.value === 'light' ? lightTheme : darkTheme
   );
 
@@ -675,39 +631,31 @@ export function useTheme() {{
   }};
 }}
 """
-        
+
         composable_path = f"{base_path}/src/composables/useTheme.js"
         os.makedirs(os.path.dirname(composable_path), exist_ok=True)
-        with open(composable_path, "w") as f:
+        with open(composable_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return composable_path
 
     # ========== ANGULAR THEME ==========
 
-    def _generate_angular_theme(
-        self,
-        base_path: str,
-        options: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_angular_theme(self, base_path: str, options: Dict[str, Any]) -> List[str]:
         """Generiert Angular Material Theme"""
         files = []
         colors = self._get_colors(options)
-        
+
         theme_file = self._create_angular_theme_scss(base_path, colors)
         files.append(theme_file)
-        
+
         return files
 
-    def _create_angular_theme_scss(
-        self,
-        base_path: str,
-        colors: Dict[str, str]
-    ) -> str:
+    def _create_angular_theme_scss(self, base_path: str, colors: Dict[str, str]) -> str:
         """Erstellt Angular theme.scss"""
-        
+
         primary = colors.get("primary", "#667eea")
-        
+
         content = f"""@use '@angular/material' as mat;
 
 @include mat.core();
@@ -738,12 +686,12 @@ $app-dark-theme: mat.define-dark-theme((
   @include mat.all-component-colors($app-dark-theme);
 }}
 """
-        
+
         theme_path = f"{base_path}/src/theme.scss"
         os.makedirs(os.path.dirname(theme_path), exist_ok=True)
-        with open(theme_path, "w") as f:
+        with open(theme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         return theme_path
 
     # ========== HELPER METHODS ==========
@@ -756,12 +704,12 @@ $app-dark-theme: mat.define-dark-theme((
     def _dict_to_js(self, d: Dict, indent: int = 0) -> str:
         """Converts Python dict to JS object string"""
         import json
+
         js_str = json.dumps(d, indent=2)
         if indent > 0:
-            lines = js_str.split('\n')
-            indented = [' ' * indent + line if i > 0 else line 
-                       for i, line in enumerate(lines)]
-            return '\n'.join(indented)
+            lines = js_str.split("\n")
+            indented = [" " * indent + line if i > 0 else line for i, line in enumerate(lines)]
+            return "\n".join(indented)
         return js_str
 
 

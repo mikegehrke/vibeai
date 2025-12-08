@@ -1,0 +1,76 @@
+{
+  "name": "vibe-autofix-v3",
+  "displayName": "VIBE Auto-Fix Agent v3.0",
+  "description": "Autonomous multi-agent AI system to fix, refactor and improve codebases.",
+  "version": "3.0.0",
+  "publisher": "vibeai",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onCommand:vibe.autofix",
+    "onView:vibeSidebar"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vibe.autofix",
+        "title": "Vibe Auto-Fix Full Project"
+      },
+      {
+        "command": "vibe.autopilot",
+        "title": "Vibe Autopilot Mode"
+      },
+      {
+        "command": "vibe.snapshot",
+        "title": "Create Vibe Snapshot"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "vibeSidebar",
+          "name": "VIBE Agent"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "VIBE Auto-Fix",
+      "properties": {
+        "vibe.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key for GPT-5/GPT-4.1"
+        },
+        "vibe.autopilotMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable autopilot mode (auto-apply all fixes)"
+        },
+        "vibe.model": {
+          "type": "string",
+          "default": "gpt-4o",
+          "enum": [
+            "gpt-4o",
+            "gpt-4-turbo",
+            "gpt-3.5-turbo"
+          ],
+          "description": "OpenAI model to use"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "openai": "^4.0.0",
+    "diff": "^7.0.0",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.4.0",
+    "uuid": "^9.0.1",
+    "archiver": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.0.0"
+  }
+}

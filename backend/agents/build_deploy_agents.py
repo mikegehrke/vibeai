@@ -18,15 +18,15 @@ Integration:
 - Artifact management
 """
 
-from typing import Dict, Optional
-from agents.multi_agent import BaseAgent, AgentType
-import asyncio
+from typing import Dict
+
+from agents.multi_agent import AgentType, BaseAgent
 
 
 class BuildAgent(BaseAgent):
     """
     Build Agent - Managed App Building.
-    
+
     Integrates with existing BuildSystem for:
     - Flutter APK builds
     - Flutter Web builds
@@ -43,7 +43,7 @@ class BuildAgent(BaseAgent):
             "build_electron",
             "monitor_build",
             "cancel_build",
-            "get_build_status"
+            "get_build_status",
         ]
 
     async def execute(self, task: Dict) -> Dict:
@@ -69,13 +69,13 @@ class BuildAgent(BaseAgent):
             return {
                 "success": False,
                 "error": f"Unknown task type: {task_type}",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
     async def _build_flutter_apk(self, params: Dict) -> Dict:
         """
         Build Flutter APK.
-        
+
         Params:
             {
                 "project_path": "/path/to/flutter/project",
@@ -93,7 +93,7 @@ class BuildAgent(BaseAgent):
             return {
                 "success": False,
                 "error": "Missing project_path",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
         try:
@@ -103,7 +103,7 @@ class BuildAgent(BaseAgent):
                 "build_type": "apk",
                 "project_path": project_path,
                 "output_name": output_name,
-                "build_mode": build_mode
+                "build_mode": build_mode,
             }
 
             build_result = await build_manager.start_build(build_config)
@@ -116,18 +116,14 @@ class BuildAgent(BaseAgent):
                     "platform": "flutter",
                     "build_type": "apk",
                     "build_mode": build_mode,
-                    "message": "Build started successfully"
+                    "message": "Build started successfully",
                 },
                 "agent": self.agent_type,
-                "action": "Flutter APK build started"
+                "action": "Flutter APK build started",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _build_flutter_web(self, params: Dict) -> Dict:
         """Build Flutter Web."""
@@ -139,7 +135,7 @@ class BuildAgent(BaseAgent):
             build_config = {
                 "platform": "flutter",
                 "build_type": "web",
-                "project_path": project_path
+                "project_path": project_path,
             }
 
             build_result = await build_manager.start_build(build_config)
@@ -150,18 +146,14 @@ class BuildAgent(BaseAgent):
                     "build_id": build_result.get("build_id"),
                     "status": build_result.get("status"),
                     "platform": "flutter",
-                    "build_type": "web"
+                    "build_type": "web",
                 },
                 "agent": self.agent_type,
-                "action": "Flutter Web build started"
+                "action": "Flutter Web build started",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _build_react_web(self, params: Dict) -> Dict:
         """Build React Web."""
@@ -173,7 +165,7 @@ class BuildAgent(BaseAgent):
             build_config = {
                 "platform": "react",
                 "build_type": "web",
-                "project_path": project_path
+                "project_path": project_path,
             }
 
             build_result = await build_manager.start_build(build_config)
@@ -184,18 +176,14 @@ class BuildAgent(BaseAgent):
                     "build_id": build_result.get("build_id"),
                     "status": build_result.get("status"),
                     "platform": "react",
-                    "build_type": "web"
+                    "build_type": "web",
                 },
                 "agent": self.agent_type,
-                "action": "React Web build started"
+                "action": "React Web build started",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _build_electron(self, params: Dict) -> Dict:
         """Build Electron app."""
@@ -207,7 +195,7 @@ class BuildAgent(BaseAgent):
             build_config = {
                 "platform": "electron",
                 "build_type": "desktop",
-                "project_path": project_path
+                "project_path": project_path,
             }
 
             build_result = await build_manager.start_build(build_config)
@@ -218,23 +206,19 @@ class BuildAgent(BaseAgent):
                     "build_id": build_result.get("build_id"),
                     "status": build_result.get("status"),
                     "platform": "electron",
-                    "build_type": "desktop"
+                    "build_type": "desktop",
                 },
                 "agent": self.agent_type,
-                "action": "Electron build started"
+                "action": "Electron build started",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _monitor_build(self, params: Dict) -> Dict:
         """
         Monitor build progress.
-        
+
         Returns current status and logs.
         """
         from buildsystem.build_manager import build_manager
@@ -245,7 +229,7 @@ class BuildAgent(BaseAgent):
             return {
                 "success": False,
                 "error": "Missing build_id",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
         try:
@@ -255,15 +239,11 @@ class BuildAgent(BaseAgent):
                 "success": True,
                 "result": status,
                 "agent": self.agent_type,
-                "action": "Build status retrieved"
+                "action": "Build status retrieved",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _get_build_status(self, params: Dict) -> Dict:
         """Get build status."""
@@ -276,7 +256,7 @@ class BuildAgent(BaseAgent):
 class DeployAgent(BaseAgent):
     """
     Deploy Agent - Managed Artifacts & Downloads.
-    
+
     Capabilities:
     - package_artifact: Create downloadable package
     - generate_download_link: Generate download URL
@@ -291,7 +271,7 @@ class DeployAgent(BaseAgent):
             "generate_download_link",
             "upload_to_storage",
             "get_artifact_info",
-            "cleanup_artifact"
+            "cleanup_artifact",
         ]
 
     async def execute(self, task: Dict) -> Dict:
@@ -313,13 +293,13 @@ class DeployAgent(BaseAgent):
             return {
                 "success": False,
                 "error": f"Unknown task type: {task_type}",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
     async def _package_artifact(self, params: Dict) -> Dict:
         """
         Package build artifacts into downloadable format.
-        
+
         Params:
             {
                 "build_id": "build-123",
@@ -328,7 +308,6 @@ class DeployAgent(BaseAgent):
         """
         import os
         import zipfile
-        from pathlib import Path
 
         build_id = params.get("build_id")
         format_type = params.get("format", "zip")
@@ -336,28 +315,25 @@ class DeployAgent(BaseAgent):
         try:
             # Get artifact path from build system
             from buildsystem.artifact_manager import artifact_manager
-            
+
             artifacts = artifact_manager.get_artifacts(build_id)
-            
+
             if not artifacts:
                 return {
                     "success": False,
                     "error": f"No artifacts found for build {build_id}",
-                    "agent": self.agent_type
+                    "agent": self.agent_type,
                 }
 
             # Create package
             package_path = f"/tmp/vibeai_artifacts_{build_id}.{format_type}"
-            
+
             if format_type == "zip":
-                with zipfile.ZipFile(package_path, 'w') as zipf:
+                with zipfile.ZipFile(package_path, "w") as zipf:
                     for artifact in artifacts:
                         artifact_path = artifact.get("path")
                         if os.path.exists(artifact_path):
-                            zipf.write(
-                                artifact_path,
-                                os.path.basename(artifact_path)
-                            )
+                            zipf.write(artifact_path, os.path.basename(artifact_path))
 
             return {
                 "success": True,
@@ -365,23 +341,19 @@ class DeployAgent(BaseAgent):
                     "package_path": package_path,
                     "format": format_type,
                     "size_bytes": os.path.getsize(package_path),
-                    "artifact_count": len(artifacts)
+                    "artifact_count": len(artifacts),
                 },
                 "agent": self.agent_type,
-                "action": "Artifacts packaged successfully"
+                "action": "Artifacts packaged successfully",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _generate_download_link(self, params: Dict) -> Dict:
         """
         Generate download link for artifact.
-        
+
         Params:
             {
                 "build_id": "build-123"
@@ -392,31 +364,27 @@ class DeployAgent(BaseAgent):
         try:
             # Generate download URL
             download_url = f"http://localhost:8000/build/{build_id}/download"
-            
+
             return {
                 "success": True,
                 "result": {
                     "download_url": download_url,
                     "build_id": build_id,
-                    "expires_in": "24h"
+                    "expires_in": "24h",
                 },
                 "agent": self.agent_type,
-                "action": "Download link generated"
+                "action": "Download link generated",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _upload_to_storage(self, params: Dict) -> Dict:
         """Upload to cloud storage (placeholder for future implementation)."""
         return {
             "success": False,
             "error": "Cloud storage not yet implemented",
-            "agent": self.agent_type
+            "agent": self.agent_type,
         }
 
     async def _get_artifact_info(self, params: Dict) -> Dict:
@@ -430,27 +398,20 @@ class DeployAgent(BaseAgent):
 
             return {
                 "success": True,
-                "result": {
-                    "artifacts": artifacts,
-                    "count": len(artifacts)
-                },
+                "result": {"artifacts": artifacts, "count": len(artifacts)},
                 "agent": self.agent_type,
-                "action": "Artifact info retrieved"
+                "action": "Artifact info retrieved",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
 
 # Register agents
 def register_build_deploy_agents():
     """Register Build and Deploy agents in registry."""
-    from agents.multi_agent import agent_registry, AgentType
-    
+    from agents.multi_agent import agent_registry
+
     agent_registry.agents[AgentType.BUILD] = BuildAgent()
     agent_registry.agents[AgentType.DEPLOY] = DeployAgent()
 

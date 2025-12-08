@@ -1,0 +1,33 @@
+{
+  "name": "vibe-autofix",
+  "displayName": "VIBE Auto-Fix Agent",
+  "description": "AI-powered automatic code repair using OpenAI. Scans your project, generates patches, applies fixes automatically.",
+  "version": "1.0.0",
+  "publisher": "vibeai",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onCommand:vibe.autofix"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vibe.autofix",
+        "title": "Vibe: Auto Fix Entire Project"
+      }
+    ]
+  },
+  "dependencies": {
+    "diff": "^7.0.0",
+    "dotenv": "^17.2.3",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.4.0",
+    "openai": "^4.0.0"
+  }
+}

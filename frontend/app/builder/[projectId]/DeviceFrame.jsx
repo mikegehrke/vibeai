@@ -52,7 +52,7 @@ export default function DeviceFrame({ device = 'iphone15', url, children }) {
   return (
     <div className="device-frame-container">
       <div className="device-label">{config.name}</div>
-      
+
       <div className="device-wrapper">
         <div
           className={`device-frame ${device}`}
@@ -83,6 +83,7 @@ export default function DeviceFrame({ device = 'iphone15', url, children }) {
           <div className="device-screen">
             {url ? (
               <iframe
+                id="preview-frame"
                 src={url}
                 className="device-iframe"
                 title="Device Preview"

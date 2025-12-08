@@ -1,77 +1,701 @@
-// -------------------------------------------------------------
-// VIBEAI – APP BUILDER PAGE (Main Layout)
-// -------------------------------------------------------------
-/**
- * App Builder Dashboard
- * 
- * Layout:
- * - Left Sidebar: File Explorer
- * - Center Top: Code Editor Tabs (Monaco)
- * - Center Bottom: Build Panel
- * - Right Top: Visual Editor (Drag & Drop)
- * - Right Bottom: Live Preview Panel
- * - Bottom: AI Chat Panel (Orchestrator)
- * 
- * Real-time AI assistance while building!
- */
+'use client';
 
-"use client";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 
-import { useState } from "react";
-import FileExplorer from "./FileExplorer";
-import EditorTabs from "./EditorTabs";
-import LivePreview from "./LivePreview";
-import AIPanel from "./AIPanel";
-import BuildPanel from "./BuildPanel";
-import VisualEditor from "./VisualEditor";
-import "./styles.css";
+// Dynamic Monaco Editor import
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { 
+  ssr: false 
+});
+
+// AI Models Configuration
+const AI_MODELS = {
+  'gpt-4': { name: 'GPT-4', provider: 'OpenAI', icon: '🧠', color: '#10B981' },
+  'gpt-4-turbo': { name: 'GPT-4 Turbo', provider: 'OpenAI', icon: '⚡', color: '#3B82F6' },
+  'claude-3-sonnet': { name: 'Claude 3 Sonnet', provider: 'Anthropic', icon: '🎭', color: '#8B5CF6' },
+  'claude-3-opus': { name: 'Claude 3 Opus', provider: 'Anthropic', icon: '🎨', color: '#F59E0B' },
+  'gemini-pro': { name: 'Gemini Pro', provider: 'Google', icon: '💎', color: '#EF4444' }
+};
+
+// Agent Types
+const AGENT_TYPES = {
+  'code_assistant': { name: 'Code Assistant', icon: '💻', description: 'Hilft beim Programmieren' },
+  'auto_coder': { name: 'Auto Coder', icon: '🤖', description: 'Automatische Code-Generierung' },
+  'ui_designer': { name: 'UI Designer', icon: '🎨', description: 'Erstellt UI/UX Designs' },
+  'data_analyst': { name: 'Data Analyst', icon: '📊', description: 'Analysiert Daten' },
+  'project_manager': { name: 'Project Manager', icon: '📋', description: 'Verwaltet Projekte' },
+  'creative_writer': { name: 'Creative Writer', icon: '✍️', description: 'Erstellt Inhalte' }
+};
 
 export default function BuilderPage({ params }) {
-    const { projectId } = params;
+  const { projectId } = params;
+  const router = useRouter();
+
+  // Enhanced State Management
+  const [files, setFiles] = useState([]);
+  const [activeFile, setActiveFile] = useState(null);
+  const [openTabs, setOpenTabs] = useState([]);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(280);
+  const [rightPanelWidth, setRightPanelWidth] = useState(450);
+  const [activeRightPanel, setActiveRightPanel] = useState('chat');
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(200);
+  const [showBottomPanel, setShowBottomPanel] = useState(false);
+  
+  // Chat & AI State
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [currentModel, setCurrentModel] = useState('gpt-4');
+  const [currentAgent, setCurrentAgent] = useState('auto_coder');
+  const [chatSessions, setChatSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState('default');
+  
+  // Advanced Features State
+  const [selectedText, setSelectedText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [generatedImages, setGeneratedImages] = useState([]);
+  const [codeGenHistory, setCodeGenHistory] = useState([]);
+  const [autoMode, setAutoMode] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  
+  // Project State
+  const [projectStats, setProjectStats] = useState({
+    linesOfCode: 0,
+    filesCount: 0,
+    lastBuild: null,
+    errors: 0,
+    warnings: 0
+  });
+
+  const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const editorRef = useRef(null);
+
+  // Enhanced Initialization
+  useEffect(() => {
+    initializeProject();
+    loadChatSessions();
+    setupRealtimeUpdates();
+  }, [projectId]);
+
+  const initializeProject = async () => {
+    try {
+      // Load project files
+      const response = await fetch(`/api/projects/${projectId}/files`);
+      if (response.ok) {
+        const projectFiles = await response.json();
+        setFiles(projectFiles);
+        if (projectFiles.length > 0) {
+          setActiveFile(projectFiles[0]);
+          setOpenTabs([projectFiles[0]]);
+        }
+      } else {
+        // Create mock files for demo
+        loadMockFiles();
+      }
+      
+      // Load project statistics
+      updateProjectStats();
+      
+    } catch (error) {
+      console.error('Project init failed:', error);
+      loadMockFiles();
+    }
+  };
+
+  const loadMockFiles = () => {
+    const mockFiles = [
+      {
+        name: 'README.md',
+        path: '/README.md',
+        content: `# 🚀 ${projectId}\n\nDies ist dein intelligentes Projekt!\n\n## Features\n- AI-powered development\n- Real-time collaboration\n- Smart code generation\n- Automated testing\n\n## Getting Started\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\n---\n*Erstellt mit VibeAI Builder*`,
+        language: 'markdown',
+        size: 245,
+        lastModified: new Date()
+      },
+      {
+        name: 'app.py', 
+        path: '/src/app.py',
+        content: `#!/usr/bin/env python3\n"""\\nAdvanced AI-Powered Application\\nGenerated by VibeAI Auto-Coder\\n"""\n\\nimport asyncio\nimport logging\nfrom fastapi import FastAPI, HTTPException\nfrom fastapi.middleware.cors import CORSMiddleware\\n\\n# Configure logging\nlogging.basicConfig(level=logging.INFO)\nlogger = logging.getLogger(__name__)\\n\\n# Initialize FastAPI app\napp = FastAPI(\n    title="${projectId} API",\n    description="AI-generated application with advanced features",\n    version="1.0.0"\n)\\n\\n# CORS middleware\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=["*"],\n    allow_credentials=True,\n    allow_methods=["*"],\n    allow_headers=["*"],\n)\\n\\n@app.get("/")\nasync def root():\n    return {\n        "message": "🚀 AI-Powered App Running",\n        "status": "online",\n        "version": "1.0.0"\n    }\\n\\n@app.get("/health")\nasync def health_check():\n    return {"status": "healthy", "timestamp": "2024-12-08"}\\n\\nif __name__ == "__main__":\n    import uvicorn\n    uvicorn.run(app, host="0.0.0.0", port=8000)`,
+        language: 'python',
+        size: 1024,
+        lastModified: new Date()
+      },
+      {
+        name: 'package.json',
+        path: '/package.json', 
+        content: `{\\n  "name": "${projectId.toLowerCase()}",\\n  "version": "1.0.0",\\n  "description": "AI-generated application with modern features",\\n  "main": "index.js",\\n  "scripts": {\\n    "start": "node index.js",\\n    "dev": "nodemon index.js",\\n    "test": "jest",\\n    "build": "webpack --mode production",\\n    "lint": "eslint .",\\n    "format": "prettier --write ."\\n  },\\n  "keywords": ["ai", "automation", "webapp"],\\n  "author": "VibeAI Auto-Coder",\\n  "license": "MIT",\\n  "dependencies": {\\n    "express": "^4.18.0",\\n    "cors": "^2.8.5",\\n    "helmet": "^6.0.0",\\n    "morgan": "^1.10.0"\\n  },\\n  "devDependencies": {\\n    "nodemon": "^2.0.20",\\n    "jest": "^29.0.0",\\n    "eslint": "^8.0.0",\\n    "prettier": "^2.7.0"\\n  }\\n}`,
+        language: 'json',
+        size: 689,
+        lastModified: new Date()
+      },
+      {
+        name: 'index.html',
+        path: '/public/index.html',
+        content: `<!DOCTYPE html>\\n<html lang="de">\\n<head>\\n    <meta charset="UTF-8">\\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n    <title>${projectId} - AI-Powered App</title>\\n    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">\\n    <style>\\n        .gradient-bg {\\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\n        }\\n        .glass {\\n            backdrop-filter: blur(10px);\\n            background: rgba(255, 255, 255, 0.1);\\n        }\\n    </style>\\n</head>\\n<body class="bg-gray-900 text-white">\\n    <div class="min-h-screen">\\n        <!-- Header -->\\n        <header class="gradient-bg p-6">\\n            <div class="container mx-auto">\\n                <h1 class="text-3xl font-bold">🚀 ${projectId}</h1>\\n                <p class="text-gray-200">AI-Generated Application</p>\\n            </div>\\n        </header>\\n        \\n        <!-- Main Content -->\\n        <main class="container mx-auto p-6">\\n            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">\\n                <div class="glass rounded-lg p-6">\\n                    <h2 class="text-xl font-semibold mb-4">📊 Dashboard</h2>\\n                    <p>Real-time analytics and monitoring</p>\\n                </div>\\n                <div class="glass rounded-lg p-6">\\n                    <h2 class="text-xl font-semibold mb-4">🤖 AI Features</h2>\\n                    <p>Intelligent automation and assistance</p>\\n                </div>\\n                <div class="glass rounded-lg p-6">\\n                    <h2 class="text-xl font-semibold mb-4">⚡ Performance</h2>\\n                    <p>Optimized for speed and reliability</p>\\n                </div>\\n            </div>\\n        </main>\\n    </div>\\n</body>\\n</html>`,
+        language: 'html',
+        size: 1456,
+        lastModified: new Date()
+      }
+    ];
     
-    // ⭐ BLOCK 15: Visual Editor State
-    const [screen, setScreen] = useState({
-        name: "HomeScreen",
-        type: "Screen",
-        children: []
+    setFiles(mockFiles);
+    if (mockFiles.length > 0) {
+      setActiveFile(mockFiles[0]);
+      setOpenTabs([mockFiles[0]]);
+    }
+    
+    // Update stats
+    setProjectStats({
+      linesOfCode: mockFiles.reduce((acc, file) => acc + file.content.split('\\n').length, 0),
+      filesCount: mockFiles.length,
+      lastBuild: new Date(),
+      errors: 0,
+      warnings: 2
     });
+  };
 
-    return (
-        <div className="builder-container-extended">
-            
-            {/* LEFT SIDEBAR - File Explorer */}
-            <div className="sidebar">
-                <FileExplorer projectId={projectId} />
-            </div>
+  const loadChatSessions = () => {
+    const defaultSession = {
+      id: 'default',
+      title: '🤖 AI Assistant',
+      messages: [
+        {
+          id: 'welcome',
+          role: 'assistant',
+          content: `🚀 **Willkommen im Ultimate AI Builder!**\\n\\nIch bin dein intelligenter Auto-Coder Agent. Hier sind meine Fähigkeiten:\\n\\n**🔥 Was ich kann:**\\n• 📁 **Dateien erstellen & bearbeiten** - Automatisch\\n• 🤖 **Code generieren** - Mit KI-Power\\n• 🔧 **Bugs fixen** - Sofort\\n• 🎨 **UI/UX designen** - Modern & responsive\\n• 📊 **Daten analysieren** - Smart insights\\n• 🚀 **Apps deployen** - One-click\\n\\n**⚡ Quick Actions:**\\n• Sage "erstelle eine React App" \\n• Sage "fixe alle Fehler"\\n• Sage "optimiere den Code"\\n• Sage "erstelle ein Dashboard"\\n\\n**🎯 Pro-Tip:** Ich arbeite vollautomatisch! Einfach beschreiben was du willst.`,
+          timestamp: new Date(),
+          model_used: currentModel,
+          agent_type: currentAgent
+        }
+      ],
+      model: currentModel,
+      agent: currentAgent,
+      created_at: new Date()
+    };
+    
+    setChatSessions([defaultSession]);
+    setChatMessages(defaultSession.messages);
+  };
 
-            {/* CENTER TOP - Code Editor */}
-            <div className="editor">
-                <EditorTabs projectId={projectId} />
-            </div>
+  const setupRealtimeUpdates = () => {
+    // Setup WebSocket or polling for real-time updates
+    const interval = setInterval(() => {
+      // Check for file changes, build status, etc.
+      updateProjectStats();
+    }, 5000);
 
-            {/* CENTER BOTTOM - Build Panel */}
-            <div className="build-panel">
-                <BuildPanel projectId={projectId} />
-            </div>
+    return () => clearInterval(interval);
+  };
 
-            {/* RIGHT TOP - Visual Editor */}
-            <div className="visual-editor">
-                <VisualEditor 
-                    screen={screen} 
-                    setScreen={setScreen}
-                    projectId={projectId}
-                />
-            </div>
+  const updateProjectStats = () => {
+    if (files.length > 0) {
+      setProjectStats(prev => ({
+        ...prev,
+        linesOfCode: files.reduce((acc, file) => acc + (file.content?.split('\\n').length || 0), 0),
+        filesCount: files.length,
+        lastBuild: new Date()
+      }));
+    }
+  };
 
-            {/* RIGHT BOTTOM - Live Preview */}
-            <div className="preview">
-                <LivePreview projectId={projectId} />
-            </div>
+  const openFile = (file) => {
+    setActiveFile(file);
+    if (!openTabs.find(tab => tab.path === file.path)) {
+      setOpenTabs(prev => [...prev, file]);
+    }
+  };
 
-            {/* BOTTOM PANEL - AI Chat Assistant */}
-            <div className="ai-panel">
-                <AIPanel projectId={projectId} />
-            </div>
+  const closeTab = (file) => {
+    const newTabs = openTabs.filter(tab => tab.path !== file.path);
+    setOpenTabs(newTabs);
+    
+    if (activeFile?.path === file.path) {
+      setActiveFile(newTabs.length > 0 ? newTabs[newTabs.length - 1] : null);
+    }
+  };
+
+  const handleEditorChange = (value) => {
+    if (activeFile) {
+      const updatedFile = { ...activeFile, content: value };
+      setActiveFile(updatedFile);
+      
+      setFiles(prev => prev.map(file => 
+        file.path === activeFile.path ? updatedFile : file
+      ));
+      
+      setOpenTabs(prev => prev.map(tab =>
+        tab.path === activeFile.path ? updatedFile : tab
+      ));
+    }
+  };
+
+  const getLanguage = (filename) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const languageMap = {
+      'dart': 'dart',
+      'js': 'javascript',
+      'jsx': 'javascript', 
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'html': 'html',
+      'css': 'css',
+      'md': 'markdown',
+      'json': 'json',
+      'py': 'python'
+    };
+    return languageMap[ext] || 'text';
+  };
+
+  const getFileIcon = (filename) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const iconMap = {
+      'dart': '🎯',
+      'js': '🟨',
+      'jsx': '⚛️',
+      'ts': '🔷', 
+      'tsx': '⚛️',
+      'html': '🌐',
+      'css': '🎨',
+      'md': '📝',
+      'json': '📄',
+      'py': '🐍'
+    };
+    return iconMap[ext] || '📄';
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMsg = {
+      role: 'user',
+      content: chatInput,
+      timestamp: new Date().toISOString()
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    const prompt = chatInput;
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      // Simulate AI response
+      setTimeout(() => {
+        const aiMsg = {
+          role: 'assistant',
+          content: `Ich habe deine Nachricht "${prompt}" erhalten. Das ist eine Simulation - die echte KI-Integration kommt bald!`,
+          timestamp: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, aiMsg]);
+        setIsChatLoading(false);
+      }, 1000);
+
+    } catch (error) {
+      const errorMsg = {
+        role: 'assistant', 
+        content: `❌ **Fehler:** ${error.message}`,
+        timestamp: new Date().toISOString()
+      };
+      setChatMessages(prev => [...prev, errorMsg]);
+      setIsChatLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  return (
+    <div style={{
+      height: '100vh',
+      display: 'flex', 
+      flexDirection: 'column',
+      background: '#1e1e1e',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    }}>
+      {/* Header */}
+      <div style={{
+        height: '50px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        color: '#fff'
+      }}>
+        <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+          ✨ VibeAI Builder - {projectId}
         </div>
-    );
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button style={{
+            background: 'rgba(255,255,255,0.2)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}>
+            🔧 Build
+          </button>
+          <button style={{
+            background: 'rgba(255,255,255,0.2)', 
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}>
+            ⚙️ Settings
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex' }}>
+        {/* Left Panel - Files */}
+        <div style={{
+          width: `${leftPanelWidth}px`,
+          background: '#252526',
+          borderRight: '1px solid #3c3c3c',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{
+            padding: '12px',
+            borderBottom: '1px solid #3c3c3c',
+            color: '#cccccc',
+            fontWeight: '500',
+            fontSize: '12px'
+          }}>
+            📁 EXPLORER
+          </div>
+          
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {files.map((file, index) => (
+              <div
+                key={file.path}
+                onClick={() => openFile(file)}
+                style={{
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  background: activeFile?.path === file.path ? '#37373d' : 'transparent',
+                  color: activeFile?.path === file.path ? '#ffffff' : '#cccccc',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>{getFileIcon(file.name)}</span>
+                <span>{file.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Center - Editor */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Tabs */}
+          {openTabs.length > 0 && (
+            <div style={{
+              background: '#2d2d30',
+              borderBottom: '1px solid #3c3c3c',
+              display: 'flex'
+            }}>
+              {openTabs.map(file => (
+                <div
+                  key={file.path}
+                  onClick={() => setActiveFile(file)}
+                  style={{
+                    padding: '8px 16px',
+                    background: activeFile?.path === file.path ? '#1e1e1e' : 'transparent',
+                    borderRight: '1px solid #3c3c3c',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: activeFile?.path === file.path ? '#ffffff' : '#cccccc',
+                    fontSize: '12px'
+                  }}
+                >
+                  <span>{getFileIcon(file.name)}</span>
+                  <span>{file.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(file);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#888',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Editor */}
+          <div style={{ flex: 1, background: '#1e1e1e' }}>
+            {activeFile ? (
+              <MonacoEditor
+                height="100%"
+                language={getLanguage(activeFile.name)}
+                theme="vs-dark" 
+                value={activeFile.content}
+                onChange={handleEditorChange}
+                options={{
+                  minimap: { enabled: true },
+                  fontSize: 14,
+                  wordWrap: 'off',
+                  automaticLayout: true
+                }}
+              />
+            ) : (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                color: '#666',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div style={{ fontSize: '48px' }}>📝</div>
+                <div>Wähle eine Datei zum Bearbeiten</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Panel */}
+        <div style={{
+          width: `${rightPanelWidth}px`,
+          background: '#252526', 
+          borderLeft: '1px solid #3c3c3c',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Panel Tabs */}
+          <div style={{
+            background: '#2d2d30',
+            borderBottom: '1px solid #3c3c3c',
+            display: 'flex'
+          }}>
+            <button
+              onClick={() => setActiveRightPanel('preview')}
+              style={{
+                flex: 1,
+                background: activeRightPanel === 'preview' ? '#1e1e1e' : 'transparent',
+                color: activeRightPanel === 'preview' ? '#ffffff' : '#cccccc',
+                border: 'none',
+                padding: '10px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              📱 PREVIEW
+            </button>
+            <button
+              onClick={() => setActiveRightPanel('chat')}
+              style={{
+                flex: 1,
+                background: activeRightPanel === 'chat' ? '#1e1e1e' : 'transparent',
+                color: activeRightPanel === 'chat' ? '#ffffff' : '#cccccc',
+                border: 'none',
+                padding: '10px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              🤖 AI CHAT
+            </button>
+          </div>
+
+          {/* Panel Content */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {activeRightPanel === 'preview' ? (
+              /* Preview Panel */
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#666',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div style={{ fontSize: '48px' }}>📱</div>
+                <div>Live Preview</div>
+                <div style={{ textAlign: 'center', fontSize: '12px' }}>
+                  Preview wird geladen...
+                </div>
+              </div>
+            ) : (
+              /* Chat Panel */
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Chat Messages */}
+                <div style={{
+                  flex: 1,
+                  overflow: 'auto',
+                  padding: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  {chatMessages.length === 0 && (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      color: '#666',
+                      fontSize: '12px'
+                    }}>
+                      <div style={{ fontSize: '24px', marginBottom: '10px' }}>🤖</div>
+                      <div>Starte eine Unterhaltung mit dem AI Assistant!</div>
+                    </div>
+                  )}
+
+                  {chatMessages.map((message, index) => (
+                    <div key={index} style={{
+                      display: 'flex',
+                      gap: '8px',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: message.role === 'user' ? '#667eea' : '#4ecdc4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px'
+                      }}>
+                        {message.role === 'user' ? '👤' : '🤖'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          background: message.role === 'user' ? '#37373d' : '#2d3748',
+                          padding: '8px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          color: '#ffffff'
+                        }}>
+                          {message.content}
+                        </div>
+                        <div style={{
+                          fontSize: '10px',
+                          color: '#666',
+                          marginTop: '4px'
+                        }}>
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {isChatLoading && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: '#4ecdc4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px'
+                      }}>
+                        🤖
+                      </div>
+                      <div style={{
+                        background: '#2d3748',
+                        padding: '8px 12px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        color: '#888'
+                      }}>
+                        Tippt...
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Chat Input */}
+                <div style={{
+                  padding: '10px',
+                  background: '#2d2d30',
+                  borderTop: '1px solid #3c3c3c'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px',
+                    background: '#1e1e1e',
+                    borderRadius: '6px',
+                    padding: '2px',
+                    border: '1px solid #3c3c3c'
+                  }}>
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          sendChatMessage();
+                        }
+                      }}
+                      placeholder="Frage den AI Assistant..."
+                      disabled={isChatLoading}
+                      style={{
+                        flex: 1,
+                        padding: '8px 10px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#d4d4d4',
+                        fontSize: '11px',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      onClick={sendChatMessage}
+                      disabled={!chatInput.trim() || isChatLoading}
+                      style={{
+                        padding: '6px 12px',
+                        background: chatInput.trim() && !isChatLoading 
+                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                          : '#3c3c3c',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: chatInput.trim() && !isChatLoading ? 'pointer' : 'not-allowed',
+                        fontSize: '11px'
+                      }}
+                    >
+                      {isChatLoading ? '⏳' : '📤'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

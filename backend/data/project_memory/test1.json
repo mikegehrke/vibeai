@@ -1,0 +1,22 @@
+{
+  "preferences": {
+    "framework": {
+      "value": "flutter",
+      "timestamp": "2025-12-04T20:11:11.891207"
+    }
+  },
+  "code_style": {},
+  "architecture": {},
+  "ui_standards": {},
+  "tech_stack": {},
+  "features": {
+    "auth": {
+      "type": "firebase",
+      "version": "1.0",
+      "created_at": "2025-12-04T20:11:11.891469"
+    }
+  },
+  "decisions": {},
+  "feedback": {},
+  "metrics": {}
+}

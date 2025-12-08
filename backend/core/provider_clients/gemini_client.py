@@ -25,6 +25,7 @@
 # -------------------------------------------------------------
 
 import os
+import base64
 import httpx
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -48,12 +49,12 @@ class GeminiProvider:
         """
         Einheitliche Schnittstelle für Gemini.
         Kompatibel mit VibeAI ModelWrapper.
-        
+
         Args:
             model: Gemini Modellname (gemini-2.0-flash, gemini-2.0-ultra)
             messages: Liste von {role, content} Nachrichten
             context: Kontext mit max_output_tokens, temperature, etc.
-        
+
         Returns:
             {
                 provider: "google",
@@ -79,12 +80,14 @@ class GeminiProvider:
                 for part in content:
                     if part.get("type") == "input_image":
                         # Vision Input: Inline-Daten als Base64
-                        parts.append({
-                            "inlineData": {
-                                "mimeType": "image/jpeg",
-                                "data": part["image"].decode("latin1")
+                        parts.append(
+                            {
+                                "inlineData": {
+                                    "mimeType": "image/jpeg",
+                                    "data": base64.b64encode(part["image"]).decode("latin1"),
+                                }
                             }
-                        })
+                        )
                     elif part.get("type") == "input_text":
                         parts.append({"text": part["text"]})
                     else:
@@ -92,17 +95,14 @@ class GeminiProvider:
             else:
                 parts = [{"text": str(content)}]
 
-            contents.append({
-                "role": role,
-                "parts": parts
-            })
+            contents.append({"role": role, "parts": parts})
 
         body = {
             "contents": contents,
             "generationConfig": {
                 "maxOutputTokens": context.get("max_output_tokens", 500),
                 "temperature": context.get("temperature", 0.4),
-            }
+            },
         }
 
         async with httpx.AsyncClient(timeout=15) as client:
@@ -111,12 +111,7 @@ class GeminiProvider:
                 data = resp.json()
 
                 # Gemini Output extrahieren
-                output_text = (
-                    data.get("candidates", [{}])[0]
-                        .get("content", {})
-                        .get("parts", [{}])[0]
-                        .get("text", "")
-                )
+                output_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             except Exception:
                 # Fallback wenn API nicht erreichbar
                 output_text = "Gemini response unavailable. Fallback executed."
@@ -133,11 +128,5 @@ class GeminiProvider:
             "model": model,
             "message": output_text,
             "input_tokens": input_tokens,
-            "output_tokens": output_tokens
+            "output_tokens": output_tokens,
         }
-
-
-# -------------------------------------------------------------
-# Globale Instanz
-# -------------------------------------------------------------
-gemini_client = GeminiProvider()

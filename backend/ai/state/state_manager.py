@@ -8,7 +8,7 @@ Generiert State Management Code für verschiedene Frameworks:
 """
 
 import os
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class StateManager:
@@ -18,17 +18,17 @@ class StateManager:
         self.supported_frameworks = {
             "flutter": ["riverpod", "provider", "bloc", "getx"],
             "react": ["zustand", "redux", "context", "recoil"],
-            "vue": ["pinia", "vuex"]
+            "vue": ["pinia", "vuex"],
         }
 
     # ============================================================
     # FLUTTER STATE MANAGEMENT
     # ============================================================
 
-    def create_riverpod(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_riverpod(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert Flutter Riverpod State Provider"""
         fields = fields or [{"name": "count", "type": "int", "default": "0"}]
-        
+
         state_class = f"""
 class {state_name.capitalize()}State {{
   {chr(10).join([f'  final {f["type"]} {f["name"]};' for f in fields])}
@@ -68,10 +68,10 @@ class {state_name.capitalize()}Notifier extends StateNotifier<{state_name.capita
 {provider_code}
 """
 
-    def create_provider(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_provider(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert Flutter Provider"""
         fields = fields or [{"name": "count", "type": "int", "default": "0"}]
-        
+
         return f"""import 'package:flutter/foundation.dart';
 
 class {state_name.capitalize()}Provider with ChangeNotifier {{
@@ -111,10 +111,10 @@ class {state_name.capitalize()}Bloc extends Bloc<{state_name.capitalize()}Event,
 }}
 """
 
-    def create_getx(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_getx(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert Flutter GetX Controller"""
         fields = fields or [{"name": "count", "type": "int", "default": "0"}]
-        
+
         return f"""import 'package:get/get.dart';
 
 class {state_name.capitalize()}Controller extends GetxController {{
@@ -130,16 +130,15 @@ class {state_name.capitalize()}Controller extends GetxController {{
     # REACT STATE MANAGEMENT
     # ============================================================
 
-    def create_zustand(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_zustand(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert React Zustand Store"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
+
         state_fields = ", ".join([f"{f['name']}: {f['default']}" for f in fields])
-        actions = "\n  ".join([
-            f"set{f['name'].capitalize()}: (value) => set({{ {f['name']}: value }})," 
-            for f in fields
-        ])
-        
+        actions = "\n  ".join(
+            [f"set{f['name'].capitalize()}: (value) => set({{ {f['name']}: value }})," for f in fields]
+        )
+
         return f"""import {{ create }} from 'zustand';
 
 export const use{state_name.capitalize()}Store = create((set) => ({{
@@ -150,12 +149,12 @@ export const use{state_name.capitalize()}Store = create((set) => ({{
 }}));
 """
 
-    def create_redux(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_redux(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert React Redux Store"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
+
         initial_state = "{ " + ", ".join([f"{f['name']}: {f['default']}" for f in fields]) + " }"
-        
+
         return f"""import {{ createSlice }} from '@reduxjs/toolkit';
 
 const {state_name}Slice = createSlice({{
@@ -172,12 +171,12 @@ export const {{ increment, decrement, setValue }} = {state_name}Slice.actions;
 export default {state_name}Slice.reducer;
 """
 
-    def create_context(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_context(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert React Context API"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
+
         initial_state = "{ " + ", ".join([f"{f['name']}: {f['default']}" for f in fields]) + " }"
-        
+
         return f"""import {{ createContext, useContext, useState }} from 'react';
 
 const {state_name.capitalize()}Context = createContext();
@@ -199,15 +198,17 @@ export function {state_name.capitalize()}Provider({{ children }}) {{
 export const use{state_name.capitalize()} = () => useContext({state_name.capitalize()}Context);
 """
 
-    def create_recoil(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_recoil(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert React Recoil Atoms"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
-        atoms = "\n\n".join([
-            f"export const {f['name']}State = atom({{\n  key: '{state_name}_{f['name']}',\n  default: {f['default']}\n}});"
-            for f in fields
-        ])
-        
+
+        atoms = "\n\n".join(
+            [
+                f"export const {f['name']}State = atom({{\n  key: '{state_name}_{f['name']}',\n  default: {f['default']}\n}});"
+                for f in fields
+            ]
+        )
+
         return f"""import {{ atom }} from 'recoil';
 
 {atoms}
@@ -217,16 +218,13 @@ export const use{state_name.capitalize()} = () => useContext({state_name.capital
     # VUE STATE MANAGEMENT
     # ============================================================
 
-    def create_pinia(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_pinia(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert Vue Pinia Store"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
+
         state_fields = ",\n    ".join([f"{f['name']}: {f['default']}" for f in fields])
-        actions = "\n    ".join([
-            f"{f['name'].capitalize()}(value) {{ this.{f['name']} = value; }},"
-            for f in fields
-        ])
-        
+        actions = "\n    ".join([f"{f['name'].capitalize()}(value) {{ this.{f['name']} = value; }}," for f in fields])
+
         return f"""import {{ defineStore }} from 'pinia';
 
 export const use{state_name.capitalize()}Store = defineStore('{state_name}', {{
@@ -241,16 +239,15 @@ export const use{state_name.capitalize()}Store = defineStore('{state_name}', {{
 }});
 """
 
-    def create_vuex(self, state_name: str = "app", fields: List[Dict] = None) -> str:
+    def create_vuex(self, state_name: str = "app", fields: Optional[List[Dict[str, Any]]] = None) -> str:
         """Generiert Vue Vuex Store"""
         fields = fields or [{"name": "count", "type": "number", "default": "0"}]
-        
+
         state_fields = ",\n    ".join([f"{f['name']}: {f['default']}" for f in fields])
-        mutations = "\n    ".join([
-            f"SET_{f['name'].upper()}(state, value) {{ state.{f['name']} = value; }},"
-            for f in fields
-        ])
-        
+        mutations = "\n    ".join(
+            [f"SET_{f['name'].upper()}(state, value) {{ state.{f['name']} = value; }}," for f in fields]
+        )
+
         return f"""import {{ createStore }} from 'vuex';
 
 export default createStore({{
@@ -278,26 +275,26 @@ export default createStore({{
         framework: str,
         library: str,
         state_name: str = "app",
-        fields: List[Dict] = None,
-        base_path: Optional[str] = None
+        fields: Optional[List[Dict[str, Any]]] = None,
+        base_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Universal State Management Generator
-        
+
         Args:
             framework: flutter | react | vue
             library: riverpod | provider | bloc | getx | zustand | redux | context | recoil | pinia | vuex
             state_name: Name des State
             fields: Liste von State-Feldern [{"name": "count", "type": "int", "default": "0"}]
             base_path: Optional - Pfad zum Speichern der Datei
-        
+
         Returns:
             {success: bool, code: str, file_path: str, library: str}
         """
         try:
             framework = framework.lower()
             library = library.lower()
-            
+
             # Method Mapping
             generators = {
                 "riverpod": self.create_riverpod,
@@ -309,16 +306,16 @@ export default createStore({{
                 "context": self.create_context,
                 "recoil": self.create_recoil,
                 "pinia": self.create_pinia,
-                "vuex": self.create_vuex
+                "vuex": self.create_vuex,
             }
-            
+
             if library not in generators:
                 return {
                     "success": False,
                     "error": f"Unsupported library: {library}",
-                    "supported": self.supported_frameworks
+                    "supported": self.supported_frameworks,
                 }
-            
+
             # Code generieren
             if library in ["riverpod", "provider", "getx"]:
                 code = generators[library](state_name, fields)
@@ -326,25 +323,21 @@ export default createStore({{
                 code = generators[library](state_name)
             else:
                 code = generators[library](state_name, fields)
-            
+
             result = {
                 "success": True,
                 "code": code,
                 "framework": framework,
                 "library": library,
-                "state_name": state_name
+                "state_name": state_name,
             }
-            
+
             # Optional: Datei schreiben
             if base_path:
-                file_extensions = {
-                    "flutter": ".dart",
-                    "react": ".js",
-                    "vue": ".js"
-                }
+                file_extensions = {"flutter": ".dart", "react": ".js", "vue": ".js"}
                 ext = file_extensions.get(framework, ".txt")
                 file_name = f"{state_name}_state{ext}"
-                
+
                 if framework == "flutter":
                     file_path = os.path.join(base_path, "lib", "state", file_name)
                 elif framework == "react":
@@ -353,22 +346,22 @@ export default createStore({{
                     file_path = os.path.join(base_path, "src", "stores", file_name)
                 else:
                     file_path = os.path.join(base_path, file_name)
-                
+
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                
+
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(code)
-                
+
                 result["file_path"] = file_path
-            
+
             return result
-            
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
                 "framework": framework,
-                "library": library
+                "library": library,
             }
 
 

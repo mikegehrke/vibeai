@@ -12,20 +12,15 @@ Capabilities:
 - WebSocket notifications
 """
 
-from typing import Dict, Optional
 import asyncio
-import os
 from pathlib import Path
+from typing import Dict
 
 
 class PreviewAgent:
     """Agent for preview management."""
 
-    async def update_preview(
-        self,
-        user_id: str,
-        project_id: str
-    ) -> Dict:
+    async def update_preview(self, user_id: str, project_id: str) -> Dict:
         """
         Update live preview for project.
 
@@ -50,18 +45,11 @@ class PreviewAgent:
         project_path = ctx.get("project_path")
 
         if not project_path:
-            return {
-                "success": False,
-                "error": "No project path configured"
-            }
+            return {"success": False, "error": "No project path configured"}
 
         try:
             # Step 1: Save code files
-            save_result = await self._save_code_files(
-                user_id,
-                project_id,
-                ctx
-            )
+            save_result = await self._save_code_files(user_id, project_id, ctx)
 
             if not save_result.get("success"):
                 return save_result
@@ -73,10 +61,7 @@ class PreviewAgent:
             await asyncio.sleep(0.3)
 
             # Step 3: Start new preview
-            result = await self._start_preview_server(
-                framework,
-                project_path
-            )
+            result = await self._start_preview_server(framework, project_path)
 
             if result.get("success"):
                 # Update context with server info
@@ -85,39 +70,26 @@ class PreviewAgent:
                     project_id,
                     {
                         "server_id": result.get("server_id"),
-                        "preview_url": result.get("preview_url")
-                    }
+                        "preview_url": result.get("preview_url"),
+                    },
                 )
 
                 # Step 4: Send WebSocket notification
-                await self._notify_preview_update(
-                    user_id,
-                    project_id,
-                    result
-                )
+                await self._notify_preview_update(user_id, project_id, result)
 
             return {
                 "success": True,
                 "preview_url": result.get("preview_url"),
                 "server_id": result.get("server_id"),
                 "framework": framework,
-                "files_saved": save_result.get("files_saved", 0)
+                "files_saved": save_result.get("files_saved", 0),
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
-    async def _save_code_files(
-        self,
-        user_id: str,
-        project_id: str,
-        ctx: Dict
-    ) -> Dict:
+    async def _save_code_files(self, user_id: str, project_id: str, ctx: Dict) -> Dict:
         """Save generated code to project files."""
-        from ai.orchestrator.memory.project_context import project_context
 
         project_path = ctx.get("project_path")
         framework = ctx.get("framework", "flutter")
@@ -146,7 +118,7 @@ class PreviewAgent:
                 file_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # Write file
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     f.write(content)
 
                 files_saved += 1
@@ -154,21 +126,13 @@ class PreviewAgent:
             return {
                 "success": True,
                 "files_saved": files_saved,
-                "project_path": str(project_path)
+                "project_path": str(project_path),
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"Failed to save files: {str(e)}"
-            }
+            return {"success": False, "error": f"Failed to save files: {str(e)}"}
 
-    async def _stop_existing_preview(
-        self,
-        user_id: str,
-        project_id: str,
-        ctx: Dict
-    ) -> None:
+    async def _stop_existing_preview(self, user_id: str, project_id: str, ctx: Dict) -> None:
         """Stop existing preview server if running."""
         server_id = ctx.get("server_id")
         framework = ctx.get("framework", "flutter")
@@ -179,19 +143,17 @@ class PreviewAgent:
         try:
             if framework == "flutter":
                 from preview.flutter_preview import flutter_preview_manager
+
                 await flutter_preview_manager.stop_server(server_id)
             elif framework == "react":
                 from preview.react_preview import react_preview_manager
+
                 await react_preview_manager.stop_server(server_id)
         except Exception:
             # Server might already be stopped
             pass
 
-    async def _start_preview_server(
-        self,
-        framework: str,
-        project_path: str
-    ) -> Dict:
+    async def _start_preview_server(self, framework: str, project_path: str) -> Dict:
         """Start preview server based on framework."""
         from preview.unified_preview_manager import unified_preview_manager
 
@@ -199,27 +161,13 @@ class PreviewAgent:
         port = unified_preview_manager._get_default_port(framework)
 
         if framework == "flutter":
-            return await unified_preview_manager._start_flutter(
-                project_path,
-                port
-            )
+            return await unified_preview_manager._start_flutter(project_path, port)
         elif framework in ["react", "vue"]:
-            return await unified_preview_manager._start_react(
-                project_path,
-                port
-            )
+            return await unified_preview_manager._start_react(project_path, port)
         else:
-            return {
-                "success": False,
-                "error": f"Framework {framework} not supported"
-            }
+            return {"success": False, "error": f"Framework {framework} not supported"}
 
-    async def _notify_preview_update(
-        self,
-        user_id: str,
-        project_id: str,
-        result: Dict
-    ) -> None:
+    async def _notify_preview_update(self, user_id: str, project_id: str, result: Dict) -> None:
         """Send WebSocket notification about preview update."""
         try:
             # Try to use WebSocket manager if available
@@ -231,23 +179,16 @@ class PreviewAgent:
                 "project_id": project_id,
                 "preview_url": result.get("preview_url"),
                 "server_id": result.get("server_id"),
-                "timestamp": None
+                "timestamp": None,
             }
 
             # Broadcast to user's connections
-            await manager.send_personal_message(
-                message,
-                user_id
-            )
+            await manager.send_personal_message(message, user_id)
         except Exception:
             # WebSocket not available, skip notification
             pass
 
-    async def reload_preview(
-        self,
-        user_id: str,
-        project_id: str
-    ) -> Dict:
+    async def reload_preview(self, user_id: str, project_id: str) -> Dict:
         """
         Hot reload preview (Flutter only).
 
@@ -260,35 +201,26 @@ class PreviewAgent:
         server_id = ctx.get("server_id")
 
         if not server_id:
-            return {
-                "success": False,
-                "error": "No preview server running"
-            }
+            return {"success": False, "error": "No preview server running"}
 
         try:
             if framework == "flutter":
                 from preview.flutter_preview import flutter_preview_manager
+
                 await flutter_preview_manager.trigger_hot_reload(server_id)
                 return {
                     "success": True,
                     "message": "Hot reload triggered",
-                    "framework": framework
+                    "framework": framework,
                 }
             else:
                 # For React/Vue, restart server
                 return await self.update_preview(user_id, project_id)
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
-    async def stop_preview(
-        self,
-        user_id: str,
-        project_id: str
-    ) -> Dict:
+    async def stop_preview(self, user_id: str, project_id: str) -> Dict:
         """Stop preview server."""
         from ai.orchestrator.memory.project_context import project_context
 

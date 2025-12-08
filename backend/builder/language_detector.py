@@ -5,21 +5,20 @@
 # -------------------------------------------------------------
 
 import os
-from typing import Optional
 
 
 def detect_language(file_path: str) -> str:
     """
     Erkennt die Programmiersprache anhand der Dateiendung.
-    
+
     Args:
         file_path: Dateipfad (z.B. "lib/main.dart")
-    
+
     Returns:
         Sprach-Identifier (z.B. "dart", "python", "typescript")
     """
     ext = os.path.splitext(file_path)[1].lower()
-    
+
     language_map = {
         ".dart": "dart",
         ".ts": "typescript",
@@ -48,17 +47,17 @@ def detect_language(file_path: str) -> str:
         ".sh": "bash",
         ".sql": "sql",
     }
-    
+
     return language_map.get(ext, "text")
 
 
 def get_file_extension(language: str) -> str:
     """
     Umgekehrte Mapping: Sprache → Dateiendung.
-    
+
     Args:
         language: Sprach-Identifier
-    
+
     Returns:
         Dateiendung (z.B. ".dart")
     """
@@ -89,7 +88,7 @@ def get_file_extension(language: str) -> str:
         "bash": ".sh",
         "sql": ".sql",
     }
-    
+
     return extension_map.get(language, ".txt")
 
 
@@ -97,9 +96,22 @@ def is_code_file(file_path: str) -> bool:
     """Prüft ob Datei eine Code-Datei ist (keine Config/Asset)."""
     language = detect_language(file_path)
     code_languages = {
-        "dart", "typescript", "tsx", "javascript", "jsx",
-        "python", "swift", "kotlin", "java", "go", "rust",
-        "ruby", "php", "c", "cpp", "csharp"
+        "dart",
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsx",
+        "python",
+        "swift",
+        "kotlin",
+        "java",
+        "go",
+        "rust",
+        "ruby",
+        "php",
+        "c",
+        "cpp",
+        "csharp",
     }
     return language in code_languages
 
@@ -128,8 +140,5 @@ def get_comment_syntax(language: str) -> dict:
         "sql": {"line": "--", "block_start": "/*", "block_end": "*/"},
         "bash": {"line": "#", "block_start": None, "block_end": None},
     }
-    
-    return syntax_map.get(
-        language,
-        {"line": "//", "block_start": "/*", "block_end": "*/"}
-    )
+
+    return syntax_map.get(language, {"line": "//", "block_start": "/*", "block_end": "*/"})

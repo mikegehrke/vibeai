@@ -2,30 +2,25 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
-  // Enable experimental app directory
-  experimental: {
-    appDir: true
-  },
-  
+
   // Configure API proxy to backend
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*'
+        destination: 'http://127.0.0.1:8001/api/:path*'
       },
       {
         source: '/preview/:path*',
-        destination: 'http://localhost:8000/preview/:path*'
+        destination: 'http://127.0.0.1:8001/preview/:path*'
       },
       {
         source: '/ai/:path*',
-        destination: 'http://localhost:8000/ai/:path*'
+        destination: 'http://127.0.0.1:8001/ai/:path*'
       }
     ]
   },
-  
+
   // CORS headers
   async headers() {
     return [

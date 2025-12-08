@@ -19,21 +19,21 @@ Features:
 - Admin-Aktionen (Cancel, Cleanup, Restart)
 """
 
-import os
 import time
-import psutil
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Optional, Any
 from datetime import datetime, timedelta
+from typing import Dict, Optional, Any
 
-from .build_manager import build_manager
+import psutil
+from fastapi import APIRouter, HTTPException
+
+from ..auth import verify_admin  # Admin-Auth Middleware
 from .build_cleanup import (
-    get_cleanup_stats,
-    cleanup_old_builds,
     cleanup_failed_builds,
-    get_all_builds_size
+    cleanup_old_builds,
+    get_all_builds_size,
+    get_cleanup_stats,
 )
-from auth import verify_admin  # Admin-Auth Middleware
+from .build_manager import build_manager
 
 router = APIRouter(prefix="/api/admin/builds", tags=["admin-builds"])
 
@@ -44,17 +44,16 @@ async def list_all_builds(
     offset: int = 0,
     status: Optional[str] = None,
     user: Optional[str] = None,
-    admin_user=Depends(verify_admin)
 ) -> Dict[str, Any]:
     """
     Liste aller Builds mit Filterung.
-    
+
     Query Params:
         limit: Max. Anzahl Builds
         offset: Pagination offset
         status: Filter nach Status (SUCCESS, FAILED, RUNNING)
         user: Filter nach User-ID
-    
+
     Returns:
         {
             "total": 125,
@@ -64,58 +63,46 @@ async def list_all_builds(
         }
     """
     all_builds = list(build_manager.builds.items())
-    
+
     # Filter nach Status
     if status:
-        all_builds = [
-            (bid, b) for bid, b in all_builds
-            if b.get("status") == status
-        ]
-    
+        all_builds = [(bid, b) for bid, b in all_builds if b.get("status") == status]
+
     # Filter nach User
     if user:
-        all_builds = [
-            (bid, b) for bid, b in all_builds
-            if b.get("user") == user
-        ]
-    
+        all_builds = [(bid, b) for bid, b in all_builds if b.get("user") == user]
+
     # Sortiere nach Timestamp (neueste zuerst)
-    all_builds.sort(
-        key=lambda x: x[1].get("timestamp", 0),
-        reverse=True
-    )
-    
+    all_builds.sort(key=lambda x: x[1].get("timestamp", 0), reverse=True)
+
     total = len(all_builds)
-    
+
     # Pagination
-    paginated = all_builds[offset:offset + limit]
-    
+    paginated = all_builds[offset : offset + limit]
+
     builds_data = []
     for build_id, build_data in paginated:
-        builds_data.append({
-            "build_id": build_id,
-            "user": build_data.get("user"),
-            "project": build_data.get("project_path"),
-            "build_type": build_data.get("build_type"),
-            "status": build_data.get("status"),
-            "timestamp": build_data.get("timestamp"),
-            "duration": build_data.get("duration"),
-            "artifacts": build_data.get("artifacts", [])
-        })
-    
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "builds": builds_data
-    }
+        builds_data.append(
+            {
+                "build_id": build_id,
+                "user": build_data.get("user"),
+                "project": build_data.get("project_path"),
+                "build_type": build_data.get("build_type"),
+                "status": build_data.get("status"),
+                "timestamp": build_data.get("timestamp"),
+                "duration": build_data.get("duration"),
+                "artifacts": build_data.get("artifacts", []),
+            }
+        )
+
+    return {"total": total, "limit": limit, "offset": offset, "builds": builds_data}
 
 
 @router.get("/stats")
 async def get_build_statistics() -> Dict[str, Any]:
     """
     Build-Statistiken für Admin-Dashboard.
-    
+
     Returns:
         {
             "total_builds": 125,
@@ -128,9 +115,9 @@ async def get_build_statistics() -> Dict[str, Any]:
         }
     """
     all_builds = build_manager.builds.values()
-    
+
     total = len(all_builds)
-    
+
     if total == 0:
         return {
             "total_builds": 0,
@@ -139,56 +126,39 @@ async def get_build_statistics() -> Dict[str, Any]:
             "builds_today": 0,
             "builds_this_week": 0,
             "builds_by_type": {},
-            "builds_by_status": {}
+            "builds_by_status": {},
         }
-    
+
     # Success Rate
-    success_count = sum(
-        1 for b in all_builds
-        if b.get("status") == "SUCCESS"
-    )
+    success_count = sum(1 for b in all_builds if b.get("status") == "SUCCESS")
     success_rate = success_count / total
-    
+
     # Durchschnittliche Dauer
-    durations = [
-        b.get("duration", 0)
-        for b in all_builds
-        if b.get("duration")
-    ]
+    durations = [b.get("duration", 0) for b in all_builds if b.get("duration")]
     avg_duration = sum(durations) / len(durations) if durations else 0
-    
+
     # Builds heute
-    today_start = datetime.now().replace(
-        hour=0, minute=0, second=0, microsecond=0
-    ).timestamp()
-    
-    builds_today = sum(
-        1 for b in all_builds
-        if b.get("timestamp", 0) >= today_start
-    )
-    
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+
+    builds_today = sum(1 for b in all_builds if b.get("timestamp", 0) >= today_start)
+
     # Builds diese Woche
-    week_start = (
-        datetime.now() - timedelta(days=7)
-    ).timestamp()
-    
-    builds_this_week = sum(
-        1 for b in all_builds
-        if b.get("timestamp", 0) >= week_start
-    )
-    
+    week_start = (datetime.now() - timedelta(days=7)).timestamp()
+
+    builds_this_week = sum(1 for b in all_builds if b.get("timestamp", 0) >= week_start)
+
     # Builds nach Typ
     builds_by_type = {}
     for b in all_builds:
         build_type = b.get("build_type", "unknown")
         builds_by_type[build_type] = builds_by_type.get(build_type, 0) + 1
-    
+
     # Builds nach Status
     builds_by_status = {}
     for b in all_builds:
         status = b.get("status", "UNKNOWN")
         builds_by_status[status] = builds_by_status.get(status, 0) + 1
-    
+
     return {
         "total_builds": total,
         "success_rate": round(success_rate, 3),
@@ -196,7 +166,7 @@ async def get_build_statistics() -> Dict[str, Any]:
         "builds_today": builds_today,
         "builds_this_week": builds_this_week,
         "builds_by_type": builds_by_type,
-        "builds_by_status": builds_by_status
+        "builds_by_status": builds_by_status,
     }
 
 
@@ -204,7 +174,7 @@ async def get_build_statistics() -> Dict[str, Any]:
 async def get_active_builds() -> Dict[str, Any]:
     """
     Aktuell laufende Builds.
-    
+
     Returns:
         {
             "active_count": 3,
@@ -212,75 +182,63 @@ async def get_active_builds() -> Dict[str, Any]:
         }
     """
     active_builds = []
-    
+
     for build_id, build_data in build_manager.builds.items():
         status = build_data.get("status")
-        
+
         if status in ["PENDING", "RUNNING"]:
-            active_builds.append({
-                "build_id": build_id,
-                "user": build_data.get("user"),
-                "build_type": build_data.get("build_type"),
-                "status": status,
-                "started_at": build_data.get("timestamp"),
-                "elapsed_seconds": (
-                    time.time() - build_data.get("timestamp", 0)
-                )
-            })
-    
-    return {
-        "active_count": len(active_builds),
-        "builds": active_builds
-    }
+            active_builds.append(
+                {
+                    "build_id": build_id,
+                    "user": build_data.get("user"),
+                    "build_type": build_data.get("build_type"),
+                    "status": status,
+                    "started_at": build_data.get("timestamp"),
+                    "elapsed_seconds": (time.time() - build_data.get("timestamp", 0)),
+                }
+            )
+
+    return {"active_count": len(active_builds), "builds": active_builds}
 
 
 @router.post("/{build_id}/cancel")
 async def cancel_build(build_id: str) -> Dict[str, str]:
     """
     Bricht einen laufenden Build ab.
-    
+
     Args:
         build_id: Build-ID
-    
+
     Returns:
         {"status": "cancelled", "build_id": "..."}
     """
     build = build_manager.get_build(build_id)
-    
+
     if not build:
         raise HTTPException(status_code=404, detail="Build not found")
-    
+
     status = build.get("status")
-    
+
     if status not in ["PENDING", "RUNNING"]:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot cancel build with status: {status}"
-        )
-    
+        raise HTTPException(status_code=400, detail=f"Cannot cancel build with status: {status}")
+
     # Update Status
     build_manager.update_status(build_id, "CANCELLED")
-    
+
     # TODO: Kill Build-Prozess wenn implementiert
-    
-    return {
-        "status": "cancelled",
-        "build_id": build_id
-    }
+
+    return {"status": "cancelled", "build_id": build_id}
 
 
 @router.post("/cleanup")
-async def trigger_cleanup(
-    max_age_days: int = 7,
-    cleanup_failed: bool = True
-) -> Dict[str, Any]:
+async def trigger_cleanup(max_age_days: int = 7, cleanup_failed: bool = True) -> Dict[str, Any]:
     """
     Startet Cleanup-Operation.
-    
+
     Query Params:
         max_age_days: Builds älter als X Tage löschen
         cleanup_failed: Fehlgeschlagene Builds auch löschen
-    
+
     Returns:
         {
             "deleted_builds": 5,
@@ -289,17 +247,17 @@ async def trigger_cleanup(
         }
     """
     result = cleanup_old_builds(max_age_days=max_age_days)
-    
+
     failed_result = {"deleted": 0, "freed_space": 0}
     if cleanup_failed:
         failed_result = cleanup_failed_builds(max_age_hours=24)
-    
+
     total_freed = result["freed_space"] + failed_result["freed_space"]
-    
+
     return {
         "deleted_builds": result["deleted"],
         "freed_space_gb": round(total_freed / (1024**3), 2),
-        "deleted_failed": failed_result["deleted"]
+        "deleted_failed": failed_result["deleted"],
     }
 
 
@@ -307,7 +265,7 @@ async def trigger_cleanup(
 async def get_system_resources() -> Dict[str, Any]:
     """
     System-Ressourcen für Monitoring.
-    
+
     Returns:
         {
             "cpu_percent": 45.2,
@@ -320,22 +278,22 @@ async def get_system_resources() -> Dict[str, Any]:
     """
     # CPU
     cpu_percent = psutil.cpu_percent(interval=1)
-    
+
     # Memory
     memory = psutil.virtual_memory()
     memory_percent = memory.percent
-    
+
     # Disk
     disk = psutil.disk_usage(".")
     disk_total_gb = disk.total / (1024**3)
     disk_used_gb = disk.used / (1024**3)
     disk_free_gb = disk.free / (1024**3)
     disk_percent = disk.percent
-    
+
     # Build-Artifacts Größe
     artifacts_size = get_all_builds_size()
     artifacts_size_gb = artifacts_size / (1024**3)
-    
+
     return {
         "cpu_percent": round(cpu_percent, 1),
         "memory_percent": round(memory_percent, 1),
@@ -343,7 +301,7 @@ async def get_system_resources() -> Dict[str, Any]:
         "disk_used_gb": round(disk_used_gb, 2),
         "disk_free_gb": round(disk_free_gb, 2),
         "disk_percent": round(disk_percent, 1),
-        "build_artifacts_size_gb": round(artifacts_size_gb, 2)
+        "build_artifacts_size_gb": round(artifacts_size_gb, 2),
     }
 
 
@@ -351,7 +309,7 @@ async def get_system_resources() -> Dict[str, Any]:
 async def get_cleanup_statistics() -> Dict[str, Any]:
     """
     Cleanup-Statistiken für Admin-Dashboard.
-    
+
     Returns:
         Stats von get_cleanup_stats()
     """
@@ -359,17 +317,14 @@ async def get_cleanup_statistics() -> Dict[str, Any]:
 
 
 @router.get("/user/{user_id}/builds")
-async def get_user_builds(
-    user_id: str,
-    limit: int = 20
-) -> Dict[str, Any]:
+async def get_user_builds(user_id: str, limit: int = 20) -> Dict[str, Any]:
     """
     Alle Builds eines Users.
-    
+
     Args:
         user_id: User-ID
         limit: Max. Anzahl
-    
+
     Returns:
         {
             "user_id": "...",
@@ -377,32 +332,24 @@ async def get_user_builds(
             "builds": [...]
         }
     """
-    user_builds = [
-        (bid, b) for bid, b in build_manager.builds.items()
-        if b.get("user") == user_id
-    ]
-    
+    user_builds = [(bid, b) for bid, b in build_manager.builds.items() if b.get("user") == user_id]
+
     # Sortiere nach Timestamp
-    user_builds.sort(
-        key=lambda x: x[1].get("timestamp", 0),
-        reverse=True
-    )
-    
+    user_builds.sort(key=lambda x: x[1].get("timestamp", 0), reverse=True)
+
     total = len(user_builds)
     limited = user_builds[:limit]
-    
+
     builds_data = []
     for build_id, build_data in limited:
-        builds_data.append({
-            "build_id": build_id,
-            "build_type": build_data.get("build_type"),
-            "status": build_data.get("status"),
-            "timestamp": build_data.get("timestamp"),
-            "duration": build_data.get("duration")
-        })
-    
-    return {
-        "user_id": user_id,
-        "total_builds": total,
-        "builds": builds_data
-    }
+        builds_data.append(
+            {
+                "build_id": build_id,
+                "build_type": build_data.get("build_type"),
+                "status": build_data.get("status"),
+                "timestamp": build_data.get("timestamp"),
+                "duration": build_data.get("duration"),
+            }
+        )
+
+    return {"user_id": user_id, "total_builds": total, "builds": builds_data}

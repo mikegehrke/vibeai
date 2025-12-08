@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 
 import re
-from typing import Optional
+
 from builder.language_detector import detect_language
 
 
@@ -23,18 +23,18 @@ class CodeFormatter:
     def format_code(self, content: str, language: str = None, file_path: str = None) -> str:
         """
         Formatiert Code basierend auf Sprache.
-        
+
         Args:
             content: Code-Inhalt
             language: Sprach-Identifier (optional)
             file_path: Dateipfad (für auto-detection)
-        
+
         Returns:
             Formatierter Code
         """
         if language is None and file_path:
             language = detect_language(file_path)
-        
+
         if not language:
             return content
 
@@ -60,16 +60,16 @@ class CodeFormatter:
         for line in lines:
             # Entferne trailing whitespace
             line = line.rstrip()
-            
+
             # Kein multiple blank lines
             if not line and formatted and not formatted[-1]:
                 continue
-            
+
             formatted.append(line)
 
         # Max 2 blank lines zwischen Funktionen/Klassen
         result = "\n".join(formatted)
-        result = re.sub(r'\n{3,}', '\n\n', result)
+        result = re.sub(r"\n{3,}", "\n\n", result)
 
         return result
 
@@ -81,7 +81,7 @@ class CodeFormatter:
 
         for line in lines:
             stripped = line.strip()
-            
+
             # Skip empty lines
             if not stripped:
                 formatted.append("")
@@ -111,7 +111,7 @@ class CodeFormatter:
 
         for line in lines:
             stripped = line.strip()
-            
+
             if not stripped:
                 formatted.append("")
                 continue

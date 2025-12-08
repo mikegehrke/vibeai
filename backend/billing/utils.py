@@ -23,30 +23,26 @@ MODEL_COSTS = {
     # -------------------------------
     # OpenAI – GPT models
     # -------------------------------
-    "gpt-4o": (0.000005, 0.000015),         # (input, output)
+    "gpt-4o": (0.000005, 0.000015),  # (input, output)
     "gpt-4.1": (0.000004, 0.000012),
     "gpt-4.1-mini": (0.0000004, 0.0000005),
     "gpt-o3": (0.000008, 0.000020),
-
     # -------------------------------
     # Anthropic – Claude models
     # -------------------------------
     "claude-3.7-sonnet": (0.0000035, 0.000008),
     "claude-3.5-sonnet": (0.0000030, 0.000007),
     "claude-3-haiku": (0.0000010, 0.0000025),
-
     # -------------------------------
     # Google – Gemini models
     # -------------------------------
     "gemini-2.0-ultra": (0.0000045, 0.000010),
     "gemini-2.0-flash": (0.00000015, 0.00000030),
-
     # -------------------------------
     # GitHub Copilot Models (flat-rate / pseudo cost)
     # -------------------------------
     "copilot-gpt4": (0.0000005, 0.0000005),
     "copilot-editor": (0.0000002, 0.0000002),
-
     # -------------------------------
     # Ollama – Local models (0 cost)
     # -------------------------------
@@ -55,7 +51,6 @@ MODEL_COSTS = {
     "phi3": (0, 0),
     "neural-chat": (0, 0),
     "qwen2.5-coder:7b": (0, 0),
-
     # -------------------------------
     # VibeAI internal agents (tools)
     # -------------------------------
@@ -83,10 +78,7 @@ def calculate_cost_v2(model: str, input_tokens: int, output_tokens: int) -> floa
     """
     in_rate, out_rate = get_cost_rates(model)
 
-    return round(
-        (input_tokens * in_rate) + (output_tokens * out_rate),
-        6
-    )
+    return round((input_tokens * in_rate) + (output_tokens * out_rate), 6)
 
 
 def calculate_total_cost(model: str, input_tokens: int, output_tokens: int) -> dict:
@@ -106,7 +98,7 @@ def calculate_total_cost(model: str, input_tokens: int, output_tokens: int) -> d
         "input_cost_usd": round(input_cost, 6),
         "output_cost_usd": round(output_cost, 6),
         "total_cost_usd": round(total, 6),
-        "provider": get_provider_from_model(model)
+        "provider": get_provider_from_model(model),
     }
 
 

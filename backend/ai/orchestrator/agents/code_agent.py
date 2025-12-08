@@ -11,18 +11,13 @@ Supports:
 - HTML/CSS
 """
 
-from typing import Dict, Optional
-import json
+from typing import Dict
 
 
 class CodeAgent:
     """Agent for code generation."""
 
-    async def generate_code(
-        self,
-        screen: Dict,
-        framework: str = "flutter"
-    ) -> Dict:
+    async def generate_code(self, screen: Dict, framework: str = "flutter") -> Dict:
         """
         Generate code from UI structure.
 
@@ -72,8 +67,8 @@ class CodeAgent:
                 "flutter": flutter,
                 "react": react,
                 "vue": vue,
-                "html": html
-            }
+                "html": html,
+            },
         }
 
     async def _generate_flutter(self, screen: Dict) -> Dict:
@@ -88,9 +83,7 @@ class CodeAgent:
             "code": code,
             "framework": "flutter",
             "language": "dart",
-            "files": {
-                "main.dart": code
-            }
+            "files": {"main.dart": code},
         }
 
     async def _generate_react(self, screen: Dict) -> Dict:
@@ -105,10 +98,7 @@ class CodeAgent:
             "code": code,
             "framework": "react",
             "language": "javascript",
-            "files": {
-                "App.jsx": code,
-                "index.jsx": self._react_index()
-            }
+            "files": {"App.jsx": code, "index.jsx": self._react_index()},
         }
 
     async def _generate_vue(self, screen: Dict) -> Dict:
@@ -146,9 +136,7 @@ export default {{
             "code": code,
             "framework": "vue",
             "language": "vue",
-            "files": {
-                f"{screen.get('name', 'Screen')}.vue": code
-            }
+            "files": {f"{screen.get('name', 'Screen')}.vue": code},
         }
 
     async def _generate_html(self, screen: Dict) -> Dict:
@@ -203,9 +191,7 @@ export default {{
             "code": code,
             "framework": "html",
             "language": "html",
-            "files": {
-                "index.html": code
-            }
+            "files": {"index.html": code},
         }
 
     def _render_vue_components(self, components) -> str:
@@ -215,10 +201,7 @@ export default {{
             if comp_type == "text":
                 html.append(f"<p>{comp.get('value', '')}</p>")
             elif comp_type == "input":
-                html.append(
-                    f"<input type='text' "
-                    f"placeholder='{comp.get('placeholder', '')}' />"
-                )
+                html.append(f"<input type='text' placeholder='{comp.get('placeholder', '')}' />")
             elif comp_type == "button":
                 html.append(f"<button>{comp.get('label', 'Button')}</button>")
         return "\n    ".join(html)
@@ -230,10 +213,7 @@ export default {{
             if comp_type == "text":
                 html.append(f"<p>{comp.get('value', '')}</p>")
             elif comp_type == "input":
-                html.append(
-                    f"<input type='text' "
-                    f"placeholder='{comp.get('placeholder', '')}' />"
-                )
+                html.append(f"<input type='text' placeholder='{comp.get('placeholder', '')}' />")
             elif comp_type == "button":
                 html.append(f"<button>{comp.get('label', 'Button')}</button>")
         return "\n        ".join(html)

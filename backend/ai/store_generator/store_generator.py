@@ -4,14 +4,15 @@
 Automatische App Store + Play Store Listings, SEO, Screenshots, Icons, Manifeste
 """
 
+import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Dict, Optional
-import json
+from typing import Dict, List
 
 
 class StorePlatform(Enum):
     """Store platforms"""
+
     IOS_APP_STORE = "ios_app_store"
     GOOGLE_PLAY = "google_play"
     BOTH = "both"
@@ -19,6 +20,7 @@ class StorePlatform(Enum):
 
 class StoreAssetType(Enum):
     """Asset types"""
+
     ICON = "icon"
     SPLASH_SCREEN = "splash_screen"
     SCREENSHOTS = "screenshots"
@@ -28,6 +30,7 @@ class StoreAssetType(Enum):
 
 class AppCategory(Enum):
     """App categories"""
+
     BUSINESS = "business"
     PRODUCTIVITY = "productivity"
     SOCIAL = "social"
@@ -45,6 +48,7 @@ class AppCategory(Enum):
 @dataclass
 class StoreConfig:
     """Store generation configuration"""
+
     app_name: str
     app_description: str
     category: AppCategory
@@ -58,7 +62,7 @@ class StoreConfig:
     generate_privacy_policy: bool = True
     generate_terms: bool = True
     languages: List[str] = None
-    
+
     def __post_init__(self):
         if self.languages is None:
             self.languages = ["en"]
@@ -67,6 +71,7 @@ class StoreConfig:
 @dataclass
 class GeneratedStoreListing:
     """Generated store listing"""
+
     app_store_metadata: Dict
     play_store_metadata: Dict
     privacy_policy: str
@@ -81,42 +86,42 @@ class GeneratedStoreListing:
 
 class StoreGenerator:
     """AI-powered store listing generator"""
-    
+
     def __init__(self):
         self.seo_keywords_cache = {}
-    
+
     def generate(self, config: StoreConfig) -> GeneratedStoreListing:
         """
         Generate complete store listing
-        
+
         Args:
             config: Store configuration
-            
+
         Returns:
             Complete store listing with all assets
         """
         # Generate metadata
         app_store_metadata = self._generate_app_store_metadata(config)
         play_store_metadata = self._generate_play_store_metadata(config)
-        
+
         # Generate legal documents
         privacy_policy = self._generate_privacy_policy(config)
         terms_of_service = self._generate_terms_of_service(config)
-        
+
         # Generate assets
         icon_exports = self._generate_icon_exports(config)
         splash_exports = self._generate_splash_exports(config)
         screenshot_mockups = self._generate_screenshot_mockups(config)
-        
+
         # Generate manifests
         manifest_files = self._generate_manifests(config)
-        
+
         # Generate build commands
         build_commands = self._generate_build_commands(config)
-        
+
         # Generate changelog
         changelog = self._generate_changelog(config)
-        
+
         return GeneratedStoreListing(
             app_store_metadata=app_store_metadata,
             play_store_metadata=play_store_metadata,
@@ -127,39 +132,39 @@ class StoreGenerator:
             screenshot_mockups=screenshot_mockups,
             manifest_files=manifest_files,
             build_commands=build_commands,
-            changelog=changelog
+            changelog=changelog,
         )
-    
+
     def _generate_app_store_metadata(self, config: StoreConfig) -> Dict:
         """Generate iOS App Store metadata"""
-        
+
         # SEO-optimized title (max 30 chars)
         title = self._optimize_title(config.app_name, 30)
-        
+
         # Subtitle (max 30 chars)
         subtitle = self._generate_subtitle(config, 30)
-        
+
         # Promotional text (max 170 chars)
         promo_text = self._generate_promo_text(config, 170)
-        
+
         # Description (max 4000 chars)
         description = self._generate_description(config, 4000)
-        
+
         # Keywords (max 100 chars, comma-separated)
         keywords = self._generate_seo_keywords(config, 100)
-        
+
         # Support URL
         support_url = f"https://{config.app_name.lower().replace(' ', '')}.com/support"
-        
+
         # Marketing URL
         marketing_url = f"https://{config.app_name.lower().replace(' ', '')}.com"
-        
+
         # Privacy URL
         privacy_url = f"https://{config.app_name.lower().replace(' ', '')}.com/privacy"
-        
+
         # What's new (max 4000 chars)
         whats_new = self._generate_whats_new(config, 4000)
-        
+
         metadata = {
             "name": title,
             "subtitle": subtitle,
@@ -171,37 +176,34 @@ class StoreGenerator:
             "privacy_policy_url": privacy_url,
             "category": {
                 "primary": self._map_category_ios(config.category),
-                "secondary": None
+                "secondary": None,
             },
-            "version": {
-                "number": config.version,
-                "whats_new": whats_new
-            },
+            "version": {"number": config.version, "whats_new": whats_new},
             "age_rating": "4+",
             "copyright": f"© {2025} {config.app_name}",
             "review_notes": "Thank you for reviewing our app!",
             "screenshots": {
                 "iphone_6_5": [],  # iPhone 14 Pro Max
                 "iphone_5_5": [],  # iPhone 8 Plus
-                "ipad_pro_12_9": []  # iPad Pro
+                "ipad_pro_12_9": [],  # iPad Pro
             },
-            "app_preview_videos": []
+            "app_preview_videos": [],
         }
-        
+
         return metadata
-    
+
     def _generate_play_store_metadata(self, config: StoreConfig) -> Dict:
         """Generate Google Play Store metadata"""
-        
+
         # Title (max 30 chars)
         title = self._optimize_title(config.app_name, 30)
-        
+
         # Short description (max 80 chars)
         short_desc = self._generate_short_description(config, 80)
-        
+
         # Full description (max 4000 chars)
         full_desc = self._generate_description(config, 4000)
-        
+
         metadata = {
             "title": title,
             "short_description": short_desc,
@@ -212,7 +214,7 @@ class StoreGenerator:
                 "website": f"https://{config.app_name.lower().replace(' ', '')}.com",
                 "email": f"support@{config.app_name.lower().replace(' ', '')}.com",
                 "phone": "+1-555-0123",
-                "address": "123 Main St, San Francisco, CA 94102"
+                "address": "123 Main St, San Francisco, CA 94102",
             },
             "privacy_policy": f"https://{config.app_name.lower().replace(' ', '')}.com/privacy",
             "graphics": {
@@ -220,21 +222,21 @@ class StoreGenerator:
                 "feature_graphic": "1024x500",
                 "phone_screenshots": [],  # min 2, max 8
                 "tablet_screenshots": [],
-                "tv_screenshots": []
+                "tv_screenshots": [],
             },
             "version": config.version,
             "release_notes": self._generate_release_notes(config, 500),
-            "tags": config.keywords[:5]  # Max 5 tags
+            "tags": config.keywords[:5],  # Max 5 tags
         }
-        
+
         return metadata
-    
+
     def _optimize_title(self, app_name: str, max_length: int) -> str:
         """Optimize title for SEO within character limit"""
         if len(app_name) <= max_length:
             return app_name
-        return app_name[:max_length-3] + "..."
-    
+        return app_name[: max_length - 3] + "..."
+
     def _generate_subtitle(self, config: StoreConfig, max_length: int) -> str:
         """Generate SEO-optimized subtitle"""
         subtitles = {
@@ -249,24 +251,24 @@ class StoreGenerator:
             AppCategory.SHOPPING: "Shop Smarter",
             AppCategory.TRAVEL: "Explore the World",
             AppCategory.UTILITIES: "Simplify Your Life",
-            AppCategory.GAMES: "Play & Have Fun"
+            AppCategory.GAMES: "Play & Have Fun",
         }
-        
+
         subtitle = subtitles.get(config.category, "Your New Favorite App")
         return subtitle[:max_length]
-    
+
     def _generate_promo_text(self, config: StoreConfig, max_length: int) -> str:
         """Generate promotional text"""
         promo = f"🚀 New: {config.app_description[:max_length-20]}! Download now and join thousands of users."
         return promo[:max_length]
-    
+
     def _generate_short_description(self, config: StoreConfig, max_length: int) -> str:
         """Generate short description for Play Store"""
         return config.app_description[:max_length]
-    
+
     def _generate_description(self, config: StoreConfig, max_length: int) -> str:
         """Generate full app description with SEO"""
-        
+
         # Build description
         description = f"""
 {config.app_description}
@@ -282,12 +284,12 @@ class StoreGenerator:
 🎯 KEY FEATURES:
 
 """
-        
+
         # Add category-specific features
         features = self._generate_features_list(config)
         for i, feature in enumerate(features[:8], 1):
             description += f"{i}. {feature}\n"
-        
+
         description += f"""
 
 💡 PERFECT FOR:
@@ -321,12 +323,12 @@ Download {config.app_name} today and join thousands of satisfied users!
 
 Keywords: {', '.join(config.keywords[:10])}
 """
-        
+
         return description.strip()[:max_length]
-    
+
     def _generate_features_list(self, config: StoreConfig) -> List[str]:
         """Generate features list based on category"""
-        
+
         features = {
             AppCategory.BUSINESS: [
                 "Project management and task tracking",
@@ -336,7 +338,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Advanced analytics and reporting",
                 "Invoice and expense management",
                 "Calendar integration",
-                "Document sharing"
+                "Document sharing",
             ],
             AppCategory.PRODUCTIVITY: [
                 "Smart task management",
@@ -346,7 +348,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Goal setting & habits",
                 "Pomodoro timer",
                 "Cloud backup",
-                "Cross-device sync"
+                "Cross-device sync",
             ],
             AppCategory.SOCIAL: [
                 "Connect with friends",
@@ -356,7 +358,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Group chats",
                 "Stories & posts",
                 "Privacy controls",
-                "Dark mode"
+                "Dark mode",
             ],
             AppCategory.EDUCATION: [
                 "Interactive lessons",
@@ -366,7 +368,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Certificates",
                 "Offline learning",
                 "Quizzes & tests",
-                "Expert instructors"
+                "Expert instructors",
             ],
             AppCategory.ENTERTAINMENT: [
                 "Unlimited streaming",
@@ -376,7 +378,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "No ads",
                 "Multiple profiles",
                 "Parental controls",
-                "Cross-platform"
+                "Cross-platform",
             ],
             AppCategory.FINANCE: [
                 "Budget tracking",
@@ -386,7 +388,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Financial goals",
                 "Bank-level security",
                 "Automatic sync",
-                "Reports & insights"
+                "Reports & insights",
             ],
             AppCategory.HEALTH: [
                 "Activity tracking",
@@ -396,7 +398,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Water reminder",
                 "Health insights",
                 "Integration with wearables",
-                "Progress charts"
+                "Progress charts",
             ],
             AppCategory.LIFESTYLE: [
                 "Daily inspiration",
@@ -406,7 +408,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Achievements",
                 "Reminders",
                 "Beautiful design",
-                "Regular updates"
+                "Regular updates",
             ],
             AppCategory.SHOPPING: [
                 "Browse thousands of products",
@@ -416,7 +418,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Daily deals",
                 "Price alerts",
                 "Easy returns",
-                "Customer reviews"
+                "Customer reviews",
             ],
             AppCategory.TRAVEL: [
                 "Book flights & hotels",
@@ -426,7 +428,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Currency converter",
                 "Travel guides",
                 "Photo storage",
-                "Itinerary management"
+                "Itinerary management",
             ],
             AppCategory.UTILITIES: [
                 "Fast & lightweight",
@@ -436,7 +438,7 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Widget support",
                 "Quick actions",
                 "Export & import",
-                "Regular updates"
+                "Regular updates",
             ],
             AppCategory.GAMES: [
                 "Stunning graphics",
@@ -446,22 +448,20 @@ Keywords: {', '.join(config.keywords[:10])}
                 "Daily challenges",
                 "Leaderboards",
                 "Achievements",
-                "No pay-to-win"
-            ]
+                "No pay-to-win",
+            ],
         }
-        
-        return features.get(config.category, [
-            "Easy to use",
-            "Fast performance",
-            "Beautiful design",
-            "Regular updates"
-        ])
-    
+
+        return features.get(
+            config.category,
+            ["Easy to use", "Fast performance", "Beautiful design", "Regular updates"],
+        )
+
     def _generate_seo_keywords(self, config: StoreConfig, max_length: int) -> str:
         """Generate SEO-optimized keywords"""
         # Combine user keywords with auto-generated
         all_keywords = config.keywords.copy()
-        
+
         # Add category-specific keywords
         category_keywords = {
             AppCategory.BUSINESS: ["productivity", "team", "work", "collaboration"],
@@ -475,17 +475,17 @@ Keywords: {', '.join(config.keywords[:10])}
             AppCategory.SHOPPING: ["shop", "buy", "deals", "shopping"],
             AppCategory.TRAVEL: ["travel", "trips", "hotels", "flights"],
             AppCategory.UTILITIES: ["tools", "utility", "helper", "assistant"],
-            AppCategory.GAMES: ["game", "play", "fun", "arcade"]
+            AppCategory.GAMES: ["game", "play", "fun", "arcade"],
         }
-        
+
         all_keywords.extend(category_keywords.get(config.category, []))
-        
+
         # Remove duplicates and join
         unique_keywords = list(dict.fromkeys(all_keywords))
         keywords_str = ", ".join(unique_keywords)
-        
+
         return keywords_str[:max_length]
-    
+
     def _generate_whats_new(self, config: StoreConfig, max_length: int) -> str:
         """Generate 'What's New' section"""
         whats_new = f"""
@@ -502,7 +502,7 @@ Thank you for using {config.app_name}! We're constantly improving to give you th
 Have feedback? Contact us at support@{config.app_name.lower().replace(' ', '')}.com
 """
         return whats_new.strip()[:max_length]
-    
+
     def _generate_release_notes(self, config: StoreConfig, max_length: int) -> str:
         """Generate release notes for Play Store"""
         notes = f"""
@@ -516,7 +516,7 @@ Have feedback? Contact us at support@{config.app_name.lower().replace(' ', '')}.
 Thanks for using {config.app_name}!
 """
         return notes.strip()[:max_length]
-    
+
     def _map_category_ios(self, category: AppCategory) -> str:
         """Map category to iOS App Store category"""
         mapping = {
@@ -531,10 +531,10 @@ Thanks for using {config.app_name}!
             AppCategory.SHOPPING: "Shopping",
             AppCategory.TRAVEL: "Travel",
             AppCategory.UTILITIES: "Utilities",
-            AppCategory.GAMES: "Games"
+            AppCategory.GAMES: "Games",
         }
         return mapping.get(category, "Utilities")
-    
+
     def _map_category_android(self, category: AppCategory) -> str:
         """Map category to Google Play category"""
         mapping = {
@@ -549,13 +549,13 @@ Thanks for using {config.app_name}!
             AppCategory.SHOPPING: "SHOPPING",
             AppCategory.TRAVEL: "TRAVEL_AND_LOCAL",
             AppCategory.UTILITIES: "TOOLS",
-            AppCategory.GAMES: "GAME_CASUAL"
+            AppCategory.GAMES: "GAME_CASUAL",
         }
         return mapping.get(category, "TOOLS")
-    
+
     def _generate_privacy_policy(self, config: StoreConfig) -> str:
         """Generate privacy policy"""
-        
+
         policy = f"""
 # Privacy Policy for {config.app_name}
 
@@ -640,12 +640,12 @@ If you have any questions about this privacy policy, please contact us:
 - By email: privacy@{config.app_name.lower().replace(' ', '')}.com
 - By visiting this page on our website: https://{config.app_name.lower().replace(' ', '')}.com/privacy
 """
-        
+
         return policy.strip()
-    
+
     def _generate_terms_of_service(self, config: StoreConfig) -> str:
         """Generate terms of service"""
-        
+
         terms = f"""
 # Terms of Service for {config.app_name}
 
@@ -714,152 +714,198 @@ If you have any questions about these Terms, please contact us:
 - By email: legal@{config.app_name.lower().replace(' ', '')}.com
 - By visiting: https://{config.app_name.lower().replace(' ', '')}.com/terms
 """
-        
+
         return terms.strip()
-    
+
     def _generate_icon_exports(self, config: StoreConfig) -> Dict:
         """Generate icon export specifications"""
-        
+
         exports = {
             "ios": {
-                "app_store": {
-                    "1024x1024": f"{config.app_name}_icon_1024.png"
-                },
+                "app_store": {"1024x1024": f"{config.app_name}_icon_1024.png"},
                 "app": {
-                    "20x20": [f"{config.app_name}_icon_20@1x.png", f"{config.app_name}_icon_20@2x.png", f"{config.app_name}_icon_20@3x.png"],
-                    "29x29": [f"{config.app_name}_icon_29@1x.png", f"{config.app_name}_icon_29@2x.png", f"{config.app_name}_icon_29@3x.png"],
-                    "40x40": [f"{config.app_name}_icon_40@1x.png", f"{config.app_name}_icon_40@2x.png", f"{config.app_name}_icon_40@3x.png"],
-                    "60x60": [f"{config.app_name}_icon_60@2x.png", f"{config.app_name}_icon_60@3x.png"],
-                    "76x76": [f"{config.app_name}_icon_76@1x.png", f"{config.app_name}_icon_76@2x.png"],
-                    "83.5x83.5": [f"{config.app_name}_icon_83.5@2x.png"]
-                }
+                    "20x20": [
+                        f"{config.app_name}_icon_20@1x.png",
+                        f"{config.app_name}_icon_20@2x.png",
+                        f"{config.app_name}_icon_20@3x.png",
+                    ],
+                    "29x29": [
+                        f"{config.app_name}_icon_29@1x.png",
+                        f"{config.app_name}_icon_29@2x.png",
+                        f"{config.app_name}_icon_29@3x.png",
+                    ],
+                    "40x40": [
+                        f"{config.app_name}_icon_40@1x.png",
+                        f"{config.app_name}_icon_40@2x.png",
+                        f"{config.app_name}_icon_40@3x.png",
+                    ],
+                    "60x60": [
+                        f"{config.app_name}_icon_60@2x.png",
+                        f"{config.app_name}_icon_60@3x.png",
+                    ],
+                    "76x76": [
+                        f"{config.app_name}_icon_76@1x.png",
+                        f"{config.app_name}_icon_76@2x.png",
+                    ],
+                    "83.5x83.5": [f"{config.app_name}_icon_83.5@2x.png"],
+                },
             },
             "android": {
-                "play_store": {
-                    "512x512": f"{config.app_name}_icon_512.png"
-                },
+                "play_store": {"512x512": f"{config.app_name}_icon_512.png"},
                 "app": {
                     "mdpi": {"48x48": f"{config.app_name}_icon_mdpi.png"},
                     "hdpi": {"72x72": f"{config.app_name}_icon_hdpi.png"},
                     "xhdpi": {"96x96": f"{config.app_name}_icon_xhdpi.png"},
                     "xxhdpi": {"144x144": f"{config.app_name}_icon_xxhdpi.png"},
-                    "xxxhdpi": {"192x192": f"{config.app_name}_icon_xxxhdpi.png"}
+                    "xxxhdpi": {"192x192": f"{config.app_name}_icon_xxxhdpi.png"},
                 },
                 "adaptive": {
                     "foreground": f"{config.app_name}_adaptive_foreground.png",
-                    "background": f"{config.app_name}_adaptive_background.png"
-                }
+                    "background": f"{config.app_name}_adaptive_background.png",
+                },
             },
             "design_spec": {
                 "primary_color": config.primary_color,
                 "background_color": "#FFFFFF",
                 "style": "modern_rounded",
-                "format": "PNG with transparency"
-            }
+                "format": "PNG with transparency",
+            },
         }
-        
+
         return exports
-    
+
     def _generate_splash_exports(self, config: StoreConfig) -> Dict:
         """Generate splash screen export specifications"""
-        
+
         exports = {
             "ios": {
                 "launch_screen": {
-                    "1x": {"width": 375, "height": 812, "file": f"{config.app_name}_splash_1x.png"},
-                    "2x": {"width": 750, "height": 1624, "file": f"{config.app_name}_splash_2x.png"},
-                    "3x": {"width": 1125, "height": 2436, "file": f"{config.app_name}_splash_3x.png"}
+                    "1x": {
+                        "width": 375,
+                        "height": 812,
+                        "file": f"{config.app_name}_splash_1x.png",
+                    },
+                    "2x": {
+                        "width": 750,
+                        "height": 1624,
+                        "file": f"{config.app_name}_splash_2x.png",
+                    },
+                    "3x": {
+                        "width": 1125,
+                        "height": 2436,
+                        "file": f"{config.app_name}_splash_3x.png",
+                    },
                 }
             },
             "android": {
                 "splash_screen": {
-                    "mdpi": {"width": 320, "height": 480, "file": f"{config.app_name}_splash_mdpi.png"},
-                    "hdpi": {"width": 480, "height": 800, "file": f"{config.app_name}_splash_hdpi.png"},
-                    "xhdpi": {"width": 720, "height": 1280, "file": f"{config.app_name}_splash_xhdpi.png"},
-                    "xxhdpi": {"width": 1080, "height": 1920, "file": f"{config.app_name}_splash_xxhdpi.png"},
-                    "xxxhdpi": {"width": 1440, "height": 2560, "file": f"{config.app_name}_splash_xxxhdpi.png"}
+                    "mdpi": {
+                        "width": 320,
+                        "height": 480,
+                        "file": f"{config.app_name}_splash_mdpi.png",
+                    },
+                    "hdpi": {
+                        "width": 480,
+                        "height": 800,
+                        "file": f"{config.app_name}_splash_hdpi.png",
+                    },
+                    "xhdpi": {
+                        "width": 720,
+                        "height": 1280,
+                        "file": f"{config.app_name}_splash_xhdpi.png",
+                    },
+                    "xxhdpi": {
+                        "width": 1080,
+                        "height": 1920,
+                        "file": f"{config.app_name}_splash_xxhdpi.png",
+                    },
+                    "xxxhdpi": {
+                        "width": 1440,
+                        "height": 2560,
+                        "file": f"{config.app_name}_splash_xxxhdpi.png",
+                    },
                 }
             },
             "design_spec": {
                 "logo_position": "center",
                 "background_color": config.primary_color,
                 "logo_color": "#FFFFFF",
-                "animation": "fade_in"
-            }
+                "animation": "fade_in",
+            },
         }
-        
+
         return exports
-    
+
     def _generate_screenshot_mockups(self, config: StoreConfig) -> List[str]:
         """Generate screenshot mockup descriptions"""
-        
+
         mockups = [
             {
                 "platform": "ios",
                 "device": "iPhone 14 Pro Max",
                 "size": "1290x2796",
                 "description": f"Main screen showing {config.app_name} dashboard with key features",
-                "file": f"{config.app_name}_screenshot_ios_1.png"
+                "file": f"{config.app_name}_screenshot_ios_1.png",
             },
             {
                 "platform": "ios",
                 "device": "iPhone 14 Pro Max",
                 "size": "1290x2796",
                 "description": f"Feature showcase - primary functionality of {config.app_name}",
-                "file": f"{config.app_name}_screenshot_ios_2.png"
+                "file": f"{config.app_name}_screenshot_ios_2.png",
             },
             {
                 "platform": "ios",
                 "device": "iPhone 14 Pro Max",
                 "size": "1290x2796",
                 "description": "Settings and customization options",
-                "file": f"{config.app_name}_screenshot_ios_3.png"
+                "file": f"{config.app_name}_screenshot_ios_3.png",
             },
             {
                 "platform": "ios",
                 "device": "iPad Pro 12.9",
                 "size": "2048x2732",
                 "description": f"iPad version showing {config.app_name} on larger screen",
-                "file": f"{config.app_name}_screenshot_ipad_1.png"
+                "file": f"{config.app_name}_screenshot_ipad_1.png",
             },
             {
                 "platform": "android",
                 "device": "Pixel 7 Pro",
                 "size": "1440x3120",
                 "description": f"Android version - {config.app_name} main interface",
-                "file": f"{config.app_name}_screenshot_android_1.png"
+                "file": f"{config.app_name}_screenshot_android_1.png",
             },
             {
                 "platform": "android",
                 "device": "Pixel 7 Pro",
                 "size": "1440x3120",
                 "description": "Key features demonstration",
-                "file": f"{config.app_name}_screenshot_android_2.png"
-            }
+                "file": f"{config.app_name}_screenshot_android_2.png",
+            },
         ]
-        
+
         return [json.dumps(m, indent=2) for m in mockups]
-    
+
     def _generate_manifests(self, config: StoreConfig) -> Dict:
         """Generate platform manifests"""
-        
+
         manifests = {}
-        
+
         # iOS Info.plist
         if config.platforms in [StorePlatform.IOS_APP_STORE, StorePlatform.BOTH]:
             manifests["ios_info_plist"] = self._generate_ios_info_plist(config)
-        
+
         # Android AndroidManifest.xml
         if config.platforms in [StorePlatform.GOOGLE_PLAY, StorePlatform.BOTH]:
             manifests["android_manifest"] = self._generate_android_manifest(config)
             manifests["android_build_gradle"] = self._generate_android_build_gradle(config)
-        
+
         return manifests
-    
+
     def _generate_ios_info_plist(self, config: StoreConfig) -> str:
         """Generate iOS Info.plist"""
-        
-        plist = f'''<?xml version="1.0" encoding="UTF-8"?>
+
+        plist = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -903,14 +949,14 @@ If you have any questions about these Terms, please contact us:
         <true/>
     </dict>
 </dict>
-</plist>'''
-        
+</plist>"""
+
         return plist
-    
+
     def _generate_android_manifest(self, config: StoreConfig) -> str:
         """Generate Android AndroidManifest.xml"""
-        
-        manifest = f'''<?xml version="1.0" encoding="utf-8"?>
+
+        manifest = f"""<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.{config.app_name.lower().replace(' ', '')}.app">
 
@@ -924,7 +970,7 @@ If you have any questions about these Terms, please contact us:
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -937,17 +983,17 @@ If you have any questions about these Terms, please contact us:
         </activity>
     </application>
 
-</manifest>'''
-        
+</manifest>"""
+
         return manifest
-    
+
     def _generate_android_build_gradle(self, config: StoreConfig) -> str:
         """Generate Android build.gradle"""
-        
-        version_parts = config.version.split('.')
+
+        version_parts = config.version.split(".")
         version_code = int(version_parts[0]) * 10000 + int(version_parts[1]) * 100 + int(version_parts[2])
-        
-        gradle = f'''android {{
+
+        gradle = f"""android {{
     compileSdkVersion 33
     defaultConfig {{
         applicationId "com.{config.app_name.lower().replace(' ', '')}.app"
@@ -963,13 +1009,13 @@ If you have any questions about these Terms, please contact us:
             signingConfig signingConfigs.release
         }}
     }}
-}}'''
-        
+}}"""
+
         return gradle
-    
+
     def _generate_build_commands(self, config: StoreConfig) -> str:
         """Generate build commands for both platforms"""
-        
+
         commands = f"""
 # 🏗️ Build Commands for {config.app_name}
 
@@ -980,179 +1026,3 @@ If you have any questions about these Terms, please contact us:
 2. Install CocoaPods: `sudo gem install cocoapods`
 
 ### Build Steps
-```bash
-# Navigate to iOS folder
-cd ios
-
-# Install dependencies
-pod install
-
-# Open workspace
-open {config.app_name.replace(' ', '')}.xcworkspace
-
-# Build for Archive (in Xcode)
-# Product > Archive
-# Window > Organizer > Distribute App > App Store Connect
-```
-
-### Command Line Build
-```bash
-# Build release version
-xcodebuild -workspace ios/{config.app_name.replace(' ', '')}.xcworkspace \\
-           -scheme {config.app_name.replace(' ', '')} \\
-           -configuration Release \\
-           -archivePath build/{config.app_name.replace(' ', '')}.xcarchive \\
-           archive
-
-# Export IPA
-xcodebuild -exportArchive \\
-           -archivePath build/{config.app_name.replace(' ', '')}.xcarchive \\
-           -exportPath build \\
-           -exportOptionsPlist ExportOptions.plist
-```
-
-## Android Build
-
-### Prerequisites
-1. Install Android Studio
-2. Install Java JDK 11+
-3. Configure signing keys
-
-### Build Steps
-```bash
-# Navigate to Android folder
-cd android
-
-# Clean build
-./gradlew clean
-
-# Build release APK
-./gradlew assembleRelease
-
-# Build release AAB (for Play Store)
-./gradlew bundleRelease
-
-# Output files:
-# APK: android/app/build/outputs/apk/release/app-release.apk
-# AAB: android/app/build/outputs/bundle/release/app-release.aab
-```
-
-### Signing Configuration
-```bash
-# Generate keystore
-keytool -genkey -v -keystore {config.app_name.lower().replace(' ', '')}.keystore \\
-        -alias {config.app_name.lower().replace(' ', '')} \\
-        -keyalg RSA -keysize 2048 -validity 10000
-
-# Add to android/gradle.properties:
-# MYAPP_RELEASE_STORE_FILE={config.app_name.lower().replace(' ', '')}.keystore
-# MYAPP_RELEASE_KEY_ALIAS={config.app_name.lower().replace(' ', '')}
-# MYAPP_RELEASE_STORE_PASSWORD=****
-# MYAPP_RELEASE_KEY_PASSWORD=****
-```
-
-## Upload to Stores
-
-### iOS App Store
-1. Archive app in Xcode
-2. Window > Organizer
-3. Select archive > Distribute App
-4. Choose "App Store Connect"
-5. Follow prompts to upload
-
-### Google Play Store
-1. Go to Google Play Console
-2. Select your app
-3. Production > Create new release
-4. Upload AAB file
-5. Fill in release details
-6. Review and roll out
-
-## Automation with Fastlane
-
-### Install Fastlane
-```bash
-gem install fastlane
-```
-
-### iOS Fastlane
-```bash
-cd ios
-fastlane init
-fastlane release
-```
-
-### Android Fastlane
-```bash
-cd android
-fastlane init
-fastlane release
-```
-"""
-        
-        return commands.strip()
-    
-    def _generate_changelog(self, config: StoreConfig) -> str:
-        """Generate changelog"""
-        
-        changelog = f"""
-# Changelog - {config.app_name}
-
-## Version {config.version} (2025-12-03)
-
-### 🎉 Initial Release
-
-**New Features:**
-- Complete {config.category.value} functionality
-- Intuitive user interface
-- Cross-platform support (iOS & Android)
-- Cloud synchronization
-- Offline mode
-- Dark mode support
-
-**Performance:**
-- Optimized for speed and efficiency
-- Reduced battery consumption
-- Minimal storage footprint
-
-**Security:**
-- End-to-end encryption
-- Secure authentication
-- Privacy-first design
-
-**Known Issues:**
-- None at this time
-
-**Coming Soon:**
-- Additional language support
-- Advanced features
-- Integration with third-party services
-
----
-
-For support, visit: https://{config.app_name.lower().replace(' ', '')}.com/support
-"""
-        
-        return changelog.strip()
-
-
-# Example usage
-if __name__ == "__main__":
-    config = StoreConfig(
-        app_name="TaskMaster Pro",
-        app_description="The ultimate productivity app to manage your tasks, projects, and goals efficiently.",
-        category=AppCategory.PRODUCTIVITY,
-        platforms=StorePlatform.BOTH,
-        keywords=["tasks", "todo", "productivity", "planner", "organize"],
-        target_audience="Professionals, students, and anyone looking to boost their productivity",
-        primary_color="#007AFF",
-        version="1.0.0"
-    )
-    
-    generator = StoreGenerator()
-    result = generator.generate(config)
-    
-    print("✅ App Store Metadata:", json.dumps(result.app_store_metadata, indent=2)[:500])
-    print("\n✅ Play Store Metadata:", json.dumps(result.play_store_metadata, indent=2)[:500])
-    print("\n✅ Privacy Policy:", result.privacy_policy[:300])
-    print("\n✅ Icon Exports:", json.dumps(result.icon_exports, indent=2)[:500])

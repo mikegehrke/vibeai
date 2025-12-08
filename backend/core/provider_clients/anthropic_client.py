@@ -2,8 +2,10 @@
 # Anthropic Claude API Client
 
 import os
+from typing import Any, Dict
+
 from anthropic import Anthropic
-from typing import Optional, Dict, Any
+
 
 class AnthropicClient:
     def __init__(self):
@@ -11,44 +13,38 @@ class AnthropicClient:
         if not api_key or api_key.startswith("your-"):
             raise ValueError("ANTHROPIC_API_KEY nicht konfiguriert in .env")
         self.client = Anthropic(api_key=api_key)
-    
-    def chat(self, 
-             model: str, 
-             prompt: str, 
-             temperature: float = 0.7, 
-             max_tokens: int = 4000) -> Dict[str, Any]:
+
+    def chat(self, model: str, prompt: str, temperature: float = 0.7, max_tokens: int = 4000) -> Dict[str, Any]:
         """
         Chat mit Claude Modellen
         """
         # Claude Model Mapping
         model_map = {
-            'claude-sonnet-4.5': 'claude-sonnet-4-20250514',
-            'claude-sonnet-4': 'claude-sonnet-4-20250514',
-            'claude-opus-4': 'claude-opus-4-20250514',
-            'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
-            'claude-3-opus': 'claude-3-opus-20240229',
-            'claude-3-sonnet': 'claude-3-sonnet-20240229',
-            'claude-3-haiku': 'claude-3-haiku-20240307'
+            "claude-sonnet-4.5": "claude-sonnet-4-20250514",
+            "claude-sonnet-4": "claude-sonnet-4-20250514",
+            "claude-opus-4": "claude-opus-4-20250514",
+            "claude-3.5-sonnet": "claude-3-5-sonnet-20241022",
+            "claude-3-opus": "claude-3-opus-20240229",
+            "claude-3-sonnet": "claude-3-sonnet-20240229",
+            "claude-3-haiku": "claude-3-haiku-20240307",
         }
-        
+
         actual_model = model_map.get(model, model)
-        
+
         response = self.client.messages.create(
             model=actual_model,
             max_tokens=max_tokens,
             temperature=temperature,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}],
         )
-        
+
         return {
             "response": response.content[0].text if response.content else "",
-            "tokens": response.usage.input_tokens + response.usage.output_tokens if response.usage else 0,
+            "tokens": (response.usage.input_tokens + response.usage.output_tokens if response.usage else 0),
             "inputTokens": response.usage.input_tokens if response.usage else 0,
             "outputTokens": response.usage.output_tokens if response.usage else 0,
             "model": actual_model,
-            "provider": "anthropic"
+            "provider": "anthropic",
         }
 
 
@@ -69,7 +65,6 @@ class AnthropicClient:
 #
 # 👉 Das Original ist ein guter sync Claude-Wrapper
 # 👉 Für model_registry_v2 brauchen wir async + generate() Interface
-
 
 # -------------------------------------------------------------
 # VIBEAI – ANTHROPIC PROVIDER (ASYNC + MODEL REGISTRY COMPATIBLE)
@@ -92,7 +87,7 @@ class AnthropicProvider:
     async def generate(self, model: str, messages: list, context: dict):
         """
         Einheitliche Schnittstelle für ModelWrapper.
-        
+
         Returns:
         {
             "provider": "anthropic",
@@ -103,7 +98,7 @@ class AnthropicProvider:
         }
         """
         api_key = os.getenv("ANTHROPIC_API_KEY")
-        
+
         if not api_key or api_key.startswith("your-"):
             return {
                 "provider": "anthropic",
@@ -111,29 +106,29 @@ class AnthropicProvider:
                 "message": "Error: ANTHROPIC_API_KEY not configured",
                 "input_tokens": 0,
                 "output_tokens": 0,
-                "error": "API key missing"
+                "error": "API key missing",
             }
 
         headers = {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
-            "content-type": "application/json"
+            "content-type": "application/json",
         }
 
         # Model Mapping (falls nötig)
         model_map = {
-            'claude-sonnet-4.5': 'claude-sonnet-4-20250514',
-            'claude-sonnet-4': 'claude-sonnet-4-20250514',
-            'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
-            'claude-3.7-sonnet': 'claude-3-5-sonnet-20241022',
+            "claude-sonnet-4.5": "claude-sonnet-4-20250514",
+            "claude-sonnet-4": "claude-sonnet-4-20250514",
+            "claude-3.5-sonnet": "claude-3-5-sonnet-20241022",
+            "claude-3.7-sonnet": "claude-3-5-sonnet-20241022",
         }
-        
+
         actual_model = model_map.get(model, model)
 
         body = {
             "model": actual_model,
             "max_tokens": context.get("max_output_tokens", 4000),
-            "messages": messages
+            "messages": messages,
         }
 
         try:
@@ -154,7 +149,7 @@ class AnthropicProvider:
                 "model": actual_model,
                 "message": output,
                 "input_tokens": input_tokens,
-                "output_tokens": output_tokens
+                "output_tokens": output_tokens,
             }
 
         except Exception as e:
@@ -164,11 +159,5 @@ class AnthropicProvider:
                 "message": f"Error: {str(e)}",
                 "input_tokens": 0,
                 "output_tokens": 0,
-                "error": str(e)
+                "error": str(e),
             }
-
-
-# -------------------------------------------------------------
-# Globale Instanz
-# -------------------------------------------------------------
-anthropic_client = AnthropicProvider()

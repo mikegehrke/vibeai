@@ -8,8 +8,7 @@ Automatische Navigation-Generierung für:
 """
 
 import os
-import json
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 
 class NavigationManager:
@@ -39,11 +38,16 @@ class AppNavigator {{
 """
             routes_file = os.path.join(base_path, "lib", "routes.dart")
             os.makedirs(os.path.dirname(routes_file), exist_ok=True)
-            
+
             with open(routes_file, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            return {"success": True, "file_path": routes_file, "routes_count": len(screens), "framework": "flutter"}
+            return {
+                "success": True,
+                "file_path": routes_file,
+                "routes_count": len(screens),
+                "framework": "flutter",
+            }
         except Exception as e:
             return {"success": False, "error": str(e), "framework": "flutter"}
 
@@ -51,10 +55,12 @@ class AppNavigator {{
         """Erstellt React router.jsx"""
         try:
             imports = "\n".join([f"import {s['name']} from './components/{s['name']}';" for s in screens])
-            routes_array = ",\n    ".join([
-                "{ path: '" + s.get('path', '/' + s['name'].lower()) + "', element: <" + s['name'] + " /> }"
-                for s in screens
-            ])
+            routes_array = ",\n    ".join(
+                [
+                    "{ path: '" + s.get("path", "/" + s["name"].lower()) + "', element: <" + s["name"] + " /> }"
+                    for s in screens
+                ]
+            )
 
             content = f"""import {{ createBrowserRouter, RouterProvider }} from 'react-router-dom';
 {imports}
@@ -75,11 +81,16 @@ export default function AppRouter() {{
 """
             router_file = os.path.join(base_path, "src", "router.jsx")
             os.makedirs(os.path.dirname(router_file), exist_ok=True)
-            
+
             with open(router_file, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            return {"success": True, "file_path": router_file, "routes_count": len(screens), "framework": "react"}
+            return {
+                "success": True,
+                "file_path": router_file,
+                "routes_count": len(screens),
+                "framework": "react",
+            }
         except Exception as e:
             return {"success": False, "error": str(e), "framework": "react"}
 
@@ -89,7 +100,7 @@ export default function AppRouter() {{
             created_routes = []
 
             for screen in screens:
-                route_name = screen.get('path', screen['name']).lower().strip('/')
+                route_name = screen.get("path", screen["name"]).lower().strip("/")
                 route_dir = os.path.join(base_path, "app", route_name)
                 page_file = os.path.join(route_dir, "page.jsx")
                 os.makedirs(route_dir, exist_ok=True)
@@ -123,14 +134,19 @@ export function useAppNavigation() {
                 f.write(nav_content)
 
             created_routes.append({"route": "helper", "file": nav_helper})
-            return {"success": True, "routes_created": created_routes, "routes_count": len(screens), "framework": "nextjs"}
+            return {
+                "success": True,
+                "routes_created": created_routes,
+                "routes_count": len(screens),
+                "framework": "nextjs",
+            }
         except Exception as e:
             return {"success": False, "error": str(e), "framework": "nextjs"}
 
     def generate_navigation(self, framework: str, base_path: str, screens: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Universal Navigation Generator"""
         framework = framework.lower()
-        
+
         if framework == "flutter":
             return self.create_flutter_routes(base_path, screens)
         elif framework == "react":
@@ -138,13 +154,17 @@ export function useAppNavigation() {
         elif framework == "nextjs":
             return self.create_nextjs_routes(base_path, screens)
         else:
-            return {"success": False, "error": f"Unsupported: {framework}", "supported": self.supported_frameworks}
+            return {
+                "success": False,
+                "error": f"Unsupported: {framework}",
+                "supported": self.supported_frameworks,
+            }
 
     def extract_existing_routes(self, framework: str, base_path: str) -> Dict[str, Any]:
         """Extrahiert existierende Routes"""
         try:
             routes = []
-            
+
             if framework == "flutter":
                 lib_path = os.path.join(base_path, "lib")
                 if os.path.exists(lib_path):
@@ -152,14 +172,14 @@ export function useAppNavigation() {
                         if file.endswith("_screen.dart"):
                             name = file.replace("_screen.dart", "").capitalize()
                             routes.append({"name": name, "file": file})
-            
+
             elif framework == "react":
                 comp_path = os.path.join(base_path, "src", "components")
                 if os.path.exists(comp_path):
                     for file in os.listdir(comp_path):
                         if file.endswith(".jsx") and file[0].isupper():
                             routes.append({"name": file.replace(".jsx", ""), "file": file})
-            
+
             elif framework == "nextjs":
                 app_path = os.path.join(base_path, "app")
                 if os.path.exists(app_path):
@@ -167,8 +187,13 @@ export function useAppNavigation() {
                         item_path = os.path.join(app_path, item)
                         if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, "page.jsx")):
                             routes.append({"name": item.capitalize(), "path": f"/{item}"})
-            
-            return {"success": True, "routes": routes, "count": len(routes), "framework": framework}
+
+            return {
+                "success": True,
+                "routes": routes,
+                "count": len(routes),
+                "framework": framework,
+            }
         except Exception as e:
             return {"success": False, "error": str(e), "framework": framework}
 

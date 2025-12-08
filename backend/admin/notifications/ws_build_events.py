@@ -1,11 +1,11 @@
-from typing import Any
 # -------------------------------------------------------------
 # VIBEAI – BUILD EVENTS WEBSOCKET (Live Build Logs)
 # -------------------------------------------------------------
-from fastapi import WebSocket
-import json
 import asyncio
+import json
 import logging
+
+from fastapi import WebSocket
 
 logger = logging.getLogger("ws_build_events")
 
@@ -27,15 +27,18 @@ class BuildEventManager:
 
         self.active_build_streams[build_id].add(websocket)
 
-        await websocket.send_text(json.dumps({
-            "type": "connected",
-            "build_id": build_id,
-            "message": f"Connected to build {build_id}"
-        }))
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "type": "connected",
+                    "build_id": build_id,
+                    "message": f"Connected to build {build_id}",
+                }
+            )
+        )
 
         logger.info(
-            f"Client connected to build {build_id}. "
-            f"Total clients: {len(self.active_build_streams[build_id])}"
+            f"Client connected to build {build_id}. Total clients: {len(self.active_build_streams[build_id])}"
         )
 
     # ---------------------------------------------------------
@@ -64,11 +67,15 @@ class BuildEventManager:
 
         for ws in self.active_build_streams[build_id]:
             try:
-                await ws.send_text(json.dumps({
-                    "type": "log",
-                    "text": text,
-                    "timestamp": asyncio.get_event_loop().time()
-                }))
+                await ws.send_text(
+                    json.dumps(
+                        {
+                            "type": "log",
+                            "text": text,
+                            "timestamp": asyncio.get_event_loop().time(),
+                        }
+                    )
+                )
             except Exception as e:
                 logger.warning(f"Failed to send to client: {e}")
                 dead.add(ws)
@@ -80,12 +87,7 @@ class BuildEventManager:
     # ---------------------------------------------------------
     # STATUS UPDATE
     # ---------------------------------------------------------
-    async def broadcast_status(
-        self,
-        build_id: str,
-        status: str,
-        progress: int = None
-    ) -> None:
+    async def broadcast_status(self, build_id: str, status: str, progress: int = None) -> None:
         """
         Sende Status-Update an alle Clients.
         """
@@ -99,7 +101,7 @@ class BuildEventManager:
                 payload = {
                     "type": "status",
                     "status": status,
-                    "timestamp": asyncio.get_event_loop().time()
+                    "timestamp": asyncio.get_event_loop().time(),
                 }
 
                 if progress is not None:
@@ -128,11 +130,15 @@ class BuildEventManager:
 
         for ws in self.active_build_streams[build_id]:
             try:
-                await ws.send_text(json.dumps({
-                    "type": "error",
-                    "error": error,
-                    "timestamp": asyncio.get_event_loop().time()
-                }))
+                await ws.send_text(
+                    json.dumps(
+                        {
+                            "type": "error",
+                            "error": error,
+                            "timestamp": asyncio.get_event_loop().time(),
+                        }
+                    )
+                )
             except Exception as e:
                 logger.warning(f"Failed to send error: {e}")
                 dead.add(ws)
@@ -144,12 +150,7 @@ class BuildEventManager:
     # ---------------------------------------------------------
     # BUILD COMPLETE
     # ---------------------------------------------------------
-    async def broadcast_complete(
-        self,
-        build_id: str,
-        success: bool,
-        artifacts: list = None
-    ) -> None:
+    async def broadcast_complete(self, build_id: str, success: bool, artifacts: list = None) -> None:
         """
         Sende Build-Completion Event.
         """
@@ -163,7 +164,7 @@ class BuildEventManager:
                 payload = {
                     "type": "complete",
                     "success": success,
-                    "timestamp": asyncio.get_event_loop().time()
+                    "timestamp": asyncio.get_event_loop().time(),
                 }
 
                 if artifacts:
@@ -186,11 +187,7 @@ class BuildEventManager:
         Liste aller aktiven Build-Streams.
         """
         return [
-            {
-                "build_id": build_id,
-                "clients": len(clients)
-            }
-            for build_id, clients in self.active_build_streams.items()
+            {"build_id": build_id, "clients": len(clients)} for build_id, clients in self.active_build_streams.items()
         ]
 
 

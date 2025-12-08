@@ -1,0 +1,1696 @@
+"""
+Realtime Chat & Voice Call API Generator
+Generiert produktionsfähigen WebRTC, Socket.io, TTS/STT Code
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+
+class ChatFeature(str, Enum):
+    """Chat Features"""
+    BASIC_MESSAGING = "basic_messaging"
+    GROUP_CHAT = "group_chat"
+    FILE_SHARING = "file_sharing"
+    TYPING_INDICATOR = "typing_indicator"
+    READ_RECEIPTS = "read_receipts"
+    MESSAGE_REACTIONS = "message_reactions"
+    AI_ASSISTANT = "ai_assistant"
+    LIVE_TRANSLATION = "live_translation"
+    MESSAGE_SEARCH = "message_search"
+    VOICE_MESSAGES = "voice_messages"
+
+
+class VoiceFeature(str, Enum):
+    """Voice/Video Call Features"""
+    AUDIO_CALL = "audio_call"
+    VIDEO_CALL = "video_call"
+    SCREEN_SHARE = "screen_share"
+    RECORDING = "recording"
+    LIVE_TRANSLATION = "live_translation"
+    NOISE_CANCELLATION = "noise_cancellation"
+    BACKGROUND_BLUR = "background_blur"
+    AI_TRANSCRIPTION = "ai_transcription"
+    AVATAR_VOICE = "avatar_voice"
+    VOICE_EFFECTS = "voice_effects"
+
+
+class RealtimeProtocol(str, Enum):
+    """Realtime Protocols"""
+    WEBSOCKET = "websocket"
+    SOCKET_IO = "socket_io"
+    WEBRTC = "webrtc"
+    SSE = "sse"  # Server-Sent Events
+
+
+class Framework(str, Enum):
+    """Frameworks"""
+    FASTAPI = "fastapi"
+    DJANGO = "django"
+    FLASK = "flask"
+    EXPRESS = "express"
+    NEXTJS = "nextjs"
+    REACT = "react"
+    FLUTTER = "flutter"
+    REACT_NATIVE = "react_native"
+
+
+@dataclass
+class ChatConfig:
+    """Chat System Configuration"""
+    chat_features: List[ChatFeature]
+    max_message_length: int = 10000
+    max_file_size_mb: int = 50
+    ai_model: Optional[str] = None  # For AI assistant
+    translation_enabled: bool = False
+    message_retention_days: int = 365
+    enable_encryption: bool = True
+
+
+@dataclass
+class VoiceConfig:
+    """Voice/Video Call Configuration"""
+    voice_features: List[VoiceFeature]
+    max_participants: int = 10
+    enable_recording: bool = False
+    tts_provider: Optional[str] = None  # "openai", "elevenlabs", "google"
+    stt_provider: Optional[str] = None  # "openai", "google", "deepgram"
+    translation_languages: List[str] = None
+    video_quality: str = "hd"  # "sd", "hd", "fhd", "4k"
+
+
+@dataclass
+class GeneratedRealtimeCode:
+    """Generated Realtime Code"""
+    backend_code: str
+    websocket_code: str
+    signaling_code: str  # For WebRTC
+    frontend_code: str
+    chat_ui_code: str
+    voice_ui_code: str
+    database_schema: str
+    env_variables: Dict[str, str]
+    installation_commands: List[str]
+    setup_instructions: str
+
+
+class RealtimeGenerator:
+    """
+    Haupt-Engine für Realtime Chat & Voice Code-Generierung
+    """
+    
+    def __init__(self):
+        pass
+    
+    def generate_chat_system(
+        self,
+        config: ChatConfig,
+        backend_framework: Framework,
+        frontend_framework: Optional[Framework] = None,
+        protocol: RealtimeProtocol = RealtimeProtocol.SOCKET_IO
+    ) -> GeneratedRealtimeCode:
+        """
+        Generiere komplettes Chat-System
+        
+        Args:
+            config: Chat Konfiguration
+            backend_framework: Backend Framework
+            frontend_framework: Frontend Framework
+            protocol: Realtime Protocol
+            
+        Returns:
+            GeneratedRealtimeCode mit allen Komponenten
+        """
+        # Generate backend code
+        backend_code = self._generate_chat_backend(
+            config, backend_framework, protocol
+        )
+        
+        # Generate WebSocket/Socket.io code
+        websocket_code = self._generate_websocket_server(
+            config, backend_framework, protocol
+        )
+        
+        # Generate frontend code
+        frontend_code = ""
+        chat_ui_code = ""
+        if frontend_framework:
+            frontend_code = self._generate_chat_frontend(
+                config, frontend_framework
+            )
+            chat_ui_code = self._generate_chat_ui(
+                config, frontend_framework
+            )
+        
+        # Generate database schema
+        database_schema = self._generate_chat_database(config)
+        
+        # Environment variables
+        env_vars = self._generate_chat_env_variables(config)
+        
+        # Installation commands
+        install_commands = self._generate_chat_install_commands(
+            config, backend_framework, frontend_framework
+        )
+        
+        # Setup instructions
+        setup_instructions = self._generate_chat_setup_instructions(config)
+        
+        return GeneratedRealtimeCode(
+            backend_code=backend_code,
+            websocket_code=websocket_code,
+            signaling_code="",  # Not used for chat
+            frontend_code=frontend_code,
+            chat_ui_code=chat_ui_code,
+            voice_ui_code="",
+            database_schema=database_schema,
+            env_variables=env_vars,
+            installation_commands=install_commands,
+            setup_instructions=setup_instructions
+        )
+    
+    def generate_voice_system(
+        self,
+        config: VoiceConfig,
+        backend_framework: Framework,
+        frontend_framework: Optional[Framework] = None
+    ) -> GeneratedRealtimeCode:
+        """
+        Generiere komplettes Voice/Video Call System
+        
+        Args:
+            config: Voice Konfiguration
+            backend_framework: Backend Framework
+            frontend_framework: Frontend Framework
+            
+        Returns:
+            GeneratedRealtimeCode mit allen Komponenten
+        """
+        # Generate backend code
+        backend_code = self._generate_voice_backend(config, backend_framework)
+        
+        # Generate WebRTC signaling server
+        signaling_code = self._generate_webrtc_signaling(
+            config, backend_framework
+        )
+        
+        # Generate frontend code
+        frontend_code = ""
+        voice_ui_code = ""
+        if frontend_framework:
+            frontend_code = self._generate_voice_frontend(
+                config, frontend_framework
+            )
+            voice_ui_code = self._generate_voice_ui(
+                config, frontend_framework
+            )
+        
+        # Generate database schema
+        database_schema = self._generate_voice_database(config)
+        
+        # Environment variables
+        env_vars = self._generate_voice_env_variables(config)
+        
+        # Installation commands
+        install_commands = self._generate_voice_install_commands(
+            config, backend_framework, frontend_framework
+        )
+        
+        # Setup instructions
+        setup_instructions = self._generate_voice_setup_instructions(config)
+        
+        return GeneratedRealtimeCode(
+            backend_code=backend_code,
+            websocket_code=signaling_code,
+            signaling_code=signaling_code,
+            frontend_code=frontend_code,
+            chat_ui_code="",
+            voice_ui_code=voice_ui_code,
+            database_schema=database_schema,
+            env_variables=env_vars,
+            installation_commands=install_commands,
+            setup_instructions=setup_instructions
+        )
+    
+    def _generate_chat_backend(
+        self,
+        config: ChatConfig,
+        framework: Framework,
+        protocol: RealtimeProtocol
+    ) -> str:
+        """Generiere Chat Backend Code"""
+        if framework == Framework.FASTAPI:
+            return self._generate_fastapi_chat(config, protocol)
+        elif framework == Framework.EXPRESS:
+            return self._generate_express_chat(config, protocol)
+        else:
+            return "# Unsupported backend framework"
+    
+    def _generate_fastapi_chat(
+        self,
+        config: ChatConfig,
+        protocol: RealtimeProtocol
+    ) -> str:
+        """Generiere FastAPI Chat Backend"""
+        has_ai = ChatFeature.AI_ASSISTANT in config.chat_features
+        has_translation = ChatFeature.LIVE_TRANSLATION in config.chat_features
+        has_files = ChatFeature.FILE_SHARING in config.chat_features
+        
+        return f'''"""
+Realtime Chat System - Backend
+Auto-generated by VibeAI Realtime Generator
+Protocol: {protocol.value}
+"""
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Set
+from datetime import datetime
+import json
+import asyncio
+{"import openai" if has_ai else ""}
+{"from deep_translator import GoogleTranslator" if has_translation else ""}
+
+router = APIRouter(prefix="/chat", tags=["Chat"])
+
+
+# ========== DATA MODELS ==========
+
+class Message(BaseModel):
+    """Chat message model"""
+    id: str
+    room_id: str
+    user_id: str
+    username: str
+    content: str
+    timestamp: datetime
+    message_type: str = "text"  # text, file, voice, system
+    file_url: Optional[str] = None
+    translated_content: Optional[Dict[str, str]] = None  # lang: content
+    reactions: Dict[str, List[str]] = {{}}  # emoji: [user_ids]
+    read_by: List[str] = []
+    
+
+class ChatRoom(BaseModel):
+    """Chat room model"""
+    id: str
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    created_by: str
+    members: List[str] = []
+    is_group: bool = False
+    {"ai_assistant_enabled: bool = False" if has_ai else ""}
+
+
+class SendMessageRequest(BaseModel):
+    """Send message request"""
+    room_id: str
+    content: str
+    message_type: str = "text"
+
+
+class CreateRoomRequest(BaseModel):
+    """Create chat room request"""
+    name: str
+    description: Optional[str] = None
+    members: List[str] = []
+    is_group: bool = False
+    {"ai_assistant_enabled: bool = False" if has_ai else ""}
+
+
+# ========== IN-MEMORY STORAGE (Replace with DB) ==========
+
+chat_rooms: Dict[str, ChatRoom] = {{}}
+messages: Dict[str, List[Message]] = {{}}  # room_id: messages
+active_connections: Dict[str, Set[WebSocket]] = {{}}  # room_id: websockets
+typing_users: Dict[str, Set[str]] = {{}}  # room_id: user_ids
+
+
+# ========== WEBSOCKET CONNECTION MANAGER ==========
+
+class ConnectionManager:
+    """Manage WebSocket connections"""
+    
+    def __init__(self):
+        self.active_connections: Dict[str, Dict[str, WebSocket]] = {{}}
+        # room_id -> {{user_id: websocket}}
+    
+    async def connect(self, websocket: WebSocket, room_id: str, user_id: str):
+        """Connect user to room"""
+        await websocket.accept()
+        
+        if room_id not in self.active_connections:
+            self.active_connections[room_id] = {{}}
+        
+        self.active_connections[room_id][user_id] = websocket
+        
+        # Send room history
+        if room_id in messages:
+            history = [msg.dict() for msg in messages[room_id][-100:]]
+            await websocket.send_json({{
+                "type": "history",
+                "messages": history
+            }})
+        
+        # Notify others
+        await self.broadcast(room_id, {{
+            "type": "user_joined",
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }}, exclude_user=user_id)
+    
+    def disconnect(self, room_id: str, user_id: str):
+        """Disconnect user from room"""
+        if room_id in self.active_connections:
+            self.active_connections[room_id].pop(user_id, None)
+            
+            if not self.active_connections[room_id]:
+                del self.active_connections[room_id]
+    
+    async def send_personal_message(self, message: dict, room_id: str, user_id: str):
+        """Send message to specific user"""
+        if room_id in self.active_connections:
+            if user_id in self.active_connections[room_id]:
+                websocket = self.active_connections[room_id][user_id]
+                await websocket.send_json(message)
+    
+    async def broadcast(self, room_id: str, message: dict, exclude_user: Optional[str] = None):
+        """Broadcast message to all users in room"""
+        if room_id not in self.active_connections:
+            return
+        
+        for user_id, websocket in self.active_connections[room_id].items():
+            if exclude_user and user_id == exclude_user:
+                continue
+            
+            try:
+                await websocket.send_json(message)
+            except:
+                pass
+
+
+manager = ConnectionManager()
+
+
+# ========== REST ENDPOINTS ==========
+
+@router.post("/rooms")
+async def create_room(request: CreateRoomRequest, user_id: str):
+    """
+    Create new chat room
+    
+    Returns:
+        - room_id: Created room ID
+        - room: Room details
+    """
+    import uuid
+    
+    room_id = str(uuid.uuid4())
+    
+    room = ChatRoom(
+        id=room_id,
+        name=request.name,
+        description=request.description,
+        created_at=datetime.now(),
+        created_by=user_id,
+        members=[user_id] + request.members,
+        is_group=request.is_group,
+        {"ai_assistant_enabled=request.ai_assistant_enabled" if has_ai else ""}
+    )
+    
+    chat_rooms[room_id] = room
+    messages[room_id] = []
+    
+    return {{
+        "success": True,
+        "room_id": room_id,
+        "room": room.dict()
+    }}
+
+
+@router.get("/rooms")
+async def list_rooms(user_id: str):
+    """
+    List user's chat rooms
+    
+    Returns:
+        - rooms: List of rooms user is member of
+    """
+    user_rooms = [
+        room.dict() for room in chat_rooms.values()
+        if user_id in room.members
+    ]
+    
+    return {{
+        "success": True,
+        "rooms": user_rooms
+    }}
+
+
+@router.get("/rooms/{{room_id}}/messages")
+async def get_messages(room_id: str, limit: int = 100, before: Optional[str] = None):
+    """
+    Get room messages (pagination support)
+    
+    Returns:
+        - messages: List of messages
+        - has_more: Boolean if more messages available
+    """
+    if room_id not in messages:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    room_messages = messages[room_id]
+    
+    # Simple pagination (in production, use proper DB pagination)
+    if before:
+        # Get messages before timestamp
+        filtered = [m for m in room_messages if m.timestamp.isoformat() < before]
+    else:
+        filtered = room_messages
+    
+    return {{
+        "success": True,
+        "messages": [m.dict() for m in filtered[-limit:]],
+        "has_more": len(filtered) > limit
+    }}
+
+
+
+# File upload feature - simplified (conditional code removed)
+
+
+
+@router.post("/rooms/{{room_id}}/typing")
+async def set_typing(room_id: str, user_id: str, is_typing: bool):
+    """
+    Set typing indicator
+    
+    Returns:
+        - success: Boolean
+    """
+    if is_typing:
+        if room_id not in typing_users:
+            typing_users[room_id] = set()
+        typing_users[room_id].add(user_id)
+    else:
+        if room_id in typing_users:
+            typing_users[room_id].discard(user_id)
+    
+    # Broadcast typing status
+    await manager.broadcast(room_id, {{
+        "type": "typing",
+        "user_id": user_id,
+        "is_typing": is_typing
+    }}, exclude_user=user_id)
+    
+    return {{"success": True}}
+
+
+@router.post("/rooms/{{room_id}}/messages/{{message_id}}/read")
+async def mark_as_read(room_id: str, message_id: str, user_id: str):
+    """
+    Mark message as read
+    
+    Returns:
+        - success: Boolean
+    """
+    if room_id not in messages:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    for msg in messages[room_id]:
+        if msg.id == message_id:
+            if user_id not in msg.read_by:
+                msg.read_by.append(user_id)
+            
+            # Broadcast read receipt
+            await manager.broadcast(room_id, {{
+                "type": "read_receipt",
+                "message_id": message_id,
+                "user_id": user_id
+            }})
+            
+            return {{"success": True}}
+    
+    raise HTTPException(status_code=404, detail="Message not found")
+
+
+# ========== WEBSOCKET ENDPOINT ==========
+
+@router.websocket("/ws/{{room_id}}/{{user_id}}")
+async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
+    """
+    WebSocket endpoint for realtime chat
+    
+    Messages format:
+        - {{type: "message", content: "Hello"}}
+        - {{type: "typing", is_typing: true}}
+        - {{type: "reaction", message_id: "123", emoji: "👍"}}
+    """
+    await manager.connect(websocket, room_id, user_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            if data["type"] == "message":
+                # Create message
+                import uuid
+                message = Message(
+                    id=str(uuid.uuid4()),
+                    room_id=room_id,
+                    user_id=user_id,
+                    username=user_id,  # In production, get from user DB
+                    content=data["content"],
+                    timestamp=datetime.now(),
+                    message_type=data.get("message_type", "text")
+                )
+                
+                messages[room_id].append(message)
+                
+                {"# AI Assistant response" if has_ai else ""}
+                {"if ChatFeature.AI_ASSISTANT in config.chat_features:" if has_ai else ""}
+                {"    if room_id in chat_rooms and chat_rooms[room_id].ai_assistant_enabled:" if has_ai else ""}
+                {"        asyncio.create_task(generate_ai_response(room_id, message))" if has_ai else ""}
+                
+                {"# Live translation" if has_translation else ""}
+                {"if ChatFeature.LIVE_TRANSLATION in config.chat_features:" if has_translation else ""}
+                {"    message.translated_content = await translate_message(message.content)" if has_translation else ""}
+                
+                # Broadcast message
+                await manager.broadcast(room_id, {{
+                    "type": "message",
+                    "message": message.dict()
+                }})
+            
+            elif data["type"] == "typing":
+                await manager.broadcast(room_id, {{
+                    "type": "typing",
+                    "user_id": user_id,
+                    "is_typing": data.get("is_typing", False)
+                }}, exclude_user=user_id)
+            
+            elif data["type"] == "reaction":
+                # Add reaction to message
+                msg_id = data["message_id"]
+                emoji = data["emoji"]
+                
+                for msg in messages[room_id]:
+                    if msg.id == msg_id:
+                        if emoji not in msg.reactions:
+                            msg.reactions[emoji] = []
+                        if user_id not in msg.reactions[emoji]:
+                            msg.reactions[emoji].append(user_id)
+                        
+                        await manager.broadcast(room_id, {{
+                            "type": "reaction",
+                            "message_id": msg_id,
+                            "emoji": emoji,
+                            "user_id": user_id
+                        }})
+                        break
+    
+    except WebSocketDisconnect:
+        manager.disconnect(room_id, user_id)
+        
+        await manager.broadcast(room_id, {{
+            "type": "user_left",
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }})
+
+
+{"# ========== AI ASSISTANT ==========" if has_ai else ""}
+{"" if not has_ai else '''
+async def generate_ai_response(room_id: str, user_message: Message):
+    """Generate AI assistant response"""
+    import os
+
+    import openai
+    
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    
+    try:
+        # Get conversation history
+        history = messages[room_id][-10:]  # Last 10 messages
+        
+        conversation = [
+            {"role": "system", "content": "You are a helpful AI assistant in a chat room."}
+        ]
+        
+        for msg in history:
+            role = "assistant" if msg.user_id == "ai_assistant" else "user"
+            conversation.append({
+                "role": role,
+                "content": msg.content
+            })
+        
+        # Generate response
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-4",
+            messages=conversation,
+            max_tokens=500
+        )
+        
+        ai_content = response.choices[0].message.content
+        
+        # Create AI message
+        import uuid
+        ai_message = Message(
+            id=str(uuid.uuid4()),
+            room_id=room_id,
+            user_id="ai_assistant",
+            username="AI Assistant",
+            content=ai_content,
+            timestamp=datetime.now()
+        )
+        
+        messages[room_id].append(ai_message)
+        
+        # Broadcast AI response
+        await manager.broadcast(room_id, {
+            "type": "message",
+            "message": ai_message.dict()
+        })
+    
+    except Exception as e:
+        print(f"AI response error: {e}")
+'''}
+
+
+{"# ========== LIVE TRANSLATION ==========" if has_translation else ""}
+{"" if not has_translation else '''
+async def translate_message(content: str) -> Dict[str, str]:
+    """Translate message to multiple languages"""
+    translations = {}
+    
+    target_languages = ["es", "fr", "de", "zh-CN", "ja"]
+    
+    for lang in target_languages:
+        try:
+            translator = GoogleTranslator(source="auto", target=lang)
+            translated = translator.translate(content)
+            translations[lang] = translated
+        except:
+            translations[lang] = content
+    
+    return translations
+'''}
+
+
+# ========== STATS ENDPOINT ==========
+
+@router.get("/stats")
+async def get_chat_stats():
+    """
+    Get chat system statistics
+    
+    Returns:
+        - total_rooms: Number of chat rooms
+        - total_messages: Total messages sent
+        - active_users: Currently active users
+        - features: Enabled features
+    """
+    total_messages = sum(len(msgs) for msgs in messages.values())
+    active_users = sum(len(users) for users in manager.active_connections.values())
+    
+    return {{
+        "success": True,
+        "total_rooms": len(chat_rooms),
+        "total_messages": total_messages,
+        "active_users": active_users,
+        "features": {{
+            "ai_assistant": {str(has_ai).lower()},
+            "live_translation": {str(has_translation).lower()},
+            "file_sharing": {str(has_files).lower()},
+            "typing_indicator": {str(ChatFeature.TYPING_INDICATOR in config.chat_features).lower()},
+            "read_receipts": {str(ChatFeature.READ_RECEIPTS in config.chat_features).lower()},
+            "reactions": {str(ChatFeature.MESSAGE_REACTIONS in config.chat_features).lower()}
+        }}
+    }}
+'''
+    
+    def _generate_websocket_server(
+        self,
+        config: ChatConfig,
+        framework: Framework,
+        protocol: RealtimeProtocol
+    ) -> str:
+        """Generiere WebSocket/Socket.io Server"""
+        if protocol == RealtimeProtocol.SOCKET_IO:
+            return self._generate_socketio_server(config)
+        else:
+            return "# WebSocket server included in main backend code"
+    
+    def _generate_socketio_server(self, config: ChatConfig) -> str:
+        """Generiere Socket.io Server (für Express/Node.js)"""
+        return '''/**
+ * Socket.io Server für Realtime Chat
+ * Auto-generated by VibeAI Realtime Generator
+ */
+
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+app.use(cors());
+app.use(express.json());
+
+// ========== IN-MEMORY STORAGE ==========
+
+const rooms = new Map();
+const messages = new Map();
+const activeUsers = new Map();
+
+// ========== SOCKET.IO EVENTS ==========
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Join room
+  socket.on('join_room', ({ roomId, userId, username }) => {
+    socket.join(roomId);
+    
+    if (!activeUsers.has(roomId)) {
+      activeUsers.set(roomId, new Map());
+    }
+    activeUsers.get(roomId).set(userId, { socketId: socket.id, username });
+
+    // Send room history
+    if (messages.has(roomId)) {
+      socket.emit('room_history', messages.get(roomId));
+    }
+
+    // Notify others
+    socket.to(roomId).emit('user_joined', {
+      userId,
+      username,
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`User ${username} joined room ${roomId}`);
+  });
+
+  // Leave room
+  socket.on('leave_room', ({ roomId, userId, username }) => {
+    socket.leave(roomId);
+    
+    if (activeUsers.has(roomId)) {
+      activeUsers.get(roomId).delete(userId);
+    }
+
+    socket.to(roomId).emit('user_left', {
+      userId,
+      username,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Send message
+  socket.on('send_message', ({ roomId, userId, username, content, messageType = 'text' }) => {
+    const message = {
+      id: Date.now().toString(),
+      roomId,
+      userId,
+      username,
+      content,
+      messageType,
+      timestamp: new Date().toISOString(),
+      reactions: {},
+      readBy: []
+    };
+
+    // Store message
+    if (!messages.has(roomId)) {
+      messages.set(roomId, []);
+    }
+    messages.get(roomId).push(message);
+
+    // Broadcast to room
+    io.to(roomId).emit('new_message', message);
+  });
+
+  // Typing indicator
+  socket.on('typing', ({ roomId, userId, username, isTyping }) => {
+    socket.to(roomId).emit('user_typing', {
+      userId,
+      username,
+      isTyping
+    });
+  });
+
+  // Reaction
+  socket.on('add_reaction', ({ roomId, messageId, userId, emoji }) => {
+    if (messages.has(roomId)) {
+      const roomMessages = messages.get(roomId);
+      const message = roomMessages.find(m => m.id === messageId);
+      
+      if (message) {
+        if (!message.reactions[emoji]) {
+          message.reactions[emoji] = [];
+        }
+        if (!message.reactions[emoji].includes(userId)) {
+          message.reactions[emoji].push(userId);
+        }
+
+        io.to(roomId).emit('reaction_added', {
+          messageId,
+          emoji,
+          userId
+        });
+      }
+    }
+  });
+
+  // Read receipt
+  socket.on('mark_read', ({ roomId, messageId, userId }) => {
+    if (messages.has(roomId)) {
+      const roomMessages = messages.get(roomId);
+      const message = roomMessages.find(m => m.id === messageId);
+      
+      if (message && !message.readBy.includes(userId)) {
+        message.readBy.push(userId);
+
+        io.to(roomId).emit('message_read', {
+          messageId,
+          userId
+        });
+      }
+    }
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+
+    // Remove from all rooms
+    for (const [roomId, users] of activeUsers.entries()) {
+      for (const [userId, userData] of users.entries()) {
+        if (userData.socketId === socket.id) {
+          users.delete(userId);
+          
+          socket.to(roomId).emit('user_left', {
+            userId,
+            username: userData.username,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    }
+  });
+});
+
+// ========== REST API ==========
+
+app.get('/api/rooms', (req, res) => {
+  res.json({
+    success: true,
+    rooms: Array.from(rooms.values())
+  });
+});
+
+app.post('/api/rooms', (req, res) => {
+  const { name, createdBy, members = [] } = req.body;
+  
+  const room = {
+    id: Date.now().toString(),
+    name,
+    createdBy,
+    members: [createdBy, ...members],
+    createdAt: new Date().toISOString()
+  };
+  
+  rooms.set(room.id, room);
+  messages.set(room.id, []);
+  
+  res.json({
+    success: true,
+    room
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Socket.io server running on port ${PORT}`);
+});
+'''
+    
+    def _generate_webrtc_signaling(
+        self,
+        config: VoiceConfig,
+        framework: Framework
+    ) -> str:
+        """Generiere WebRTC Signaling Server"""
+        return '''"""
+WebRTC Signaling Server
+Auto-generated by VibeAI Realtime Generator
+"""
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Dict, Set
+import json
+
+router = APIRouter(prefix="/webrtc", tags=["WebRTC"])
+
+
+class SignalingServer:
+    """WebRTC signaling server for peer connections"""
+    
+    def __init__(self):
+        self.connections: Dict[str, WebSocket] = {}  # peer_id: websocket
+        self.rooms: Dict[str, Set[str]] = {}  # room_id: {peer_ids}
+    
+    async def connect(self, websocket: WebSocket, peer_id: str, room_id: str):
+        """Connect peer to signaling server"""
+        await websocket.accept()
+        
+        self.connections[peer_id] = websocket
+        
+        if room_id not in self.rooms:
+            self.rooms[room_id] = set()
+        
+        # Notify existing peers about new peer
+        for existing_peer_id in self.rooms[room_id]:
+            if existing_peer_id != peer_id:
+                existing_ws = self.connections.get(existing_peer_id)
+                if existing_ws:
+                    await existing_ws.send_json({
+                        "type": "peer_joined",
+                        "peer_id": peer_id,
+                        "room_id": room_id
+                    })
+        
+        self.rooms[room_id].add(peer_id)
+        
+        # Send current peers list to new peer
+        other_peers = list(self.rooms[room_id] - {peer_id})
+        await websocket.send_json({
+            "type": "peers_list",
+            "peers": other_peers
+        })
+    
+    def disconnect(self, peer_id: str, room_id: str):
+        """Disconnect peer from signaling server"""
+        self.connections.pop(peer_id, None)
+        
+        if room_id in self.rooms:
+            self.rooms[room_id].discard(peer_id)
+            
+            # Notify remaining peers
+            for remaining_peer_id in self.rooms[room_id]:
+                remaining_ws = self.connections.get(remaining_peer_id)
+                if remaining_ws:
+                    asyncio.create_task(remaining_ws.send_json({
+                        "type": "peer_left",
+                        "peer_id": peer_id
+                    }))
+            
+            if not self.rooms[room_id]:
+                del self.rooms[room_id]
+    
+    async def relay_signal(self, from_peer: str, to_peer: str, signal: dict):
+        """Relay WebRTC signal between peers"""
+        to_ws = self.connections.get(to_peer)
+        
+        if to_ws:
+            signal["from_peer"] = from_peer
+            await to_ws.send_json(signal)
+
+
+signaling_server = SignalingServer()
+
+
+@router.websocket("/signal/{room_id}/{peer_id}")
+async def webrtc_signaling(websocket: WebSocket, room_id: str, peer_id: str):
+    """
+    WebRTC signaling endpoint
+    
+    Message types:
+        - offer: WebRTC offer (SDP)
+        - answer: WebRTC answer (SDP)
+        - ice_candidate: ICE candidate
+    """
+    await signaling_server.connect(websocket, peer_id, room_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            signal_type = data.get("type")
+            to_peer = data.get("to_peer")
+            
+            if signal_type in ["offer", "answer", "ice_candidate"]:
+                # Relay signal to target peer
+                if to_peer:
+                    await signaling_server.relay_signal(peer_id, to_peer, data)
+            
+            elif signal_type == "mute":
+                # Broadcast mute status to all peers
+                for other_peer_id in signaling_server.rooms.get(room_id, set()):
+                    if other_peer_id != peer_id:
+                        await signaling_server.relay_signal(peer_id, other_peer_id, {
+                            "type": "peer_muted",
+                            "peer_id": peer_id,
+                            "muted": data.get("muted", False)
+                        })
+    
+    except WebSocketDisconnect:
+        signaling_server.disconnect(peer_id, room_id)
+
+
+@router.get("/rooms/{room_id}/peers")
+async def get_room_peers(room_id: str):
+    """
+    Get list of peers in room
+    
+    Returns:
+        - peers: List of peer IDs
+        - count: Number of active peers
+    """
+    peers = list(signaling_server.rooms.get(room_id, set()))
+    
+    return {
+        "success": True,
+        "peers": peers,
+        "count": len(peers)
+    }
+'''
+    
+    def _generate_voice_backend(
+        self,
+        config: VoiceConfig,
+        framework: Framework
+    ) -> str:
+        """Generiere Voice Call Backend"""
+        has_recording = VoiceFeature.RECORDING in config.voice_features
+        has_translation = VoiceFeature.LIVE_TRANSLATION in config.voice_features
+        has_transcription = VoiceFeature.AI_TRANSCRIPTION in config.voice_features
+        
+        return f'''"""
+Voice/Video Call System - Backend
+Auto-generated by VibeAI Realtime Generator
+"""
+
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+{"import openai" if has_transcription else ""}
+
+router = APIRouter(prefix="/calls", tags=["Voice Calls"])
+
+
+# ========== DATA MODELS ==========
+
+class Call(BaseModel):
+    """Call model"""
+    id: str
+    room_id: str
+    started_at: datetime
+    ended_at: Optional[datetime] = None
+    participants: List[str] = []
+    call_type: str = "audio"  # audio, video
+    recording_url: Optional[str] = None
+    duration_seconds: int = 0
+
+
+class StartCallRequest(BaseModel):
+    """Start call request"""
+    room_id: str
+    call_type: str = "audio"
+    enable_recording: bool = False
+
+
+# ========== IN-MEMORY STORAGE ==========
+
+active_calls: Dict[str, Call] = {{}}
+
+
+# ========== REST ENDPOINTS ==========
+
+@router.post("/start")
+async def start_call(request: StartCallRequest, user_id: str):
+    """
+    Start new call
+    
+    Returns:
+        - call_id: Created call ID
+        - call: Call details
+    """
+    import uuid
+    
+    call_id = str(uuid.uuid4())
+    
+    call = Call(
+        id=call_id,
+        room_id=request.room_id,
+        started_at=datetime.now(),
+        participants=[user_id],
+        call_type=request.call_type
+    )
+    
+    active_calls[call_id] = call
+    
+    return {{
+        "success": True,
+        "call_id": call_id,
+        "call": call.dict()
+    }}
+
+
+@router.post("/{{call_id}}/join")
+async def join_call(call_id: str, user_id: str):
+    """
+    Join existing call
+    
+    Returns:
+        - success: Boolean
+        - participants: Current participants
+    """
+    if call_id not in active_calls:
+        raise HTTPException(status_code=404, detail="Call not found")
+    
+    call = active_calls[call_id]
+    
+    if user_id not in call.participants:
+        call.participants.append(user_id)
+    
+    return {{
+        "success": True,
+        "participants": call.participants
+    }}
+
+
+@router.post("/{{call_id}}/end")
+async def end_call(call_id: str):
+    """
+    End call
+    
+    Returns:
+        - success: Boolean
+        - duration: Call duration in seconds
+    """
+    if call_id not in active_calls:
+        raise HTTPException(status_code=404, detail="Call not found")
+    
+    call = active_calls[call_id]
+    call.ended_at = datetime.now()
+    call.duration_seconds = int((call.ended_at - call.started_at).total_seconds())
+    
+    return {{
+        "success": True,
+        "duration": call.duration_seconds
+    }}
+
+
+{"@router.post('/{call_id}/transcribe')" if has_transcription else ""}
+{"async def transcribe_audio(call_id: str, audio_file: UploadFile = File(...)):" if has_transcription else ""}
+{'''    """
+    Transcribe call audio (STT)
+    
+    Returns:
+        - text: Transcribed text
+        - language: Detected language
+    """
+    import os
+
+    import openai
+    
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    
+    try:
+        transcript = await openai.Audio.atranscribe(
+            model="whisper-1",
+            file=audio_file.file
+        )
+        
+        return {
+            "success": True,
+            "text": transcript.text,
+            "language": transcript.language
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+''' if has_transcription else ""}
+
+
+@router.get("/stats")
+async def get_call_stats():
+    """
+    Get call system statistics
+    
+    Returns:
+        - active_calls: Number of active calls
+        - total_participants: Total participants in all calls
+    """
+    total_participants = sum(len(call.participants) for call in active_calls.values())
+    
+    return {{
+        "success": True,
+        "active_calls": len(active_calls),
+        "total_participants": total_participants
+    }}
+'''
+    
+    def _generate_chat_frontend(
+        self,
+        config: ChatConfig,
+        framework: Framework
+    ) -> str:
+        """Generiere Chat Frontend Code"""
+        if framework == Framework.REACT:
+            return self._generate_react_chat(config)
+        elif framework == Framework.FLUTTER:
+            return self._generate_flutter_chat(config)
+        return "// Unsupported frontend framework"
+    
+    def _generate_react_chat(self, config: ChatConfig) -> str:
+        """Generiere React Chat Code"""
+        has_typing = ChatFeature.TYPING_INDICATOR in config.chat_features
+        has_reactions = ChatFeature.MESSAGE_REACTIONS in config.chat_features
+        
+        return f'''/**
+ * React Chat Hook
+ * Auto-generated by VibeAI Realtime Generator
+ */
+
+import {{ useState, useEffect, useCallback, useRef }} from 'react';
+
+export const useChat = (roomId, userId, username) => {{
+  const [messages, setMessages] = useState([]);
+  const [connected, setConnected] = useState(false);
+  {"const [typingUsers, setTypingUsers] = useState([]);" if has_typing else ""}
+  const wsRef = useRef(null);
+
+  useEffect(() => {{
+    // Connect to WebSocket
+    const ws = new WebSocket(`ws://localhost:8000/chat/ws/${{roomId}}/${{userId}}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {{
+      setConnected(true);
+      console.log('Connected to chat');
+    }};
+
+    ws.onmessage = (event) => {{
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'history') {{
+        setMessages(data.messages);
+      }}
+      else if (data.type === 'message') {{
+        setMessages(prev => [...prev, data.message]);
+      }}
+      {"else if (data.type === 'typing') {" if has_typing else ""}
+      {"  setTypingUsers(prev => {" if has_typing else ""}
+      {"    if (data.is_typing) {" if has_typing else ""}
+      {"      return [...new Set([...prev, data.user_id])];" if has_typing else ""}
+      {"    } else {" if has_typing else ""}
+      {"      return prev.filter(id => id !== data.user_id);" if has_typing else ""}
+      {"    }" if has_typing else ""}
+      {"  });" if has_typing else ""}
+      {"}" if has_typing else ""}
+      {"else if (data.type === 'reaction') {" if has_reactions else ""}
+      {"  setMessages(prev => prev.map(msg => {" if has_reactions else ""}
+      {"    if (msg.id === data.message_id) {" if has_reactions else ""}
+      {"      const reactions = {{ ...msg.reactions }};" if has_reactions else ""}
+      {"      if (!reactions[data.emoji]) reactions[data.emoji] = [];" if has_reactions else ""}
+      {"      if (!reactions[data.emoji].includes(data.user_id)) {" if has_reactions else ""}
+      {"        reactions[data.emoji].push(data.user_id);" if has_reactions else ""}
+      {"      }" if has_reactions else ""}
+      {"      return {{ ...msg, reactions }};" if has_reactions else ""}
+      {"    }" if has_reactions else ""}
+      {"    return msg;" if has_reactions else ""}
+      {"  }));" if has_reactions else ""}
+      {"}" if has_reactions else ""}
+    }};
+
+    ws.onclose = () => {{
+      setConnected(false);
+      console.log('Disconnected from chat');
+    }};
+
+    return () => {{
+      ws.close();
+    }};
+  }}, [roomId, userId]);
+
+  const sendMessage = useCallback((content) => {{
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {{
+      wsRef.current.send(JSON.stringify({{
+        type: 'message',
+        content
+      }}));
+    }}
+  }}, []);
+
+  {"const setTyping = useCallback((isTyping) => {" if has_typing else ""}
+  {"  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {" if has_typing else ""}
+  {"    wsRef.current.send(JSON.stringify({" if has_typing else ""}
+  {"      type: 'typing'," if has_typing else ""}
+  {"      is_typing: isTyping" if has_typing else ""}
+  {"    }));" if has_typing else ""}
+  {"  }" if has_typing else ""}
+  {"}, []);" if has_typing else ""}
+
+  {"const addReaction = useCallback((messageId, emoji) => {" if has_reactions else ""}
+  {"  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {" if has_reactions else ""}
+  {"    wsRef.current.send(JSON.stringify({" if has_reactions else ""}
+  {"      type: 'reaction'," if has_reactions else ""}
+  {"      message_id: messageId," if has_reactions else ""}
+  {"      emoji" if has_reactions else ""}
+  {"    }));" if has_reactions else ""}
+  {"  }" if has_reactions else ""}
+  {"}, []);" if has_reactions else ""}
+
+  return {{
+    messages,
+    connected,
+    {"typingUsers," if has_typing else ""}
+    sendMessage,
+    {"setTyping," if has_typing else ""}
+    {"addReaction" if has_reactions else ""}
+  }};
+}};
+'''
+    
+    def _generate_chat_ui(self, config: ChatConfig, framework: Framework) -> str:
+        """Generiere Chat UI Code"""
+        if framework == Framework.REACT:
+            return '''/**
+ * React Chat UI Component
+ */
+
+import React, { useState } from 'react';
+import { useChat } from './useChat';
+import './ChatUI.css';
+
+const ChatUI = ({ roomId, userId, username }) => {
+  const { messages, connected, sendMessage, setTyping } = useChat(roomId, userId, username);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (inputValue.trim()) {
+      sendMessage(inputValue);
+      setInputValue('');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    setTyping(e.target.value.length > 0);
+  };
+
+  return (
+    <div className="chat-container">
+      <div className="chat-header">
+        <h3>Chat Room</h3>
+        <span className={connected ? 'status-connected' : 'status-disconnected'}>
+          {connected ? '🟢 Connected' : '🔴 Disconnected'}
+        </span>
+      </div>
+
+      <div className="chat-messages">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`message ${msg.user_id === userId ? 'message-own' : 'message-other'}`}
+          >
+            <div className="message-username">{msg.username}</div>
+            <div className="message-content">{msg.content}</div>
+            <div className="message-time">
+              {new Date(msg.timestamp).toLocaleTimeString()}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form className="chat-input" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Type a message..."
+        />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  );
+};
+
+export default ChatUI;
+'''
+        return ""
+    
+    def _generate_voice_ui(self, config: VoiceConfig, framework: Framework) -> str:
+        """Generiere Voice Call UI Code"""
+        return ""
+    
+    def _generate_chat_database(self, config: ChatConfig) -> str:
+        """Generiere Chat Database Schema"""
+        return '''-- Chat Database Schema
+-- Auto-generated by VibeAI Realtime Generator
+
+CREATE TABLE chat_rooms (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(36) NOT NULL,
+    is_group BOOLEAN DEFAULT FALSE,
+    ai_assistant_enabled BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE chat_messages (
+    id VARCHAR(36) PRIMARY KEY,
+    room_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    message_type VARCHAR(50) DEFAULT 'text',
+    file_url TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE
+);
+
+CREATE TABLE room_members (
+    room_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    role VARCHAR(50) DEFAULT 'member',
+    PRIMARY KEY (room_id, user_id),
+    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE
+);
+
+CREATE TABLE message_reactions (
+    message_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    emoji VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (message_id, user_id, emoji),
+    FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+);
+
+CREATE TABLE message_read_receipts (
+    message_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (message_id, user_id),
+    FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_messages_room ON chat_messages(room_id, timestamp DESC);
+CREATE INDEX idx_members_user ON room_members(user_id);
+'''
+    
+    def _generate_voice_database(self, config: VoiceConfig) -> str:
+        """Generiere Voice Call Database Schema"""
+        return '''-- Voice Call Database Schema
+
+CREATE TABLE calls (
+    id VARCHAR(36) PRIMARY KEY,
+    room_id VARCHAR(36) NOT NULL,
+    call_type VARCHAR(50) DEFAULT 'audio',
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP,
+    duration_seconds INT,
+    recording_url TEXT
+);
+
+CREATE TABLE call_participants (
+    call_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    left_at TIMESTAMP,
+    PRIMARY KEY (call_id, user_id),
+    FOREIGN KEY (call_id) REFERENCES calls(id) ON DELETE CASCADE
+);
+'''
+    
+    def _generate_chat_env_variables(self, config: ChatConfig) -> Dict[str, str]:
+        """Generiere Chat Environment Variables"""
+        env_vars = {}
+        
+        if ChatFeature.AI_ASSISTANT in config.chat_features:
+            env_vars["OPENAI_API_KEY"] = "sk-..."
+        
+        return env_vars
+    
+    def _generate_voice_env_variables(self, config: VoiceConfig) -> Dict[str, str]:
+        """Generiere Voice Environment Variables"""
+        env_vars = {}
+        
+        if config.tts_provider == "openai":
+            env_vars["OPENAI_API_KEY"] = "sk-..."
+        elif config.tts_provider == "elevenlabs":
+            env_vars["ELEVENLABS_API_KEY"] = "..."
+        
+        if config.stt_provider:
+            if "openai" in config.stt_provider:
+                env_vars["OPENAI_API_KEY"] = "sk-..."
+            elif "deepgram" in config.stt_provider:
+                env_vars["DEEPGRAM_API_KEY"] = "..."
+        
+        return env_vars
+    
+    def _generate_chat_install_commands(
+        self,
+        config: ChatConfig,
+        backend_framework: Framework,
+        frontend_framework: Optional[Framework]
+    ) -> List[str]:
+        """Generiere Chat Installation Commands"""
+        commands = []
+        
+        # Backend
+        if backend_framework == Framework.FASTAPI:
+            commands.append("pip install fastapi websockets")
+            if ChatFeature.AI_ASSISTANT in config.chat_features:
+                commands.append("pip install openai")
+            if ChatFeature.LIVE_TRANSLATION in config.chat_features:
+                commands.append("pip install deep-translator")
+        
+        # Frontend
+        if frontend_framework == Framework.REACT:
+            commands.append("npm install socket.io-client")
+        
+        return commands
+    
+    def _generate_voice_install_commands(
+        self,
+        config: VoiceConfig,
+        backend_framework: Framework,
+        frontend_framework: Optional[Framework]
+    ) -> List[str]:
+        """Generiere Voice Installation Commands"""
+        commands = []
+        
+        if backend_framework == Framework.FASTAPI:
+            commands.append("pip install fastapi websockets")
+            if config.stt_provider:
+                commands.append("pip install openai")
+        
+        return commands
+    
+    def _generate_chat_setup_instructions(self, config: ChatConfig) -> str:
+        """Generiere Chat Setup Instructions"""
+        return '''# Chat System Setup Instructions
+
+## 1. Install Dependencies
+
+Backend:
+```bash
+pip install fastapi websockets uvicorn
+pip install openai  # For AI assistant
+pip install deep-translator  # For live translation
+```
+
+Frontend:
+```bash
+npm install socket.io-client
+```
+
+## 2. Environment Variables
+
+Create `.env` file:
+```
+OPENAI_API_KEY=sk-...
+```
+
+## 3. Database Setup
+
+Run the SQL schema to create tables:
+```bash
+psql -d your_database < chat_schema.sql
+```
+
+## 4. Start Server
+
+```bash
+uvicorn main:app --reload
+```
+
+## 5. Test Chat
+
+Open browser console:
+```javascript
+const ws = new WebSocket('ws://localhost:8000/chat/ws/room1/user1');
+ws.onmessage = (e) => console.log(JSON.parse(e.data));
+ws.send(JSON.stringify({type: 'message', content: 'Hello!'}));
+```
+'''
+    
+    def _generate_voice_setup_instructions(self, config: VoiceConfig) -> str:
+        """Generiere Voice Setup Instructions"""
+        return '''# Voice Call Setup Instructions
+
+## 1. WebRTC Setup
+
+Enable HTTPS (required for WebRTC):
+```bash
+# For development, use ngrok
+ngrok http 8000
+```
+
+## 2. STUN/TURN Servers
+
+Free STUN servers:
+- stun:stun.l.google.com:19302
+- stun:stun1.l.google.com:19302
+
+## 3. Test WebRTC
+
+Frontend code:
+```javascript
+const pc = new RTCPeerConnection({
+  iceServers: [{urls: 'stun:stun.l.google.com:19302'}]
+});
+
+// Get user media
+const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+stream.getTracks().forEach(track => pc.addTrack(track, stream));
+```
+'''
+    
+    # Express/Django/Flask implementations
+    def _generate_express_chat(self, config: ChatConfig, protocol: RealtimeProtocol) -> str:
+        return "// Express chat implementation - coming soon"
+    
+    def _generate_flutter_chat(self, config: ChatConfig) -> str:
+        return "// Flutter chat implementation - coming soon"
+    
+    def _generate_voice_frontend(self, config: VoiceConfig, framework: Framework) -> str:
+        return "// Voice frontend - coming soon"

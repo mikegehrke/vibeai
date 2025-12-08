@@ -14,7 +14,8 @@ Features:
 - Responsive Design
 """
 
-from typing import Dict, List
+from typing import Dict
+
 from ai.code_generator.shared_templates import templates
 
 
@@ -32,11 +33,11 @@ class ReactGenerator:
     def render_component(self, component: Dict, indent: int = 0) -> str:
         """
         Rendert einzelnes Component zu React JSX.
-        
+
         Args:
             component: Component-Definition
             indent: Indentation level
-        
+
         Returns:
             React JSX Code
         """
@@ -68,11 +69,7 @@ class ReactGenerator:
         size_map = {"small": 14, "medium": 16, "large": 20}
         font_size = size_map.get(size, 16)
 
-        return templates.REACT_TEXT.format(
-            value=value,
-            size=font_size,
-            color=color.replace("#", "")
-        )
+        return templates.REACT_TEXT.format(value=value, size=font_size, color=color.replace("#", ""))
 
     def _render_heading(self, component: Dict, indent: str) -> str:
         """Heading Component (h1)."""
@@ -80,7 +77,7 @@ class ReactGenerator:
         props = component.get("props", {})
         color = props.get("color", "#222222")
 
-        return f"""<h1 style={{{{ color: '{color}', marginBottom: '16px' }}}}>
+        return f"""{indent}<h1 style={{{{ color: '{color}', marginBottom: '16px' }}}}>
   {value}
 </h1>"""
 
@@ -90,19 +87,14 @@ class ReactGenerator:
         props = component.get("props", {})
         color = props.get("color", "#2196f3")
 
-        return templates.REACT_BUTTON.format(
-            label=label,
-            color=color.replace("#", "")
-        )
+        return templates.REACT_BUTTON.format(label=label, color=color.replace("#", ""))
 
     def _render_input(self, component: Dict, indent: str) -> str:
         """Input Field Component."""
         props = component.get("props", {})
         placeholder = props.get("placeholder", "Enter text...")
 
-        return templates.REACT_INPUT.format(
-            placeholder=placeholder
-        )
+        return templates.REACT_INPUT.format(placeholder=placeholder)
 
     def _render_image(self, component: Dict, indent: str) -> str:
         """Image Component."""
@@ -116,12 +108,7 @@ class ReactGenerator:
         width = int(str(width).replace("px", ""))
         height = int(str(height).replace("px", ""))
 
-        return templates.REACT_IMAGE.format(
-            url=url,
-            alt=alt,
-            width=width,
-            height=height
-        )
+        return templates.REACT_IMAGE.format(url=url, alt=alt, width=width, height=height)
 
     def _render_container(self, component: Dict, indent: int) -> str:
         """Container Component mit Children."""
@@ -140,7 +127,7 @@ class ReactGenerator:
         return templates.REACT_CONTAINER.format(
             backgroundColor=bg_color.replace("#", ""),
             borderRadius=border_radius,
-            children=children_str
+            children=children_str,
         )
 
     # ---------------------------------------------------------
@@ -149,10 +136,10 @@ class ReactGenerator:
     def render_screen(self, screen: Dict) -> str:
         """
         Rendert kompletten React Component.
-        
+
         Args:
             screen: Screen-Definition mit components
-        
+
         Returns:
             Complete React Component Code
         """
@@ -175,7 +162,7 @@ class ReactGenerator:
             screenName=screen_name,
             title=title,
             backgroundColor=bg_color.replace("#", ""),
-            body=body
+            body=body,
         )
 
     # ---------------------------------------------------------
@@ -184,7 +171,7 @@ class ReactGenerator:
     def render_app(self, app_structure: Dict) -> Dict[str, str]:
         """
         Rendert komplette React App mit mehreren Components.
-        
+
         Args:
             app_structure: {
                 "app_name": "MyApp",
@@ -192,23 +179,23 @@ class ReactGenerator:
                 "navigation": {...},
                 "theme": {...}
             }
-        
+
         Returns:
             Dict[filename, code]
         """
         files = {}
-        
+
         # Render each screen as component
         for screen in app_structure.get("screens", []):
             screen_name = screen.get("name", "Screen")
             code = self.render_screen(screen)
             files[f"src/components/{screen_name}.jsx"] = code
-        
+
         # App.jsx
         app_name = app_structure.get("app_name", "MyApp")
         theme = app_structure.get("theme", {})
         primary_color = theme.get("primaryColor", "#2196f3")
-        
+
         app_code = f"""
 import React from 'react';
 import HomeScreen from './components/HomeScreen';
@@ -225,7 +212,7 @@ export default function {app_name}() {{
 }}
 """
         files["src/App.jsx"] = app_code
-        
+
         # index.jsx
         index_code = f"""
 import React from 'react';
@@ -240,7 +227,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 """
         files["src/index.jsx"] = index_code
-        
+
         return files
 
 

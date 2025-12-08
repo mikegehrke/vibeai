@@ -4,8 +4,8 @@ Generiert produktionsfähigen WebRTC, Socket.io, TTS/STT Code
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class ChatFeature(str, Enum):
@@ -479,8 +479,8 @@ async def get_messages(room_id: str, limit: int = 100, before: Optional[str] = N
 
 {"@router.post('/rooms/{room_id}/files')" if has_files else ""}
 {"async def upload_file(room_id: str, file: UploadFile = File(...), user_id: str = 'user'):" if has_files else ""}
-{'''    """
-    Upload file to chat room
+{('    """' + '''
+    Upload file to chat room''') if has_files else ""}
     
     Returns:
         - file_url: Uploaded file URL
@@ -489,7 +489,7 @@ async def get_messages(room_id: str, limit: int = 100, before: Optional[str] = N
     """
     import shutil
     from pathlib import Path
-    
+
     # Save file (in production, use S3/Cloud Storage)
     upload_dir = Path("uploads/chat") / room_id
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -675,6 +675,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
 async def generate_ai_response(room_id: str, user_message: Message):
     """Generate AI assistant response"""
     import os
+
     import openai
     
     openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -1272,6 +1273,7 @@ async def end_call(call_id: str):
         - language: Detected language
     """
     import os
+
     import openai
     
     openai.api_key = os.getenv("OPENAI_API_KEY")

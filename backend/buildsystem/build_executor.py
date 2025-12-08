@@ -1,12 +1,12 @@
-from typing import Any
 # -------------------------------------------------------------
 # VIBEAI – BUILD EXECUTOR (Live Build Engine + WebSockets)
 # -------------------------------------------------------------
 import asyncio
-import shutil
 import os
-from buildsystem.build_manager import build_manager
+import shutil
+
 from admin.notifications.ws_build_events import ws_build_events
+from buildsystem.build_manager import build_manager
 
 
 # -------------------------------------------------------------
@@ -36,10 +36,7 @@ async def _run_cmd(cmd, cwd, user, build_id):
     """
 
     process = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=cwd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
+        *cmd, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
 
     # Live STDOUT
@@ -64,11 +61,7 @@ async def _run_cmd(cmd, cwd, user, build_id):
 # FLUTTER BUILDS
 # -------------------------------------------------------------
 async def _build_flutter(build_type, project_path, user, build_id):
-    await _log(
-        user,
-        build_id,
-        f"⚙️ Starting Flutter {build_type} build..."
-    )
+    await _log(user, build_id, f"⚙️ Starting Flutter {build_type} build...")
 
     # Commands
     if build_type == "flutter_android":
@@ -87,11 +80,7 @@ async def _build_flutter(build_type, project_path, user, build_id):
         output_subpath = "build/ios"
 
     else:
-        await _log(
-            user,
-            build_id,
-            f"❌ Unknown Flutter build target: {build_type}"
-        )
+        await _log(user, build_id, f"❌ Unknown Flutter build target: {build_type}")
         return 1
 
     # Run command
@@ -100,9 +89,7 @@ async def _build_flutter(build_type, project_path, user, build_id):
         return rc
 
     # Copy Final Output
-    output_final = os.path.join(
-        "build_artifacts", user, build_id, "output"
-    )
+    output_final = os.path.join("build_artifacts", user, build_id, "output")
     os.makedirs(output_final, exist_ok=True)
 
     if output_file:
@@ -110,9 +97,7 @@ async def _build_flutter(build_type, project_path, user, build_id):
         source = os.path.join(project_path, output_subpath, output_file)
         if os.path.exists(source):
             shutil.copy2(source, output_final)
-            await _log(
-                user, build_id, f"✅ Copied {output_file} to output/"
-            )
+            await _log(user, build_id, f"✅ Copied {output_file} to output/")
     else:
         # Directory (Web, iOS)
         source = os.path.join(project_path, output_subpath)
@@ -149,16 +134,10 @@ async def _build_web(project_path, user, build_id):
         build_output = os.path.join(project_path, "dist")
 
     if not os.path.exists(build_output):
-        await _log(
-            user,
-            build_id,
-            "⚠️ No build output found (build/.next/dist)"
-        )
+        await _log(user, build_id, "⚠️ No build output found (build/.next/dist)")
         return 1
 
-    output_final = os.path.join(
-        "build_artifacts", user, build_id, "output"
-    )
+    output_final = os.path.join("build_artifacts", user, build_id, "output")
     shutil.copytree(build_output, output_final, dirs_exist_ok=True)
 
     await _log(user, build_id, "✔ Web build exported successfully")
@@ -186,9 +165,7 @@ async def _build_electron(project_path, user, build_id):
         await _log(user, build_id, "❌ No dist/ folder found")
         return 1
 
-    output_final = os.path.join(
-        "build_artifacts", user, build_id, "output"
-    )
+    output_final = os.path.join("build_artifacts", user, build_id, "output")
     shutil.copytree(dist_path, output_final, dirs_exist_ok=True)
 
     await _log(user, build_id, "✔ Electron build ready")
@@ -212,20 +189,12 @@ async def start_build(user, build_id, project_path, build_type):
     await _log(user, build_id, f"🚀 Build started: {build_type}")
 
     # WebSocket: Build started
-    await ws_build_events.broadcast_status(
-        build_id, "RUNNING", progress=0
-    )
+    await ws_build_events.broadcast_status(build_id, "RUNNING", progress=0)
 
     try:
         # --- Flutter ---
-        if build_type in (
-            "flutter_android",
-            "flutter_web",
-            "flutter_ios"
-        ):
-            rc = await _build_flutter(
-                build_type, project_path, user, build_id
-            )
+        if build_type in ("flutter_android", "flutter_web", "flutter_ios"):
+            rc = await _build_flutter(build_type, project_path, user, build_id)
 
         # --- Web (React/Next/Vue) ---
         elif build_type in ("react_web", "nextjs_web"):
@@ -236,15 +205,9 @@ async def start_build(user, build_id, project_path, build_type):
             rc = await _build_electron(project_path, user, build_id)
 
         else:
-            await _log(
-                user,
-                build_id,
-                f"❌ Unknown build type: {build_type}"
-            )
+            await _log(user, build_id, f"❌ Unknown build type: {build_type}")
             build_manager.update_build_status(user, build_id, "FAILED")
-            await ws_build_events.broadcast_error(
-                build_id, f"Unknown build type: {build_type}"
-            )
+            await ws_build_events.broadcast_error(build_id, f"Unknown build type: {build_type}")
             return
 
         # Finish
@@ -253,33 +216,23 @@ async def start_build(user, build_id, project_path, build_type):
             build_manager.update_build_status(user, build_id, "SUCCESS")
 
             # Get artifacts
-            output_path = os.path.join(
-                "build_artifacts", user, build_id, "output"
-            )
+            output_path = os.path.join("build_artifacts", user, build_id, "output")
             artifacts = []
             if os.path.exists(output_path):
                 for root, _, files in os.walk(output_path):
                     for f in files:
-                        rel = os.path.relpath(
-                            os.path.join(root, f), output_path
-                        )
+                        rel = os.path.relpath(os.path.join(root, f), output_path)
                         artifacts.append(rel)
 
             # WebSocket: Success
-            await ws_build_events.broadcast_complete(
-                build_id, success=True, artifacts=artifacts
-            )
+            await ws_build_events.broadcast_complete(build_id, success=True, artifacts=artifacts)
 
         else:
-            await _log(
-                user, build_id, f"❌ Build failed with code {rc}"
-            )
+            await _log(user, build_id, f"❌ Build failed with code {rc}")
             build_manager.update_build_status(user, build_id, "FAILED")
 
             # WebSocket: Failed
-            await ws_build_events.broadcast_complete(
-                build_id, success=False
-            )
+            await ws_build_events.broadcast_complete(build_id, success=False)
 
     except Exception as e:
         await _log(user, build_id, f"❌ Exception: {str(e)}")
@@ -287,6 +240,4 @@ async def start_build(user, build_id, project_path, build_type):
 
         # WebSocket: Error
         await ws_build_events.broadcast_error(build_id, str(e))
-        await ws_build_events.broadcast_complete(
-            build_id, success=False
-        )
+        await ws_build_events.broadcast_complete(build_id, success=False)

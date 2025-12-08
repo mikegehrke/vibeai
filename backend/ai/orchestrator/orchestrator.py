@@ -12,7 +12,6 @@ Handles:
 """
 
 from typing import Dict, Optional
-import asyncio
 
 
 class AgentOrchestrator:
@@ -24,27 +23,21 @@ class AgentOrchestrator:
 
     def _initialize_agents(self):
         """Lazy import to avoid circular dependencies."""
-        from ai.orchestrator.agents.ui_agent import ui_agent
-        from ai.orchestrator.agents.code_agent import code_agent
-        from ai.orchestrator.agents.preview_agent import preview_agent
         from ai.orchestrator.agents.build_agent import build_agent
+        from ai.orchestrator.agents.code_agent import code_agent
         from ai.orchestrator.agents.deploy_agent import deploy_agent
+        from ai.orchestrator.agents.preview_agent import preview_agent
+        from ai.orchestrator.agents.ui_agent import ui_agent
 
         self.agents = {
             "ui": ui_agent,
             "code": code_agent,
             "preview": preview_agent,
             "build": build_agent,
-            "deploy": deploy_agent
+            "deploy": deploy_agent,
         }
 
-    async def handle(
-        self,
-        user_id: str,
-        project_id: str,
-        prompt: str,
-        context: Optional[Dict] = None
-    ) -> Dict:
+    async def handle(self, user_id: str, project_id: str, prompt: str, context: Optional[Dict] = None) -> Dict:
         """
         Main entry point for agent orchestration.
 
@@ -78,59 +71,46 @@ class AgentOrchestrator:
                     "agent": "ui_agent",
                     "intent": "ui",
                     "result": screen,
-                    "success": True
+                    "success": True,
                 }
 
             elif intent == "code":
                 screen = project_context.get_last_screen(user_id, project_id)
                 framework = ctx.get("framework", "flutter")
-                code = await self.agents["code"].generate_code(
-                    screen,
-                    framework
-                )
+                code = await self.agents["code"].generate_code(screen, framework)
                 project_context.add_code(user_id, project_id, code)
                 return {
                     "agent": "code_agent",
                     "intent": "code",
                     "result": code,
-                    "success": True
+                    "success": True,
                 }
 
             elif intent == "preview":
-                result = await self.agents["preview"].update_preview(
-                    user_id,
-                    project_id
-                )
+                result = await self.agents["preview"].update_preview(user_id, project_id)
                 return {
                     "agent": "preview_agent",
                     "intent": "preview",
                     "result": result,
-                    "success": True
+                    "success": True,
                 }
 
             elif intent == "build":
-                build = await self.agents["build"].start_build(
-                    user_id,
-                    project_id,
-                    prompt
-                )
+                build = await self.agents["build"].start_build(user_id, project_id, prompt)
                 return {
                     "agent": "build_agent",
                     "intent": "build",
                     "result": build,
-                    "success": True
+                    "success": True,
                 }
 
             elif intent == "deploy":
-                url = await self.agents["deploy"].deploy_project(
-                    user_id,
-                    project_id
-                )
+                url = await self.agents["deploy"].deploy_project(user_id, project_id)
                 return {
                     "agent": "deploy_agent",
                     "intent": "deploy",
                     "result": {"url": url},
-                    "success": True
+                    "success": True,
                 }
 
             else:
@@ -138,7 +118,7 @@ class AgentOrchestrator:
                     "agent": "none",
                     "intent": "unknown",
                     "result": {"message": "Intent not recognized"},
-                    "success": False
+                    "success": False,
                 }
 
         except Exception as e:
@@ -146,7 +126,7 @@ class AgentOrchestrator:
                 "agent": "error",
                 "intent": intent,
                 "result": {"error": str(e)},
-                "success": False
+                "success": False,
             }
 
     def classify_intent(self, prompt: str) -> str:
@@ -158,38 +138,56 @@ class AgentOrchestrator:
         p = prompt.lower()
 
         # UI Generation
-        if any(word in p for word in [
-            "screen", "ui", "design", "interface",
-            "layout", "komponente", "button", "input"
-        ]):
+        if any(
+            word in p
+            for word in [
+                "screen",
+                "ui",
+                "design",
+                "interface",
+                "layout",
+                "komponente",
+                "button",
+                "input",
+            ]
+        ):
             return "ui"
 
         # Code Generation
-        if any(word in p for word in [
-            "code", "flutter", "react", "vue",
-            "programmier", "entwickle", "implementier"
-        ]):
+        if any(
+            word in p
+            for word in [
+                "code",
+                "flutter",
+                "react",
+                "vue",
+                "programmier",
+                "entwickle",
+                "implementier",
+            ]
+        ):
             return "code"
 
         # Preview
-        if any(word in p for word in [
-            "preview", "zeige", "ansicht", "vorschau",
-            "live", "anzeige"
-        ]):
+        if any(word in p for word in ["preview", "zeige", "ansicht", "vorschau", "live", "anzeige"]):
             return "preview"
 
         # Build
-        if any(word in p for word in [
-            "build", "apk", "web build", "kompilier",
-            "baue", "erstelle apk"
-        ]):
+        if any(
+            word in p
+            for word in [
+                "build",
+                "apk",
+                "web build",
+                "kompilier",
+                "baue",
+                "erstelle apk",
+            ]
+        ):
             return "build"
 
         # Deploy
-        if any(word in p for word in [
-            "deploy", "veröffentlich", "publish",
-            "hochladen", "verteilen"
-        ]):
+        if any(word in p for word in ["deploy", "veröffentlich", "publish", "hochladen", "verteilen"]):
             return "deploy"
 
         return "unknown"
@@ -199,7 +197,7 @@ class AgentOrchestrator:
         user_id: str,
         project_id: str,
         workflow: str,
-        params: Optional[Dict] = None
+        params: Optional[Dict] = None,
     ) -> Dict:
         """
         Execute predefined workflow.
@@ -213,44 +211,24 @@ class AgentOrchestrator:
 
         if workflow == "create_app":
             # Step 1: Create UI
-            ui_result = await self.handle(
-                user_id,
-                project_id,
-                params.get("prompt", "Create app UI")
-            )
+            ui_result = await self.handle(user_id, project_id, params.get("prompt", "Create app UI"))
             results.append(ui_result)
 
             # Step 2: Generate Code
-            code_result = await self.handle(
-                user_id,
-                project_id,
-                "Generate code"
-            )
+            code_result = await self.handle(user_id, project_id, "Generate code")
             results.append(code_result)
 
             # Step 3: Preview
-            preview_result = await self.handle(
-                user_id,
-                project_id,
-                "Show preview"
-            )
+            preview_result = await self.handle(user_id, project_id, "Show preview")
             results.append(preview_result)
 
         elif workflow == "build_app":
             # Step 1: Build
-            build_result = await self.handle(
-                user_id,
-                project_id,
-                "Build app"
-            )
+            build_result = await self.handle(user_id, project_id, "Build app")
             results.append(build_result)
 
             # Step 2: Deploy
-            deploy_result = await self.handle(
-                user_id,
-                project_id,
-                "Deploy app"
-            )
+            deploy_result = await self.handle(user_id, project_id, "Deploy app")
             results.append(deploy_result)
 
         elif workflow == "full_cycle":
@@ -260,7 +238,7 @@ class AgentOrchestrator:
                 "Generate code",
                 "Show preview",
                 "Build app",
-                "Deploy app"
+                "Deploy app",
             ]
 
             for prompt in prompts:
@@ -271,7 +249,7 @@ class AgentOrchestrator:
             "workflow": workflow,
             "steps": len(results),
             "results": results,
-            "success": all(r.get("success") for r in results)
+            "success": all(r.get("success") for r in results),
         }
 
 

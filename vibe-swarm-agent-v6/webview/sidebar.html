@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIBE SWARM</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--vscode-font-family);
+      color: var(--vscode-foreground);
+      background: var(--vscode-editor-background);
+      padding: 16px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .emoji {
+      font-size: 24px;
+    }
+
+    #status {
+      padding: 12px;
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .controls {
+      margin-bottom: 16px;
+    }
+
+    button {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    button:hover {
+      background: var(--vscode-button-hoverBackground);
+    }
+
+    #log {
+      max-height: 600px;
+      overflow-y: auto;
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: 4px;
+    }
+
+    .log-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--vscode-panel-border);
+      font-size: 12px;
+      font-family: var(--vscode-editor-font-family);
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-item.agent {
+      color: var(--vscode-terminal-ansiBlue);
+      font-weight: 500;
+    }
+
+    .log-item.message {
+      color: var(--vscode-terminal-ansiGreen);
+      font-style: italic;
+      padding-left: 24px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--vscode-scrollbarSlider-background);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--vscode-scrollbarSlider-hoverBackground);
+    }
+  </style>
+</head>
+
+<body>
+  <h2><span class="emoji">🔥</span> VIBE SWARM v6.0</h2>
+
+  <div id="status">Ready - 10 agents online</div>
+
+  <div class="controls">
+    <button onclick="clearLogs()">Clear Logs</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const logElement = document.getElementById("log");
+    const statusElement = document.getElementById("status");
+
+    window.addEventListener("message", event => {
+      const msg = event.data;
+
+      switch (msg.type) {
+        case "status":
+          statusElement.textContent = msg.text;
+          break;
+
+        case "agent":
+          addLog("agent", "🤖 " + msg.agent + ": " + msg.message);
+          break;
+
+        case "agentMessage":
+          addLog("message", "💬 " + msg.from + " → " + msg.to + ": " + msg.message);
+          break;
+
+        case "clear":
+          logElement.innerHTML = "";
+          break;
+      }
+
+      logElement.scrollTop = logElement.scrollHeight;
+    });
+
+    function addLog(type, text) {
+      const item = document.createElement("div");
+      item.className = "log-item " + type;
+      item.textContent = text;
+      logElement.appendChild(item);
+    }
+
+    function clearLogs() {
+      vscode.postMessage({ type: "clearLogs" });
+    }
+  </script>
+</body>
+
+</html>

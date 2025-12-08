@@ -1,12 +1,13 @@
 # ----------------------------------------------------------
 # COMPLETED MAILER FOR ADMIN NOTIFICATIONS
 # ----------------------------------------------------------
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import logging
-from fastapi import HTTPException
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from fastapi import HTTPException
 
 logger = logging.getLogger("mailer")
 
@@ -80,14 +81,14 @@ class Mailer:
 # 👉 Das Original ist ein guter SMTP Mailer
 # 👉 Für Production brauchen wir Async + Templates + Shortcuts
 
+import asyncio
 
 # -------------------------------------------------------------
 # VIBEAI – MAILER SERVICE V2 (ASYNC + TEMPLATES + RETRY)
 # -------------------------------------------------------------
 import ssl
-from typing import List, Optional, Dict, Any
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, List, Optional
 
 
 class MailerServiceV2:
@@ -107,10 +108,10 @@ class MailerServiceV2:
         self.smtp_pass = os.getenv("SMTP_PASS", "")
         self.from_address = os.getenv("MAIL_FROM", self.smtp_user)
         self.admin_email = os.getenv("ADMIN_EMAIL", "admin@vibeai.com")
-        
+
         # Enabled wenn SMTP konfiguriert
         self.enabled = bool(self.smtp_user and self.smtp_pass)
-        
+
         # Thread Pool für async execution
         self.executor = ThreadPoolExecutor(max_workers=3)
 
@@ -123,64 +124,45 @@ class MailerServiceV2:
         subject: str,
         message: str,
         html: Optional[str] = None,
-        retry: int = 3
-    ) -> Dict[str, Any]:
+        retry: int = 3,
+    ) -> Dict[str, any]:
         """
         Async Email mit Retry-Logik.
-        
+
         Args:
             to: Empfänger Email
             subject: Email Subject
             message: Plain-Text Nachricht
             html: Optional HTML Version
             retry: Anzahl Wiederholungen bei Fehler
-            
+
         Returns:
             {"success": bool, "error": str (optional)}
         """
         if not self.enabled:
             logger.warning("Mailer not configured - email not sent")
-            return {
-                "success": False,
-                "error": "SMTP not configured"
-            }
+            return {"success": False, "error": "SMTP not configured"}
 
         # Run in thread pool (SMTP ist sync)
         loop = asyncio.get_event_loop()
-        
+
         for attempt in range(retry):
             try:
-                await loop.run_in_executor(
-                    self.executor,
-                    self._send_sync,
-                    to,
-                    subject,
-                    message,
-                    html
-                )
-                
+                await loop.run_in_executor(self.executor, self._send_sync, to, subject, message, html)
+
                 logger.info(f"Email sent to {to}: {subject}")
                 return {"success": True}
-                
+
             except Exception as e:
                 logger.error(f"Email attempt {attempt + 1} failed: {e}")
-                
-                if attempt == retry - 1:
-                    return {
-                        "success": False,
-                        "error": str(e)
-                    }
-                
-                # Wait before retry
-                await asyncio.sleep(2 ** attempt)
 
-    def _send_sync(
-        self,
-        to: str,
-        subject: str,
-        message: str,
-        html: Optional[str] = None
-    ):
+                if attempt == retry - 1:
+                    return {"success": False, "error": str(e)}
+
+                # Wait before retry
+                await asyncio.sleep(2**attempt)
+
+    def _send_sync(self, to: str, subject: str, message: str, html: Optional[str] = None):
         """Synchroner SMTP Send (wird in Thread ausgeführt)."""
         email = MIMEMultipart("alternative")
         email["Subject"] = subject
@@ -198,7 +180,7 @@ class MailerServiceV2:
 
         # Send via SMTP
         context = ssl.create_default_context()
-        
+
         with smtplib.SMTP(self.smtp_server, self.smtp_port) as smtp:
             smtp.starttls(context=context)
             smtp.login(self.smtp_user, self.smtp_pass)
@@ -212,11 +194,11 @@ class MailerServiceV2:
         recipients: List[str],
         subject: str,
         message: str,
-        html: Optional[str] = None
-    ) -> Dict[str, Any]:
+        html: Optional[str] = None,
+    ) -> Dict[str, any]:
         """
         Sendet Email an mehrere Empfänger (parallel).
-        
+
         Returns:
             {
                 "total": int,
@@ -225,34 +207,27 @@ class MailerServiceV2:
                 "results": [...]
             }
         """
-        tasks = [
-            self.send_email_async(to, subject, message, html)
-            for to in recipients
-        ]
-        
+        tasks = [self.send_email_async(to, subject, message, html) for to in recipients]
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         sent = sum(1 for r in results if isinstance(r, dict) and r.get("success"))
         failed = len(results) - sent
-        
+
         return {
             "total": len(recipients),
             "sent": sent,
             "failed": failed,
-            "results": results
+            "results": results,
         }
 
     # ---------------------------------------------------------
     # Template Shortcuts
     # ---------------------------------------------------------
-    async def send_admin_alert(
-        self,
-        message: str,
-        details: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def send_admin_alert(self, message: str, details: Optional[str] = None) -> Dict[str, any]:
         """
         Sendet Alert an Admin.
-        
+
         Args:
             message: Kurze Alert-Message
             details: Optional detaillierte Info
@@ -270,20 +245,15 @@ class MailerServiceV2:
             </body>
         </html>
         """
-        
+
         return await self.send_email_async(
             to=self.admin_email,
             subject=f"🚨 Admin Alert: {message}",
             message=message,
-            html=html
+            html=html,
         )
 
-    async def send_ticket_reply(
-        self,
-        user_email: str,
-        ticket_id: str,
-        reply_message: str
-    ) -> Dict[str, Any]:
+    async def send_ticket_reply(self, user_email: str, ticket_id: str, reply_message: str) -> Dict[str, any]:
         """
         Sendet Ticket-Antwort an User.
         """
@@ -302,20 +272,17 @@ class MailerServiceV2:
             </body>
         </html>
         """
-        
+
         return await self.send_email_async(
             to=user_email,
             subject=f"Support Ticket #{ticket_id} - New Reply",
             message=reply_message,
-            html=html
+            html=html,
         )
 
     async def send_project_ready_notification(
-        self,
-        user_email: str,
-        project_name: str,
-        download_url: str
-    ) -> Dict[str, Any]:
+        self, user_email: str, project_name: str, download_url: str
+    ) -> Dict[str, any]:
         """
         Benachrichtigt User dass Projekt fertig ist.
         """
@@ -325,8 +292,8 @@ class MailerServiceV2:
                 <h2 style="color: #27ae60;">✅ Your Project is Ready!</h2>
                 <p><strong>{project_name}</strong> has been generated successfully.</p>
                 <p>
-                    <a href="{download_url}" 
-                       style="background: #3498db; color: white; padding: 10px 20px; 
+                    <a href="{download_url}"
+                       style="background: #3498db; color: white; padding: 10px 20px;
                               text-decoration: none; border-radius: 5px; display: inline-block;">
                         Download Project
                     </a>
@@ -338,19 +305,15 @@ class MailerServiceV2:
             </body>
         </html>
         """
-        
+
         return await self.send_email_async(
             to=user_email,
             subject=f"✅ {project_name} is ready to download!",
             message=f"Your project {project_name} is ready. Download: {download_url}",
-            html=html
+            html=html,
         )
 
-    async def send_account_suspended_notification(
-        self,
-        user_email: str,
-        reason: str
-    ) -> Dict[str, Any]:
+    async def send_account_suspended_notification(self, user_email: str, reason: str) -> Dict[str, any]:
         """
         Informiert User über Account-Sperrung.
         """
@@ -368,15 +331,14 @@ class MailerServiceV2:
             </body>
         </html>
         """
-        
+
         return await self.send_email_async(
             to=user_email,
             subject="⚠️ VibeAI Account Suspended",
             message=f"Your account has been suspended. Reason: {reason}",
-            html=html
+            html=html,
         )
 
 
 # Global Instances
 mailer_v2 = MailerServiceV2()
-

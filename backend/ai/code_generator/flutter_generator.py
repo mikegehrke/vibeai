@@ -14,7 +14,8 @@ Features:
 - Navigation
 """
 
-from typing import Dict, List
+from typing import Dict
+
 from ai.code_generator.shared_templates import templates
 
 
@@ -32,11 +33,11 @@ class FlutterGenerator:
     def render_component(self, component: Dict, indent: int = 0) -> str:
         """
         Rendert einzelnes Component zu Flutter Widget.
-        
+
         Args:
             component: Component-Definition
             indent: Indentation level
-        
+
         Returns:
             Flutter Widget Code
         """
@@ -68,11 +69,7 @@ class FlutterGenerator:
         size_map = {"small": 14.0, "medium": 16.0, "large": 20.0}
         font_size = size_map.get(size, 16.0)
 
-        return templates.FLUTTER_TEXT.format(
-            value=value,
-            size=font_size,
-            color=color
-        )
+        return templates.FLUTTER_TEXT.format(value=value, size=font_size, color=color)
 
     def _render_heading(self, component: Dict, indent: str) -> str:
         """Heading Widget (large Text)."""
@@ -80,14 +77,14 @@ class FlutterGenerator:
         props = component.get("props", {})
         color = props.get("color", "#222222").replace("#", "")
 
-        return f"""Text(
-  "{value}",
-  style: TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: Color(0xFF{color}),
-  ),
-)"""
+        return f"""{indent}Text(
+{indent}  "{value}",
+{indent}  style: TextStyle(
+{indent}    fontSize: 24,
+{indent}    fontWeight: FontWeight.bold,
+{indent}    color: Color(0xFF{color}),
+{indent}  ),
+{indent})"""
 
     def _render_button(self, component: Dict, indent: str) -> str:
         """Button Widget."""
@@ -95,19 +92,14 @@ class FlutterGenerator:
         props = component.get("props", {})
         color = props.get("color", "#2196f3").replace("#", "")
 
-        return templates.FLUTTER_BUTTON.format(
-            label=label,
-            color=color
-        )
+        return templates.FLUTTER_BUTTON.format(label=label, color=color)
 
     def _render_input(self, component: Dict, indent: str) -> str:
         """Input Field Widget."""
         props = component.get("props", {})
         placeholder = props.get("placeholder", "Enter text...")
 
-        return templates.FLUTTER_INPUT.format(
-            placeholder=placeholder
-        )
+        return templates.FLUTTER_INPUT.format(placeholder=placeholder)
 
     def _render_image(self, component: Dict, indent: str) -> str:
         """Image Widget."""
@@ -120,11 +112,7 @@ class FlutterGenerator:
         width = float(str(width).replace("px", ""))
         height = float(str(height).replace("px", ""))
 
-        return templates.FLUTTER_IMAGE.format(
-            url=url,
-            width=width,
-            height=height
-        )
+        return templates.FLUTTER_IMAGE.format(url=url, width=width, height=height)
 
     def _render_container(self, component: Dict, indent: int) -> str:
         """Container Widget mit Children."""
@@ -141,16 +129,12 @@ class FlutterGenerator:
         children_str = ",\n".join(children_code)
 
         if children:
-            child_widget = templates.FLUTTER_COLUMN.format(
-                children=children_str
-            )
+            child_widget = templates.FLUTTER_COLUMN.format(children=children_str)
         else:
             child_widget = "SizedBox()"
 
         return templates.FLUTTER_CONTAINER.format(
-            backgroundColor=bg_color,
-            borderRadius=border_radius,
-            child=child_widget
+            backgroundColor=bg_color, borderRadius=border_radius, child=child_widget
         )
 
     # ---------------------------------------------------------
@@ -159,10 +143,10 @@ class FlutterGenerator:
     def render_screen(self, screen: Dict) -> str:
         """
         Rendert kompletten Flutter Screen.
-        
+
         Args:
             screen: Screen-Definition mit components
-        
+
         Returns:
             Complete Flutter Screen Code
         """
@@ -178,11 +162,9 @@ class FlutterGenerator:
 
         # Join with commas
         body_content = ",\n".join(component_widgets)
-        
+
         # Wrap in Column
-        body = templates.FLUTTER_COLUMN.format(
-            children=body_content
-        )
+        body = templates.FLUTTER_COLUMN.format(children=body_content)
 
         # Wrap in Padding
         body_with_padding = f"""Padding(
@@ -191,11 +173,7 @@ class FlutterGenerator:
       )"""
 
         # Complete screen
-        return templates.FLUTTER_SCREEN.format(
-            screenName=screen_name,
-            title=title,
-            body=body_with_padding
-        )
+        return templates.FLUTTER_SCREEN.format(screenName=screen_name, title=title, body=body_with_padding)
 
     # ---------------------------------------------------------
     # FULL APP RENDERING
@@ -203,7 +181,7 @@ class FlutterGenerator:
     def render_app(self, app_structure: Dict) -> Dict[str, str]:
         """
         Rendert komplette Flutter App mit mehreren Screens.
-        
+
         Args:
             app_structure: {
                 "app_name": "MyApp",
@@ -211,23 +189,23 @@ class FlutterGenerator:
                 "navigation": {...},
                 "theme": {...}
             }
-        
+
         Returns:
             Dict[filename, code]
         """
         files = {}
-        
+
         # Render each screen
         for screen in app_structure.get("screens", []):
             screen_name = screen.get("name", "Screen")
             code = self.render_screen(screen)
             files[f"lib/screens/{screen_name.lower()}.dart"] = code
-        
+
         # Main.dart
         app_name = app_structure.get("app_name", "MyApp")
         theme = app_structure.get("theme", {})
         primary_color = theme.get("primaryColor", "#2196f3").replace("#", "")
-        
+
         main_code = f"""
 import 'package:flutter/material.dart';
 
@@ -250,7 +228,7 @@ class {app_name} extends StatelessWidget {{
 }}
 """
         files["lib/main.dart"] = main_code
-        
+
         return files
 
 

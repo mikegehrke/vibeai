@@ -1,6 +1,6 @@
 # -------------------------------------------------------------
 # VIBEAI – MEMORY MODULE
 # -------------------------------------------------------------
-from ai.memory.project_memory import project_memory
+from .project_memory import project_memory
 
 __all__ = ["project_memory"]

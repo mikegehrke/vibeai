@@ -1,9 +1,11 @@
 # -------------------------------------------------------------
 # VIBEAI – BACKEND MODEL GENERATOR ROUTES
 # -------------------------------------------------------------
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+
 from .model_generator import model_generator
 
 router = APIRouter(prefix="/backend-gen", tags=["Backend Generator"])
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/backend-gen", tags=["Backend Generator"])
 
 class ModelField(BaseModel):
     """Definition eines Model-Felds"""
+
     name: str
     type: str  # string, int, float, boolean, date, datetime, email, url, etc.
     required: Optional[bool] = True
@@ -28,6 +31,7 @@ class ModelField(BaseModel):
 
 class ModelDefinition(BaseModel):
     """Definition eines Backend Models"""
+
     name: str
     fields: List[ModelField]
     relations: Optional[List[Dict[str, Any]]] = []
@@ -36,6 +40,7 @@ class ModelDefinition(BaseModel):
 
 class GenerateBackendRequest(BaseModel):
     """Request für Backend-Generierung"""
+
     framework: str = Field(..., description="fastapi, flask, django, express")
     project_id: str
     models: List[ModelDefinition]
@@ -46,7 +51,7 @@ class GenerateBackendRequest(BaseModel):
 async def generate_backend(request: Request, data: GenerateBackendRequest):
     """
     Generiert komplettes Backend mit Models, Controllers, CRUD, Routes
-    
+
     POST /backend-gen/generate
     {
         "framework": "fastapi",
@@ -64,7 +69,7 @@ async def generate_backend(request: Request, data: GenerateBackendRequest):
         ],
         "options": {"database": "postgresql", "auth": true}
     }
-    
+
     Returns:
     {
         "success": true,
@@ -78,25 +83,22 @@ async def generate_backend(request: Request, data: GenerateBackendRequest):
     try:
         # Bestimme Projekt-Pfad
         base_path = f"/tmp/vibeai_projects/{data.project_id}"
-        
+
         # Konvertiere Pydantic Models zu Dicts
-        models_data = [model.model_dump() for model in data.models]
-        
+        models_data = [model.dict() for model in data.models]
+
         result = model_generator.generate_backend(
             framework=data.framework,
             base_path=base_path,
             models=models_data,
-            options=data.options
+            options=data.options,
         )
-        
+
         if not result.get("success"):
-            raise HTTPException(
-                status_code=400,
-                detail=result.get("error", "Fehler bei Generierung")
-            )
-        
+            raise HTTPException(status_code=400, detail=result.get("error", "Fehler bei Generierung"))
+
         return result
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler: {str(e)}")
 
@@ -105,26 +107,24 @@ async def generate_backend(request: Request, data: GenerateBackendRequest):
 async def get_supported_frameworks():
     """
     Gibt alle unterstützten Backend-Frameworks zurück
-    
+
     GET /backend-gen/frameworks
-    
+
     Returns:
     {
         "frameworks": ["fastapi", "flask", "django", "express"]
     }
     """
-    return {
-        "frameworks": model_generator.supported_frameworks
-    }
+    return {"frameworks": model_generator.supported_frameworks}
 
 
 @router.get("/field-types")
 async def get_field_types():
     """
     Gibt alle unterstützten Feld-Typen zurück
-    
+
     GET /backend-gen/field-types
-    
+
     Returns:
     {
         "types": ["string", "int", "float", "boolean", "date", ...]
@@ -137,8 +137,8 @@ async def get_field_types():
             "url": "URL validation",
             "uuid": "UUID field",
             "json": "JSON field",
-            "array": "Array/List field"
-        }
+            "array": "Array/List field",
+        },
     }
 
 
@@ -146,13 +146,13 @@ async def get_field_types():
 async def validate_model(model: ModelDefinition):
     """
     Validiert Model-Definition
-    
+
     POST /backend-gen/validate/model
     {
         "name": "User",
         "fields": [...]
     }
-    
+
     Returns:
     {
         "valid": true,
@@ -162,90 +162,70 @@ async def validate_model(model: ModelDefinition):
     """
     errors = []
     warnings = []
-    
+
     # Name validation
     if not model.name:
         errors.append("Model name is required")
     elif not model.name[0].isupper():
-        warnings.append(
-            f"Model name '{model.name}' should start with uppercase letter"
-        )
-    
+        warnings.append(f"Model name '{model.name}' should start with uppercase letter")
+
     # Fields validation
     if not model.fields or len(model.fields) == 0:
         errors.append("Model must have at least one field")
-    
+
     field_names = set()
     has_id = False
-    
+
     for field in model.fields:
         # Duplicate field names
         if field.name in field_names:
             errors.append(f"Duplicate field name: '{field.name}'")
         field_names.add(field.name)
-        
+
         # Check for ID field
         if field.name.lower() == "id":
             has_id = True
-        
+
         # Type validation
         if field.type not in model_generator.py_type_map:
-            errors.append(
-                f"Invalid field type '{field.type}' for field '{field.name}'"
-            )
-        
+            errors.append(f"Invalid field type '{field.type}' for field '{field.name}'")
+
         # Min/Max validation
         if field.min is not None and field.max is not None:
             if field.min > field.max:
-                errors.append(
-                    f"Field '{field.name}': min ({field.min}) cannot be greater than max ({field.max})"
-                )
-    
+                errors.append(f"Field '{field.name}': min ({field.min}) cannot be greater than max ({field.max})")
+
     if not has_id:
-        warnings.append(
-            "Model does not have an 'id' field. Consider adding one for CRUD operations."
-        )
-    
-    return {
-        "valid": len(errors) == 0,
-        "errors": errors,
-        "warnings": warnings
-    }
+        warnings.append("Model does not have an 'id' field. Consider adding one for CRUD operations.")
+
+    return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
 
 
 @router.get("/example/{framework}")
 async def get_example_model(framework: str):
     """
     Gibt Beispiel-Model für spezifisches Framework zurück
-    
+
     GET /backend-gen/example/fastapi
-    
+
     Returns: Example model definition
     """
     if framework not in model_generator.supported_frameworks:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Framework '{framework}' nicht gefunden"
-        )
-    
+        raise HTTPException(status_code=404, detail=f"Framework '{framework}' nicht gefunden")
+
     example = {
         "framework": framework,
         "models": [
             {
                 "name": "User",
                 "fields": [
-                    {
-                        "name": "id",
-                        "type": "int",
-                        "auto": True,
-                        "example": "1"
-                    },
+                    {"name": "id", "type": "int", "auto": True, "example": "1"},
                     {
                         "name": "email",
                         "type": "string",
                         "email": True,
                         "unique": True,
-                        "example": "user@example.com"
+                        "example": "user@example.com",
                     },
                     {
                         "name": "username",
@@ -253,7 +233,7 @@ async def get_example_model(framework: str):
                         "min_length": 3,
                         "max_length": 50,
                         "unique": True,
-                        "example": "johndoe"
+                        "example": "johndoe",
                     },
                     {
                         "name": "age",
@@ -261,73 +241,46 @@ async def get_example_model(framework: str):
                         "min": 0,
                         "max": 150,
                         "required": False,
-                        "example": "25"
+                        "example": "25",
                     },
                     {
                         "name": "is_active",
                         "type": "boolean",
                         "default": True,
-                        "example": "true"
+                        "example": "true",
                     },
                     {
                         "name": "created_at",
                         "type": "datetime",
                         "auto": True,
-                        "example": "2024-01-01T00:00:00Z"
-                    }
+                        "example": "2024-01-01T00:00:00Z",
+                    },
                 ],
                 "relations": [],
-                "validators": {}
+                "validators": {},
             },
             {
                 "name": "Post",
                 "fields": [
-                    {
-                        "name": "id",
-                        "type": "int",
-                        "auto": True
-                    },
+                    {"name": "id", "type": "int", "auto": True},
                     {
                         "name": "title",
                         "type": "string",
                         "min_length": 5,
-                        "max_length": 200
+                        "max_length": 200,
                     },
-                    {
-                        "name": "content",
-                        "type": "text"
-                    },
-                    {
-                        "name": "user_id",
-                        "type": "int"
-                    },
-                    {
-                        "name": "published",
-                        "type": "boolean",
-                        "default": False
-                    },
-                    {
-                        "name": "created_at",
-                        "type": "datetime",
-                        "auto": True
-                    }
+                    {"name": "content", "type": "string"},
+                    {"name": "user_id", "type": "int"},
+                    {"name": "published", "type": "boolean", "default": False},
+                    {"name": "created_at", "type": "datetime", "auto": True},
                 ],
-                "relations": [
-                    {
-                        "type": "many_to_one",
-                        "model": "User",
-                        "foreign_key": "user_id"
-                    }
-                ],
-                "validators": {}
-            }
+                "relations": [{"type": "many_to_one", "model": "User", "foreign_key": "user_id"}],
+                "validators": {},
+            },
         ],
-        "options": {
-            "database": "postgresql",
-            "auth": True
-        }
+        "options": {"database": "postgresql", "auth": True},
     }
-    
+
     return example
 
 
@@ -345,6 +298,6 @@ async def health_check():
             "Route Generation",
             "Type Validation",
             "Multiple Frameworks",
-            "Auto Documentation"
-        ]
+            "Auto Documentation",
+        ],
     }

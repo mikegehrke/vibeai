@@ -1,27 +1,8 @@
-# ❗ Datei ist komplett leer
-#
-# Auch Devra ist bisher nur ein Platzhalter.
-#
-# 🧠 ANALYSE – Was Devra im System bedeutet
-#
-# In vielen Multi-Agent-Systemen hat Devra folgende Rolle:
-#
-# 👉 Technischer Problemlöser
-# 👉 Spezialist für Architektur, Fehleranalyse, komplexe Systeme
-# 👉 "Deep Reasoning Agent"
-# 👉 Erklärungen, lange Logik, Fehlerkorrektur
-# 👉 Vergleichbar mit Claude Sonnet / Gemini Ultra Rollen
-#
-# Aura = General Assistant
-# Cora = Coding Developer Agent
-# Devra = Technical Reasoning / Debugging / Senior Engineer
-# Lumi = Creative / UX / Ideas
+import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-
-# -------------------------------------------------------------
-# VIBEAI – DEVRA (TECHNICAL REASONING & SYSTEM ANALYSIS AGENT)
-# -------------------------------------------------------------
-from core.model_registry_v2 import resolve_model
+logger = logging.getLogger("devra_agent")
 
 
 class DevraAgent:
@@ -36,7 +17,7 @@ class DevraAgent:
     """
 
     # Bestes Modell für tiefes Denken
-    model = "claude-3.5-sonnet"   # dynamisch durch resolve_model
+    model = "claude-3.5-sonnet"  # dynamisch durch resolve_model
 
     async def run(self, model, message: str, context: dict):
         """
@@ -54,45 +35,23 @@ class DevraAgent:
         result = await model.run(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
+                {"role": "user", "content": message},
             ],
-            context=context
+            context=context,
         )
 
         return {
             "message": result.get("message"),
             "input_tokens": result.get("input_tokens", 0),
             "output_tokens": result.get("output_tokens", 0),
-            "provider": result.get("provider", "unknown")
+            "provider": result.get("provider", "unknown"),
         }
-
-
-# ============================================================
-# ⭐ VIBEAI – DEVRA AGENT (PRODUCTION VERSION)
-# ============================================================
-# ✔ Deep Reasoning & Complex Problem Solving
-# ✔ Multi-Step Analysis (Chain of Thought)
-# ✔ System Architecture & Design
-# ✔ Advanced Debugging & Error Analysis
-# ✔ Mathematical & Logical Reasoning
-# ✔ Long-Context Processing
-# ✔ Planning & Evaluation
-# ✔ Reasoning-Optimized Models (o3/o1/Claude Opus/Gemini Pro)
-# ✔ Intelligent Fallback System
-# ✔ Token & Cost Tracking
-# ============================================================
-
-import logging
-from typing import Dict, List, Optional, Any
-from datetime import datetime
-
-logger = logging.getLogger("devra_agent")
 
 
 class Agent:
     """
     Production-Grade Devra Agent - VibeAI's Deep Reasoning Expert.
-    
+
     Devra specializes in:
     - Complex problem analysis
     - Step-by-step reasoning (Chain of Thought)
@@ -102,7 +61,7 @@ class Agent:
     - Long-context understanding
     - Planning and evaluation
     - Research and investigation
-    
+
     Personality:
     - Analytical and methodical
     - Thorough and detailed
@@ -110,7 +69,7 @@ class Agent:
     - Patient with complex problems
     - Systematic approach
     """
-    
+
     def __init__(self):
         self.name = "devra"
         self.description = "Deep reasoning and complex problem-solving AI assistant"
@@ -118,7 +77,7 @@ class Agent:
         self.provider = "openai"
         self.temperature = 0.0  # Deterministic for reasoning
         self.max_tokens = 8000  # Large context for complex reasoning
-        
+
         # Reasoning capabilities
         self.capabilities = [
             "deep_reasoning",
@@ -130,18 +89,18 @@ class Agent:
             "mathematical_reasoning",
             "logical_analysis",
             "planning_evaluation",
-            "research"
+            "research",
         ]
-        
+
         # Reasoning-optimized fallback models
         self.fallback_models = [
             ("o1", "openai"),  # OpenAI reasoning model
             ("claude-3-5-sonnet-20241022", "anthropic"),  # Excellent reasoning
             ("gemini-2.0-flash-thinking-exp", "google"),  # Thinking mode
             ("gpt-4o", "openai"),  # Fallback to standard model
-            ("deepseek-r1", "ollama")  # Local reasoning model
+            ("deepseek-r1", "ollama"),  # Local reasoning model
         ]
-        
+
         # System prompt for deep reasoning
         self.system_prompt = """You are Devra, VibeAI's deep reasoning and complex problem-solving AI assistant.
 
@@ -186,77 +145,73 @@ When planning:
 Remember: Quality of reasoning matters more than speed. Take time to think deeply and thoroughly.
 
 For reasoning-heavy tasks, use internal chain of thought but present conclusions clearly."""
-    
-    async def run(
-        self,
-        messages: List[Dict],
-        context: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+
+    async def run(self, messages: List[Dict], context: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Execute Devra agent for deep reasoning tasks.
-        
+
         Args:
             messages: Conversation history [{"role": "user/assistant", "content": "..."}]
             context: Additional context (system info, constraints, etc.)
-        
+
         Returns:
             Response dict with reasoning, analysis, tokens, cost
         """
         if context is None:
             context = {}
-        
+
         # Add system prompt
-        full_messages = [
-            {"role": "system", "content": self.system_prompt}
-        ] + messages
-        
+        full_messages = [{"role": "system", "content": self.system_prompt}] + messages
+
         # Add reasoning context if available
         if context.get("reasoning_context"):
             reasoning_msg = f"\n\nContext:\n{context['reasoning_context']}"
             full_messages[-1]["content"] += reasoning_msg
-        
+
         # Try primary reasoning model
         try:
             result = await self._run_with_provider(
                 model=self.model,
                 provider=self.provider,
                 messages=full_messages,
-                context=context
+                context=context,
             )
-            
+
             # Mark as reasoning response
             result["reasoning_model"] = True
-            
+
             return result
-        
+
         except Exception as e:
             logger.warning(f"Primary reasoning model {self.model} failed: {e}")
-            
+
             # Try fallback reasoning models
             for fallback_model, fallback_provider in self.fallback_models:
                 try:
                     logger.info(f"Trying fallback: {fallback_model} ({fallback_provider})")
-                    
+
                     result = await self._run_with_provider(
                         model=fallback_model,
                         provider=fallback_provider,
                         messages=full_messages,
-                        context=context
+                        context=context,
                     )
-                    
+
                     result["fallback"] = True
                     result["fallback_reason"] = str(e)
-                    result["reasoning_model"] = "thinking" in fallback_model or "o1" in fallback_model or "o3" in fallback_model
-                    
+                    result["reasoning_model"] = (
+                        "thinking" in fallback_model or "o1" in fallback_model or "o3" in fallback_model
+                    )
+
                     return result
-                
+
                 except Exception as fallback_error:
                     logger.warning(f"Fallback {fallback_model} failed: {fallback_error}")
                     continue
-            
+
             # All reasoning models failed
             logger.error("All reasoning models failed")
-            
+
             return {
                 "status": "error",
                 "model": self.model,
@@ -266,15 +221,11 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
                 "input_tokens": 0,
                 "output_tokens": 0,
                 "total_tokens": 0,
-                "cost_usd": 0.0
+                "cost_usd": 0.0,
             }
-    
+
     async def _run_with_provider(
-        self,
-        model: str,
-        provider: str,
-        messages: List[Dict],
-        context: Dict
+        self, model: str, provider: str, messages: List[Dict], context: Dict
     ) -> Dict[str, Any]:
         """
         Run reasoning agent with specific model and provider.
@@ -283,7 +234,9 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
         if provider == "openai":
             from core.provider_clients.openai_client import openai_client as client
         elif provider == "anthropic":
-            from core.provider_clients.anthropic_client import anthropic_client as client
+            from core.provider_clients.anthropic_client import (
+                anthropic_client as client,
+            )
         elif provider == "google":
             from core.provider_clients.gemini_client import gemini_client as client
         elif provider == "github":
@@ -292,21 +245,21 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
             from core.provider_clients.ollama_client import ollama_client as client
         else:
             raise ValueError(f"Unknown provider: {provider}")
-        
+
         # Call provider with reasoning-optimized settings
         response = await client.chat_completion(
             model=model,
             messages=messages,
             temperature=self.temperature,
-            max_tokens=self.max_tokens
+            max_tokens=self.max_tokens,
         )
-        
+
         # Extract response
         if isinstance(response, dict):
             response_text = response.get("content", response.get("message", str(response)))
             input_tokens = response.get("input_tokens", response.get("prompt_tokens", 0))
             output_tokens = response.get("output_tokens", response.get("completion_tokens", 0))
-            
+
             # Extract thinking/reasoning tokens if available (for o1/o3 models)
             reasoning_tokens = response.get("reasoning_tokens", 0)
         else:
@@ -314,21 +267,22 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
             input_tokens = 0
             output_tokens = 0
             reasoning_tokens = 0
-        
+
         total_tokens = input_tokens + output_tokens + reasoning_tokens
-        
+
         # Calculate cost
         cost_usd = 0.0
         if total_tokens > 0:
             try:
                 from billing.pricing_rules import calculate_token_cost
+
                 cost_usd = calculate_token_cost(
                     model=model,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
-                    provider=provider
+                    provider=provider,
                 )
-                
+
                 # Add reasoning token cost if applicable
                 if reasoning_tokens > 0:
                     # Reasoning tokens typically cost same as input tokens
@@ -336,12 +290,12 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
                         model=model,
                         input_tokens=reasoning_tokens,
                         output_tokens=0,
-                        provider=provider
+                        provider=provider,
                     )
                     cost_usd += reasoning_cost
             except Exception as e:
                 logger.warning(f"Cost calculation failed: {e}")
-        
+
         return {
             "status": "success",
             "model": model,
@@ -352,43 +306,43 @@ For reasoning-heavy tasks, use internal chain of thought but present conclusions
             "reasoning_tokens": reasoning_tokens,
             "total_tokens": total_tokens,
             "cost_usd": cost_usd,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
-    
+
     async def process(self, message: str, context: Optional[Dict] = None) -> Dict:
         """
         Simplified interface for single reasoning request.
         """
         messages = [{"role": "user", "content": message}]
         return await self.run(messages, context)
-    
+
     async def analyze_system(self, system_description: str, focus: Optional[str] = None) -> Dict:
         """
         Analyze system architecture and design.
-        
+
         Args:
             system_description: Description of the system
             focus: Specific aspect to focus on (e.g., "scalability", "security")
-        
+
         Returns:
             System analysis with recommendations
         """
         prompt = f"Analyze this system architecture:\n\n{system_description}"
-        
+
         if focus:
             prompt += f"\n\nFocus on: {focus}"
-        
+
         return await self.process(prompt)
-    
+
     async def debug_complex(self, problem: str, symptoms: str, context_info: str) -> Dict:
         """
         Debug complex technical problem.
-        
+
         Args:
             problem: Problem description
             symptoms: Observed symptoms
             context_info: System context and constraints
-        
+
         Returns:
             Debugging analysis with root cause and solutions
         """
@@ -406,49 +360,49 @@ Please:
 3. Explain the most likely cause with reasoning
 4. Provide solutions with explanations
 5. Suggest preventive measures"""
-        
+
         return await self.process(prompt)
-    
+
     async def plan_solution(self, goal: str, constraints: Optional[str] = None) -> Dict:
         """
         Create detailed plan for achieving goal.
-        
+
         Args:
             goal: Goal to achieve
             constraints: Constraints and requirements
-        
+
         Returns:
             Detailed plan with steps and considerations
         """
         prompt = f"Create a detailed plan to achieve: {goal}"
-        
+
         if constraints:
             prompt += f"\n\nConstraints:\n{constraints}"
-        
+
         prompt += "\n\nProvide a step-by-step plan with reasoning and considerations."
-        
+
         return await self.process(prompt)
-    
+
     async def reason_about(self, question: str, context_info: Optional[str] = None) -> Dict:
         """
         Apply deep reasoning to question.
-        
+
         Args:
             question: Question requiring reasoning
             context_info: Additional context
-        
+
         Returns:
             Reasoned answer with explanation
         """
         prompt = question
-        
+
         if context_info:
             prompt += f"\n\nContext:\n{context_info}"
-        
+
         prompt += "\n\nPlease think through this step-by-step and explain your reasoning."
-        
+
         return await self.process(prompt)
-    
+
     def get_info(self) -> Dict:
         """
         Get agent information and capabilities.
@@ -462,13 +416,9 @@ Please:
             "fallback_models": self.fallback_models,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "reasoning_optimized": True
+            "reasoning_optimized": True,
         }
 
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
 
 async def run_devra(message: str, context: Optional[Dict] = None) -> Dict:
     """
@@ -507,4 +457,3 @@ def create_devra_instance() -> Agent:
     Create new Devra agent instance.
     """
     return Agent()
-

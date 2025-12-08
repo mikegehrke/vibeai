@@ -14,7 +14,6 @@ Supported:
 """
 
 import re
-from typing import Optional
 
 
 class CodeFormatter:
@@ -28,41 +27,41 @@ class CodeFormatter:
     def format_flutter(self, code: str) -> str:
         """
         Formatiert Flutter/Dart Code.
-        
+
         Note: Für production sollte dartfmt verwendet werden.
         Diese Implementation macht basic formatting.
-        
+
         Args:
             code: Unformatierter Dart Code
-        
+
         Returns:
             Formatierter Dart Code
         """
         # Basic indentation fix
-        lines = code.split('\n')
+        lines = code.split("\n")
         formatted_lines = []
         indent_level = 0
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Skip empty lines
             if not stripped:
-                formatted_lines.append('')
+                formatted_lines.append("")
                 continue
-            
+
             # Decrease indent for closing braces
-            if stripped.startswith('}'):
+            if stripped.startswith("}"):
                 indent_level = max(0, indent_level - 1)
-            
+
             # Add indented line
-            formatted_lines.append('  ' * indent_level + stripped)
-            
+            formatted_lines.append("  " * indent_level + stripped)
+
             # Increase indent for opening braces
-            if stripped.endswith('{'):
+            if stripped.endswith("{"):
                 indent_level += 1
-        
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     # ---------------------------------------------------------
     # JAVASCRIPT/REACT FORMATTING
@@ -70,39 +69,41 @@ class CodeFormatter:
     def format_js(self, code: str) -> str:
         """
         Formatiert JavaScript/React Code.
-        
+
         Args:
             code: Unformatierter JS Code
-        
+
         Returns:
             Formatierter JS Code
         """
         # Basic indentation fix
-        lines = code.split('\n')
+        lines = code.split("\n")
         formatted_lines = []
         indent_level = 0
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Skip empty lines
             if not stripped:
-                formatted_lines.append('')
+                formatted_lines.append("")
                 continue
-            
+
             # Decrease indent for closing braces/tags
-            if stripped.startswith('}') or stripped.startswith('</') or stripped == ');':
+            if stripped.startswith("}") or stripped.startswith("</") or stripped == ");":
                 indent_level = max(0, indent_level - 1)
-            
+
             # Add indented line
-            formatted_lines.append('  ' * indent_level + stripped)
-            
+            formatted_lines.append("  " * indent_level + stripped)
+
             # Increase indent for opening braces/tags
-            if stripped.endswith('{') or (stripped.startswith('<') and not stripped.startswith('</') and not stripped.endswith('/>')):
-                if not stripped.endswith('/>'):
+            if stripped.endswith("{") or (
+                stripped.startswith("<") and not stripped.startswith("</") and not stripped.endswith("/>")
+            ):
+                if not stripped.endswith("/>"):
                     indent_level += 1
-        
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     # ---------------------------------------------------------
     # PYTHON FORMATTING
@@ -110,34 +111,35 @@ class CodeFormatter:
     def format_python(self, code: str) -> str:
         """
         Formatiert Python Code.
-        
+
         Uses black if available, otherwise basic formatting.
-        
+
         Args:
             code: Unformatierter Python Code
-        
+
         Returns:
             Formatierter Python Code
         """
         try:
             import black
+
             mode = black.FileMode()
             return black.format_file_contents(code, fast=True, mode=mode)
         except ImportError:
             # Fallback to basic formatting
             return self._basic_python_format(code)
-    
+
     def _basic_python_format(self, code: str) -> str:
         """Basic Python formatting without black."""
-        lines = code.split('\n')
+        lines = code.split("\n")
         formatted_lines = []
-        
+
         for line in lines:
             # Remove trailing whitespace
             line = line.rstrip()
             formatted_lines.append(line)
-        
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     # ---------------------------------------------------------
     # HTML FORMATTING
@@ -145,40 +147,40 @@ class CodeFormatter:
     def format_html(self, code: str) -> str:
         """
         Formatiert HTML Code.
-        
+
         Args:
             code: Unformatierter HTML Code
-        
+
         Returns:
             Formatierter HTML Code
         """
         # Basic indentation fix
-        lines = code.split('\n')
+        lines = code.split("\n")
         formatted_lines = []
         indent_level = 0
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Skip empty lines
             if not stripped:
-                formatted_lines.append('')
+                formatted_lines.append("")
                 continue
-            
+
             # Decrease indent for closing tags
-            if stripped.startswith('</'):
+            if stripped.startswith("</"):
                 indent_level = max(0, indent_level - 1)
-            
+
             # Add indented line
-            formatted_lines.append('  ' * indent_level + stripped)
-            
+            formatted_lines.append("  " * indent_level + stripped)
+
             # Increase indent for opening tags (not self-closing)
-            if stripped.startswith('<') and not stripped.startswith('</') and not stripped.endswith('/>'):
+            if stripped.startswith("<") and not stripped.startswith("</") and not stripped.endswith("/>"):
                 # Check if tag is closed on same line
-                if not re.search(r'<(\w+)[^>]*>.*</\1>', stripped):
+                if not re.search(r"<(\w+)[^>]*>.*</\1>", stripped):
                     indent_level += 1
-        
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     # ---------------------------------------------------------
     # CSS FORMATTING
@@ -186,38 +188,38 @@ class CodeFormatter:
     def format_css(self, code: str) -> str:
         """
         Formatiert CSS Code.
-        
+
         Args:
             code: Unformatierter CSS Code
-        
+
         Returns:
             Formatierter CSS Code
         """
         # Basic indentation fix
-        lines = code.split('\n')
+        lines = code.split("\n")
         formatted_lines = []
         indent_level = 0
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Skip empty lines
             if not stripped:
-                formatted_lines.append('')
+                formatted_lines.append("")
                 continue
-            
+
             # Decrease indent for closing braces
-            if stripped == '}':
+            if stripped == "}":
                 indent_level = max(0, indent_level - 1)
-            
+
             # Add indented line
-            formatted_lines.append('  ' * indent_level + stripped)
-            
+            formatted_lines.append("  " * indent_level + stripped)
+
             # Increase indent for opening braces
-            if stripped.endswith('{'):
+            if stripped.endswith("{"):
                 indent_level += 1
-        
-        return '\n'.join(formatted_lines)
+
+        return "\n".join(formatted_lines)
 
     # ---------------------------------------------------------
     # UNIVERSAL FORMATTER
@@ -225,16 +227,16 @@ class CodeFormatter:
     def format_code(self, code: str, language: str) -> str:
         """
         Formatiert Code basierend auf Sprache.
-        
+
         Args:
             code: Unformatierter Code
             language: Programmiersprache (flutter, react, python, html, css)
-        
+
         Returns:
             Formatierter Code
         """
         language = language.lower()
-        
+
         if language in ["flutter", "dart"]:
             return self.format_flutter(code)
         elif language in ["react", "javascript", "js", "jsx"]:
@@ -255,28 +257,28 @@ class CodeFormatter:
     def remove_extra_blank_lines(self, code: str) -> str:
         """
         Entfernt mehrfache Leerzeilen.
-        
+
         Args:
             code: Code mit möglicherweise mehrfachen Leerzeilen
-        
+
         Returns:
             Code mit max 1 Leerzeile zwischen Blöcken
         """
         # Replace 3+ newlines with 2 newlines
-        return re.sub(r'\n{3,}', '\n\n', code)
+        return re.sub(r"\n{3,}", "\n\n", code)
 
     def ensure_trailing_newline(self, code: str) -> str:
         """
         Stellt sicher, dass Code mit Newline endet.
-        
+
         Args:
             code: Code string
-        
+
         Returns:
             Code mit trailing newline
         """
-        if not code.endswith('\n'):
-            return code + '\n'
+        if not code.endswith("\n"):
+            return code + "\n"
         return code
 
 

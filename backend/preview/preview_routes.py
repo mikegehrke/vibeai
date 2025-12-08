@@ -19,13 +19,15 @@ Features:
 - Live Logs über WebSocket
 """
 
-from fastapi import APIRouter, Request, HTTPException, WebSocket
-from fastapi.responses import JSONResponse
 from typing import Dict, Any
-from preview.preview_manager import preview_manager
-from preview.preview_ws import preview_ws
+
+from fastapi import APIRouter, HTTPException, Request, WebSocket
+
 from auth import get_current_user
 from codestudio.project_manager import project_manager
+from preview.preview_manager import preview_manager
+from preview.preview_ws import preview_ws
+from preview.preview_renderer import PreviewRenderer
 
 router = APIRouter(prefix="/preview", tags=["Preview System"])
 
@@ -37,13 +39,13 @@ router = APIRouter(prefix="/preview", tags=["Preview System"])
 async def start_preview(request: Request) -> Dict[str, Any]:
     """
     Startet Live Preview für ein Projekt.
-    
+
     Request Body:
         {
             "project_id": "abc123",
             "type": "web" | "flutter"
         }
-    
+
     Returns:
         {
             "success": True,
@@ -71,24 +73,13 @@ async def start_preview(request: Request) -> Dict[str, Any]:
     try:
         # Preview starten
         if preview_type == "web":
-            result = await preview_manager.start_web_preview(
-                user.email, project_id, project_path
-            )
+            result = await preview_manager.start_web_preview(user.email, project_id, project_path)
         elif preview_type == "flutter":
-            result = await preview_manager.start_flutter_preview(
-                user.email, project_id, project_path
-            )
+            result = await preview_manager.start_flutter_preview(user.email, project_id, project_path)
         else:
-            raise HTTPException(
-                400,
-                f"Invalid preview type: {preview_type}. "
-                "Use 'web' or 'flutter'."
-            )
+            raise HTTPException(400, f"Invalid preview type: {preview_type}. Use 'web' or 'flutter'.")
 
-        return {
-            "success": True,
-            **result
-        }
+        return {"success": True, **result}
 
     except FileNotFoundError as e:
         raise HTTPException(400, str(e))
@@ -100,10 +91,10 @@ async def start_preview(request: Request) -> Dict[str, Any]:
 # STOP PREVIEW
 # -------------------------------------------------------------
 @router.post("/stop")
-async def stop_preview(request: Request) -> Dict[str, bool]:
+async def stop_preview(request: Request) -> Dict[str, Any]:
     """
     Stoppt aktiven Preview.
-    
+
     Returns:
         {"success": True}
     """
@@ -113,7 +104,7 @@ async def stop_preview(request: Request) -> Dict[str, bool]:
 
     return {
         "success": stopped,
-        "message": "Preview stopped" if stopped else "No active preview"
+        "message": "Preview stopped" if stopped else "No active preview",
     }
 
 
@@ -124,7 +115,7 @@ async def stop_preview(request: Request) -> Dict[str, bool]:
 async def restart_preview(request: Request) -> Dict[str, Any]:
     """
     Startet Preview neu (für Hot Reload).
-    
+
     Returns:
         {
             "success": True,
@@ -140,10 +131,7 @@ async def restart_preview(request: Request) -> Dict[str, Any]:
         if not result:
             raise HTTPException(404, "No active preview to restart")
 
-        return {
-            "success": True,
-            **result
-        }
+        return {"success": True, **result}
 
     except Exception as e:
         raise HTTPException(500, f"Error restarting preview: {str(e)}")
@@ -156,7 +144,7 @@ async def restart_preview(request: Request) -> Dict[str, Any]:
 async def get_preview_status(request: Request) -> Dict[str, Any]:
     """
     Gibt Status des aktiven Previews zurück.
-    
+
     Returns:
         {
             "active": True,
@@ -173,15 +161,9 @@ async def get_preview_status(request: Request) -> Dict[str, Any]:
     status = preview_manager.get_preview_status(user.email)
 
     if not status:
-        return {
-            "active": False,
-            "message": "No active preview"
-        }
+        return {"active": False, "message": "No active preview"}
 
-    return {
-        "active": True,
-        **status
-    }
+    return {"active": True, **status}
 
 
 # -------------------------------------------------------------
@@ -191,7 +173,7 @@ async def get_preview_status(request: Request) -> Dict[str, Any]:
 async def list_all_previews() -> Dict[str, Any]:
     """
     Liste aller aktiven Previews (Admin-Funktion).
-    
+
     Returns:
         {
             "total": 3,
@@ -203,10 +185,7 @@ async def list_all_previews() -> Dict[str, Any]:
     """
     previews = preview_manager.list_active_previews()
 
-    return {
-        "total": len(previews),
-        "previews": previews
-    }
+    return {"total": len(previews), "previews": previews}
 
 
 # -------------------------------------------------------------
@@ -216,10 +195,10 @@ async def list_all_previews() -> Dict[str, Any]:
 async def websocket_preview_logs(websocket: WebSocket, user: str):
     """
     WebSocket für Live Preview Logs.
-    
+
     Args:
         user: User-Email/ID
-    
+
     Events:
         - connected: Verbindung hergestellt
         - log: Log-Zeile vom Preview Server
@@ -233,7 +212,7 @@ async def websocket_preview_logs(websocket: WebSocket, user: str):
 
     # Status prüfen
     status = preview_manager.get_preview_status(user)
-    
+
     if not status:
         await websocket.close(code=1008, reason="No active preview")
         return
@@ -265,7 +244,7 @@ async def websocket_preview_logs(websocket: WebSocket, user: str):
 async def get_preview_url(request: Request) -> Dict[str, str]:
     """
     Gibt Preview-URL für IFRAME zurück.
-    
+
     Returns:
         {
             "url": "http://localhost:3001",
@@ -279,6 +258,8 @@ async def get_preview_url(request: Request) -> Dict[str, str]:
     if not status:
         raise HTTPException(404, "No active preview")
 
+    return {"url": status["url"], "embed_url": status["url"]}
+
 
 # -------------------------------------------------------------
 # RENDER SCREEN (App Builder Integration)
@@ -287,13 +268,13 @@ async def get_preview_url(request: Request) -> Dict[str, str]:
 async def render_screen(request: Request) -> Dict[str, str]:
     """
     Rendert KI-generierten Screen zu HTML für Live Preview.
-    
+
     🔥 App Builder Integration:
     - Nimmt Screen-Definition vom App Builder
     - Rendert zu komplettem HTML
     - Sofort sichtbar ohne Build
     - Echtzeit-Updates möglich
-    
+
     Request Body:
         {
             "screen": {
@@ -322,7 +303,7 @@ async def render_screen(request: Request) -> Dict[str, str]:
                 }
             }
         }
-    
+
     Returns:
         {
             "success": True,
@@ -339,20 +320,15 @@ async def render_screen(request: Request) -> Dict[str, str]:
 
         # Screen Name
         screen_name = screen.get("name", "Untitled Screen")
-        
+
         # Style (tailwind, bootstrap, custom)
         style = screen.get("style", "tailwind")
 
         # HTML rendern
-        from preview.preview_renderer import PreviewRenderer
         renderer = PreviewRenderer()
         html = renderer.render_screen_html(screen, style)
 
-        return {
-            "success": True,
-            "html": html,
-            "screen_name": screen_name
-        }
+        return {"success": True, "html": html, "screen_name": screen_name}
 
     except Exception as e:
         print(f"Error rendering screen: {e}")
@@ -366,7 +342,7 @@ async def render_screen(request: Request) -> Dict[str, str]:
 async def render_component(request: Request) -> Dict[str, str]:
     """
     Rendert einzelnes Component zu HTML.
-    
+
     Request Body:
         {
             "component": {
@@ -376,7 +352,7 @@ async def render_component(request: Request) -> Dict[str, str]:
             },
             "style": "tailwind"
         }
-    
+
     Returns:
         {
             "success": True,
@@ -391,16 +367,11 @@ async def render_component(request: Request) -> Dict[str, str]:
         if not component:
             raise HTTPException(400, "Missing 'component' in request body")
 
-        from preview.preview_renderer import PreviewRenderer
         renderer = PreviewRenderer()
         html = renderer.render_component_html(component, style)
 
-        return {
-            "success": True,
-            "html": html
-        }
+        return {"success": True, "html": html}
 
     except Exception as e:
         print(f"Error rendering component: {e}")
         raise HTTPException(500, f"Failed to render component: {str(e)}")
-

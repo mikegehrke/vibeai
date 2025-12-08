@@ -1,4 +1,3 @@
-from typing import Any
 # -------------------------------------------------------------
 # VIBEAI – BUILD SYSTEM MODULE
 # -------------------------------------------------------------
@@ -19,14 +18,8 @@ Features:
 - Build queue system
 """
 
-from .build_manager import build_manager, BuildStatus, BuildType
 from .build_executor import start_build
+from .build_manager import BuildStatus, BuildType, build_manager
 from .build_routes import router
 
-__all__ = [
-    "build_manager",
-    "BuildStatus",
-    "BuildType",
-    "start_build",
-    "router"
-]
+__all__ = ["build_manager", "BuildStatus", "BuildType", "start_build", "router"]

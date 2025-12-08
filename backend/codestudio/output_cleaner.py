@@ -3,8 +3,7 @@
 # -------------------------------------------------------------
 import re
 
-
-ANSI_ESCAPE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+ANSI_ESCAPE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
 
 def clean_output(text: str) -> str:
@@ -22,7 +21,7 @@ def clean_output(text: str) -> str:
     # -----------------------------
     # ANSI Colors entfernen
     # -----------------------------
-    cleaned = ANSI_ESCAPE.sub('', text)
+    cleaned = ANSI_ESCAPE.sub("", text)
 
     # -----------------------------
     # Sehr lange Zeilen kürzen

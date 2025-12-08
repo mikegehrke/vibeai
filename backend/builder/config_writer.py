@@ -11,7 +11,7 @@
 # -------------------------------------------------------------
 
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 
 class ConfigWriter:
@@ -23,10 +23,10 @@ class ConfigWriter:
         version: str = "1.0.0",
         description: str = "",
         framework: str = "react-native",
-        dependencies: Optional[Dict[str, str]] = None
+        dependencies: Optional[Dict[str, str]] = None,
     ) -> str:
         """Generiert package.json für Node.js-basierte Projekte."""
-        
+
         default_deps = {
             "react-native": {
                 "react": "^18.2.0",
@@ -39,7 +39,7 @@ class ConfigWriter:
             },
             "nodejs": {
                 "express": "^4.18.0",
-            }
+            },
         }
 
         config = {
@@ -59,13 +59,13 @@ class ConfigWriter:
         project_name: str,
         description: str = "",
         version: str = "1.0.0",
-        dependencies: Optional[Dict[str, str]] = None
+        dependencies: Optional[Dict[str, str]] = None,
     ) -> str:
         """Generiert pubspec.yaml für Flutter."""
-        
+
         deps = dependencies or {
             "flutter": {"sdk": "flutter"},
-            "cupertino_icons": "^1.0.2"
+            "cupertino_icons": "^1.0.2",
         }
 
         yaml_content = f"""name: {project_name.lower().replace(" ", "_")}
@@ -77,7 +77,7 @@ environment:
 
 dependencies:
 """
-        
+
         for dep, ver in deps.items():
             if isinstance(ver, dict):
                 yaml_content += f"  {dep}:\n"
@@ -95,16 +95,12 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 """
-        
+
         return yaml_content
 
-    def generate_requirements_txt(
-        self,
-        framework: str = "fastapi",
-        dependencies: Optional[list] = None
-    ) -> str:
+    def generate_requirements_txt(self, framework: str = "fastapi", dependencies: Optional[list] = None) -> str:
         """Generiert requirements.txt für Python."""
-        
+
         default_deps = {
             "fastapi": [
                 "fastapi==0.104.0",
@@ -119,7 +115,7 @@ flutter:
             "flask": [
                 "Flask==3.0.0",
                 "flask-cors==4.0.0",
-            ]
+            ],
         }
 
         deps = dependencies or default_deps.get(framework, [])
@@ -127,7 +123,7 @@ flutter:
 
     def generate_tsconfig_json(self, framework: str = "react-native") -> str:
         """Generiert tsconfig.json für TypeScript-Projekte."""
-        
+
         configs = {
             "react-native": {
                 "compilerOptions": {
@@ -145,7 +141,7 @@ flutter:
                     "esModuleInterop": True,
                     "skipLibCheck": True,
                 },
-                "exclude": ["node_modules"]
+                "exclude": ["node_modules"],
             },
             "nextjs": {
                 "compilerOptions": {
@@ -164,11 +160,11 @@ flutter:
                     "jsx": "preserve",
                     "incremental": True,
                     "plugins": [{"name": "next"}],
-                    "paths": {"@/*": ["./src/*"]}
+                    "paths": {"@/*": ["./src/*"]},
                 },
                 "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-                "exclude": ["node_modules"]
-            }
+                "exclude": ["node_modules"],
+            },
         }
 
         config = configs.get(framework, configs["react-native"])
@@ -176,7 +172,7 @@ flutter:
 
     def generate_gitignore(self, framework: str) -> str:
         """Generiert .gitignore für verschiedene Frameworks."""
-        
+
         common = """# Dependencies
 node_modules/
 .pnp
@@ -279,7 +275,7 @@ build/
 /captures
 .externalNativeBuild
 .cxx
-"""
+""",
         }
 
         return common + framework_specific.get(framework, "")
@@ -292,19 +288,19 @@ build/
                 "ios": "react-native run-ios",
                 "start": "react-native start",
                 "test": "jest",
-                "lint": "eslint ."
+                "lint": "eslint .",
             },
             "nextjs": {
                 "dev": "next dev",
                 "build": "next build",
                 "start": "next start",
-                "lint": "next lint"
+                "lint": "next lint",
             },
             "nodejs": {
                 "start": "node index.js",
                 "dev": "nodemon index.js",
-                "test": "jest"
-            }
+                "test": "jest",
+            },
         }
         return scripts.get(framework, {})
 
@@ -320,7 +316,7 @@ build/
                 "@tsconfig/react-native": "^3.0.0",
                 "@types/react": "^18.0.24",
                 "@types/react-test-renderer": "^18.0.0",
-                "typescript": "^5.0.0"
+                "typescript": "^5.0.0",
             },
             "nextjs": {
                 "typescript": "^5.0.0",
@@ -328,12 +324,9 @@ build/
                 "@types/react": "^18.0.0",
                 "@types/react-dom": "^18.0.0",
                 "eslint": "^8.0.0",
-                "eslint-config-next": "14.0.0"
+                "eslint-config-next": "14.0.0",
             },
-            "nodejs": {
-                "nodemon": "^3.0.0",
-                "jest": "^29.0.0"
-            }
+            "nodejs": {"nodemon": "^3.0.0", "jest": "^29.0.0"},
         }
         return dev_deps.get(framework, {})
 

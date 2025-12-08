@@ -17,11 +17,13 @@ Integration mit:
 - Build System (für Build → APK Flow)
 """
 
-from fastapi import APIRouter, Request, HTTPException
-from typing import Dict, List, Optional
+from typing import Dict
+
+from fastapi import APIRouter, HTTPException, Request
+
+from ai.code_generator.code_formatter import formatter
 from ai.code_generator.flutter_generator import flutter_generator
 from ai.code_generator.react_generator import react_generator
-from ai.code_generator.code_formatter import formatter
 from preview.preview_renderer import preview_renderer
 
 router = APIRouter(prefix="/ai/generate", tags=["AI Code Generator"])
@@ -34,7 +36,7 @@ router = APIRouter(prefix="/ai/generate", tags=["AI Code Generator"])
 async def generate_flutter_code(request: Request) -> Dict:
     """
     Generiert Flutter/Dart Code aus UI Structure.
-    
+
     Request Body:
     {
         "screen": {
@@ -58,7 +60,7 @@ async def generate_flutter_code(request: Request) -> Dict:
             ]
         }
     }
-    
+
     Response:
     {
         "success": true,
@@ -71,26 +73,26 @@ async def generate_flutter_code(request: Request) -> Dict:
     try:
         body = await request.json()
         screen = body.get("screen")
-        
+
         if not screen:
             raise HTTPException(status_code=400, detail="Missing 'screen' in request body")
-        
+
         # Generate Flutter code
         code = flutter_generator.render_screen(screen)
         code = formatter.format_flutter(code)
         code = formatter.ensure_trailing_newline(code)
-        
+
         # Generate HTML preview
         html = preview_renderer.render_screen_html(screen)
-        
+
         return {
             "success": True,
             "flutter": code,
             "html": html,
             "language": "flutter",
-            "screen_name": screen.get("name", "Screen")
+            "screen_name": screen.get("name", "Screen"),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Flutter generation failed: {str(e)}")
 
@@ -102,7 +104,7 @@ async def generate_flutter_code(request: Request) -> Dict:
 async def generate_react_code(request: Request) -> Dict:
     """
     Generiert React/JSX Code aus UI Structure.
-    
+
     Request Body:
     {
         "screen": {
@@ -111,7 +113,7 @@ async def generate_react_code(request: Request) -> Dict:
             "components": [...]
         }
     }
-    
+
     Response:
     {
         "success": true,
@@ -124,26 +126,26 @@ async def generate_react_code(request: Request) -> Dict:
     try:
         body = await request.json()
         screen = body.get("screen")
-        
+
         if not screen:
             raise HTTPException(status_code=400, detail="Missing 'screen' in request body")
-        
+
         # Generate React code
         code = react_generator.render_screen(screen)
         code = formatter.format_js(code)
         code = formatter.ensure_trailing_newline(code)
-        
+
         # Generate HTML preview
         html = preview_renderer.render_screen_html(screen)
-        
+
         return {
             "success": True,
             "react": code,
             "html": html,
             "language": "react",
-            "screen_name": screen.get("name", "Screen")
+            "screen_name": screen.get("name", "Screen"),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"React generation failed: {str(e)}")
 
@@ -155,7 +157,7 @@ async def generate_react_code(request: Request) -> Dict:
 async def generate_vue_code(request: Request) -> Dict:
     """
     Generiert Vue Code aus UI Structure.
-    
+
     Request Body:
     {
         "screen": {
@@ -164,7 +166,7 @@ async def generate_vue_code(request: Request) -> Dict:
             "components": [...]
         }
     }
-    
+
     Response:
     {
         "success": true,
@@ -177,27 +179,27 @@ async def generate_vue_code(request: Request) -> Dict:
     try:
         body = await request.json()
         screen = body.get("screen")
-        
+
         if not screen:
             raise HTTPException(status_code=400, detail="Missing 'screen' in request body")
-        
+
         # Generate Vue code (using React generator as placeholder for now)
         # TODO: Implement dedicated VueGenerator
         code = react_generator.render_screen(screen)
         code = formatter.format_code(code, "vue")
         code = formatter.ensure_trailing_newline(code)
-        
+
         # Generate HTML preview
         html = preview_renderer.render_screen_html(screen)
-        
+
         return {
             "success": True,
             "vue": code,
             "html": html,
             "language": "vue",
-            "screen_name": screen.get("name", "Screen")
+            "screen_name": screen.get("name", "Screen"),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Vue generation failed: {str(e)}")
 
@@ -209,7 +211,7 @@ async def generate_vue_code(request: Request) -> Dict:
 async def generate_html_code(request: Request) -> Dict:
     """
     Generiert statisches HTML/CSS aus UI Structure.
-    
+
     Request Body:
     {
         "screen": {
@@ -218,7 +220,7 @@ async def generate_html_code(request: Request) -> Dict:
             "components": [...]
         }
     }
-    
+
     Response:
     {
         "success": true,
@@ -230,22 +232,22 @@ async def generate_html_code(request: Request) -> Dict:
     try:
         body = await request.json()
         screen = body.get("screen")
-        
+
         if not screen:
             raise HTTPException(status_code=400, detail="Missing 'screen' in request body")
-        
+
         # Generate HTML code (already done by preview_renderer)
         html = preview_renderer.render_screen_html(screen)
         html = formatter.format_html(html)
         html = formatter.ensure_trailing_newline(html)
-        
+
         return {
             "success": True,
             "html": html,
             "language": "html",
-            "screen_name": screen.get("name", "Screen")
+            "screen_name": screen.get("name", "Screen"),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"HTML generation failed: {str(e)}")
 
@@ -257,7 +259,7 @@ async def generate_html_code(request: Request) -> Dict:
 async def generate_complete_app(request: Request) -> Dict:
     """
     Generiert komplette Multi-Screen App.
-    
+
     Request Body:
     {
         "app_structure": {
@@ -285,7 +287,7 @@ async def generate_complete_app(request: Request) -> Dict:
             }
         }
     }
-    
+
     Response:
     {
         "success": true,
@@ -301,12 +303,12 @@ async def generate_complete_app(request: Request) -> Dict:
     try:
         body = await request.json()
         app_structure = body.get("app_structure")
-        
+
         if not app_structure:
             raise HTTPException(status_code=400, detail="Missing 'app_structure' in request body")
-        
+
         framework = app_structure.get("framework", "flutter").lower()
-        
+
         # Generate files based on framework
         if framework == "flutter":
             files = flutter_generator.render_app(app_structure)
@@ -314,27 +316,27 @@ async def generate_complete_app(request: Request) -> Dict:
             files = react_generator.render_app(app_structure)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported framework: {framework}")
-        
+
         # Format all files
         formatted_files = {}
         for filename, code in files.items():
-            if filename.endswith('.dart'):
+            if filename.endswith(".dart"):
                 formatted_code = formatter.format_flutter(code)
-            elif filename.endswith('.jsx') or filename.endswith('.js'):
+            elif filename.endswith(".jsx") or filename.endswith(".js"):
                 formatted_code = formatter.format_js(code)
             else:
                 formatted_code = code
-            
+
             formatted_files[filename] = formatter.ensure_trailing_newline(formatted_code)
-        
+
         return {
             "success": True,
             "files": formatted_files,
             "framework": framework,
             "app_name": app_structure.get("app_name", "MyApp"),
-            "file_count": len(formatted_files)
+            "file_count": len(formatted_files),
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"App generation failed: {str(e)}")
 
@@ -346,7 +348,7 @@ async def generate_complete_app(request: Request) -> Dict:
 async def health_check() -> Dict:
     """
     Health Check für Code Generator.
-    
+
     Response:
     {
         "status": "healthy",
@@ -357,5 +359,5 @@ async def health_check() -> Dict:
     return {
         "status": "healthy",
         "generators": ["flutter", "react", "vue", "html"],
-        "formatters": ["dart", "js", "python", "html", "css"]
+        "formatters": ["dart", "js", "python", "html", "css"],
     }

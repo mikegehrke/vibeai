@@ -1,38 +1,8 @@
-# ❗ Datei ist komplett leer
-#
-# Auch Lumi ist bisher ein Platzhalter.
-#
-# 🧠 ANALYSE — Was macht Lumi in deinem Agentensystem?
-#
-# In modernen Multi-Agent-Systemen ist "Lumi" meistens:
-#
-# 👉 der kreative Agent
-# 👉 spezialisiert für:
-#     • UX-Ideen
-#     • Marketing
-#     • UI-Texte
-#     • Social Media Posts
-#     • Storytelling
-#     • Branding
-#     • Kreative Lösungen
-#     • Produktideen
-#     • Emotionale Formulierungen
-#
-# Also perfekt beim:
-#     • App-Design
-#     • Landingpages
-#     • Werbetexte
-#     • Produktbeschreibungen
-#     • TikTok-Hooks
-#     • YouTube Scripts
-#     • Logo-Ideen
-#     • Szenario-Entwicklung
+import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-
-# -------------------------------------------------------------
-# VIBEAI – LUMI (CREATIVE & UX DESIGN AGENT)
-# -------------------------------------------------------------
-from core.model_registry_v2 import resolve_model
+logger = logging.getLogger("lumi_agent")
 
 
 class LumiAgent:
@@ -49,7 +19,7 @@ class LumiAgent:
     """
 
     # Bestes Modell für kreative Arbeit
-    model = "gpt-4o"    # dynamisch durch resolve_model()
+    model = "gpt-4o"  # dynamisch durch resolve_model()
 
     async def run(self, model, message: str, context: dict):
         """
@@ -65,45 +35,23 @@ class LumiAgent:
         result = await model.run(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
+                {"role": "user", "content": message},
             ],
-            context=context
+            context=context,
         )
 
         return {
             "message": result.get("message"),
             "input_tokens": result.get("input_tokens", 0),
             "output_tokens": result.get("output_tokens", 0),
-            "provider": result.get("provider", "unknown")
+            "provider": result.get("provider", "unknown"),
         }
-
-
-# ============================================================
-# ⭐ VIBEAI – LUMI AGENT (PRODUCTION VERSION)
-# ============================================================
-# ✔ Creative Writing & Storytelling
-# ✔ UI/UX Design Ideation
-# ✔ Marketing & Branding Content
-# ✔ Social Media Copy
-# ✔ Product Naming & Slogans
-# ✔ Visual & Design Concepts
-# ✔ Creative Problem Solving
-# ✔ High Temperature for Creativity
-# ✔ Multi-Provider Support
-# ✔ Token & Cost Tracking
-# ============================================================
-
-import logging
-from typing import Dict, List, Optional, Any
-from datetime import datetime
-
-logger = logging.getLogger("lumi_agent")
 
 
 class Agent:
     """
     Production-Grade Lumi Agent - VibeAI's Creative Expert.
-    
+
     Lumi specializes in:
     - Creative writing and storytelling
     - UI/UX design concepts and ideas
@@ -113,7 +61,7 @@ class Agent:
     - Visual design concepts
     - Creative problem solving
     - Imaginative ideation
-    
+
     Personality:
     - Creative and imaginative
     - Inspiring and uplifting
@@ -121,7 +69,7 @@ class Agent:
     - User-centered
     - Trend-aware
     """
-    
+
     def __init__(self):
         self.name = "lumi"
         self.description = "Creative writing, design, and marketing AI assistant"
@@ -129,7 +77,7 @@ class Agent:
         self.provider = "openai"
         self.temperature = 0.9  # High for creative variation
         self.max_tokens = 3000  # Medium length for creative content
-        
+
         # Creative capabilities
         self.capabilities = [
             "creative_writing",
@@ -141,25 +89,38 @@ class Agent:
             "product_naming",
             "visual_concepts",
             "ideation",
-            "content_creation"
+            "content_creation",
         ]
-        
+
         # Creative content types
         self.content_types = [
-            "stories", "blog_posts", "social_media", "marketing_copy",
-            "product_descriptions", "slogans", "taglines", "ui_text",
-            "design_concepts", "brand_guidelines", "video_scripts",
-            "email_campaigns", "landing_pages", "creative_briefs"
+            "stories",
+            "blog_posts",
+            "social_media",
+            "marketing_copy",
+            "product_descriptions",
+            "slogans",
+            "taglines",
+            "ui_text",
+            "design_concepts",
+            "brand_guidelines",
+            "video_scripts",
+            "email_campaigns",
+            "landing_pages",
+            "creative_briefs",
         ]
-        
+
         # Fallback models (creative-optimized)
         self.fallback_models = [
-            ("claude-3-5-sonnet-20241022", "anthropic"),  # Excellent at creative writing
+            (
+                "claude-3-5-sonnet-20241022",
+                "anthropic",
+            ),  # Excellent at creative writing
             ("gemini-2.0-flash-exp", "google"),  # Good at varied creative tasks
             ("gpt-4o-mini", "openai"),  # Faster creative alternative
-            ("llama3.2", "ollama")  # Local creative model
+            ("llama3.2", "ollama"),  # Local creative model
         ]
-        
+
         # System prompt for creativity
         self.system_prompt = """You are Lumi, VibeAI's creative and imaginative AI assistant.
 
@@ -212,77 +173,71 @@ For creative writing:
 - Evoke emotions and imagery
 
 Remember: Creativity thrives on exploration. Dare to be different, surprising, and memorable."""
-    
-    async def run(
-        self,
-        messages: List[Dict],
-        context: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+
+    async def run(self, messages: List[Dict], context: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Execute Lumi agent for creative tasks.
-        
+
         Args:
             messages: Conversation history [{"role": "user/assistant", "content": "..."}]
             context: Additional context (brand guidelines, target audience, etc.)
-        
+
         Returns:
             Response dict with creative content, tokens, cost
         """
         if context is None:
             context = {}
-        
+
         # Add system prompt
-        full_messages = [
-            {"role": "system", "content": self.system_prompt}
-        ] + messages
-        
+        full_messages = [{"role": "system", "content": self.system_prompt}] + messages
+
         # Add creative context if available
         if context.get("brand_guidelines"):
             brand_msg = f"\n\nBrand Guidelines:\n{context['brand_guidelines']}"
             full_messages[-1]["content"] += brand_msg
-        
+
         if context.get("target_audience"):
             audience_msg = f"\n\nTarget Audience:\n{context['target_audience']}"
             full_messages[-1]["content"] += audience_msg
-        
+
         # Try primary model
         try:
             result = await self._run_with_provider(
                 model=self.model,
                 provider=self.provider,
                 messages=full_messages,
-                context=context
+                context=context,
             )
-            
+
             return result
-        
+
         except Exception as e:
             logger.warning(f"Primary model {self.model} failed: {e}")
-            
+
             # Try fallback models
             for fallback_model, fallback_provider in self.fallback_models:
                 try:
                     logger.info(f"Trying fallback: {fallback_model} ({fallback_provider})")
-                    
+
                     result = await self._run_with_provider(
                         model=fallback_model,
                         provider=fallback_provider,
                         messages=full_messages,
-                        context=context
+                        context=context,
                     )
-                    
+
                     result["fallback"] = True
                     result["fallback_reason"] = str(e)
-                    
+
                     return result
-                
+
                 except Exception as fallback_error:
                     logger.warning(f"Fallback {fallback_model} failed: {fallback_error}")
                     continue
-            
+
             # All models failed
             logger.error("All creative models failed")
-            
+
             return {
                 "status": "error",
                 "model": self.model,
@@ -292,15 +247,11 @@ Remember: Creativity thrives on exploration. Dare to be different, surprising, a
                 "input_tokens": 0,
                 "output_tokens": 0,
                 "total_tokens": 0,
-                "cost_usd": 0.0
+                "cost_usd": 0.0,
             }
-    
+
     async def _run_with_provider(
-        self,
-        model: str,
-        provider: str,
-        messages: List[Dict],
-        context: Dict
+        self, model: str, provider: str, messages: List[Dict], context: Dict
     ) -> Dict[str, Any]:
         """
         Run creative agent with specific model and provider.
@@ -309,7 +260,9 @@ Remember: Creativity thrives on exploration. Dare to be different, surprising, a
         if provider == "openai":
             from core.provider_clients.openai_client import openai_client as client
         elif provider == "anthropic":
-            from core.provider_clients.anthropic_client import anthropic_client as client
+            from core.provider_clients.anthropic_client import (
+                anthropic_client as client,
+            )
         elif provider == "google":
             from core.provider_clients.gemini_client import gemini_client as client
         elif provider == "github":
@@ -318,15 +271,15 @@ Remember: Creativity thrives on exploration. Dare to be different, surprising, a
             from core.provider_clients.ollama_client import ollama_client as client
         else:
             raise ValueError(f"Unknown provider: {provider}")
-        
+
         # Call provider with creative settings
         response = await client.chat_completion(
             model=model,
             messages=messages,
             temperature=self.temperature,  # High for creativity
-            max_tokens=self.max_tokens
+            max_tokens=self.max_tokens,
         )
-        
+
         # Extract response
         if isinstance(response, dict):
             response_text = response.get("content", response.get("message", str(response)))
@@ -336,23 +289,24 @@ Remember: Creativity thrives on exploration. Dare to be different, surprising, a
             response_text = str(response)
             input_tokens = 0
             output_tokens = 0
-        
+
         total_tokens = input_tokens + output_tokens
-        
+
         # Calculate cost
         cost_usd = 0.0
         if total_tokens > 0:
             try:
                 from billing.pricing_rules import calculate_token_cost
+
                 cost_usd = calculate_token_cost(
                     model=model,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
-                    provider=provider
+                    provider=provider,
                 )
             except Exception as e:
                 logger.warning(f"Cost calculation failed: {e}")
-        
+
         return {
             "status": "success",
             "model": model,
@@ -362,83 +316,75 @@ Remember: Creativity thrives on exploration. Dare to be different, surprising, a
             "output_tokens": output_tokens,
             "total_tokens": total_tokens,
             "cost_usd": cost_usd,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
-    
+
     async def process(self, message: str, context: Optional[Dict] = None) -> Dict:
         """
         Simplified interface for single creative request.
         """
         messages = [{"role": "user", "content": message}]
         return await self.run(messages, context)
-    
-    async def write_story(
-        self,
-        topic: str,
-        style: Optional[str] = None,
-        length: Optional[str] = "medium"
-    ) -> Dict:
+
+    async def write_story(self, topic: str, style: Optional[str] = None, length: Optional[str] = "medium") -> Dict:
         """
         Write creative story.
-        
+
         Args:
             topic: Story topic or theme
             style: Writing style (e.g., "dramatic", "humorous", "poetic")
             length: Story length ("short", "medium", "long")
-        
+
         Returns:
             Creative story
         """
         prompt = f"Write a {length} story about: {topic}"
-        
+
         if style:
             prompt += f"\n\nStyle: {style}"
-        
+
         return await self.process(prompt)
-    
+
     async def design_ui_concept(
         self,
         app_description: str,
         screen_name: Optional[str] = None,
-        style: Optional[str] = None
+        style: Optional[str] = None,
     ) -> Dict:
         """
         Generate UI/UX design concept.
-        
+
         Args:
             app_description: Description of the app
             screen_name: Specific screen to design
             style: Design style (e.g., "minimalist", "vibrant", "professional")
-        
+
         Returns:
             UI design concept with layout, colors, typography ideas
         """
         prompt = f"Design a UI concept for: {app_description}"
-        
+
         if screen_name:
             prompt += f"\n\nScreen: {screen_name}"
-        
+
         if style:
             prompt += f"\n\nDesign style: {style}"
-        
+
         prompt += "\n\nDescribe layout, visual hierarchy, color palette, typography, and key interactions."
-        
+
         return await self.process(prompt)
-    
+
     async def create_marketing_copy(
-        self,
-        product: str,
-        target_audience: str,
-        format: Optional[str] = "landing_page"
+        self, product: str, target_audience: str, format: Optional[str] = "landing_page"
     ) -> Dict:
         """
         Create marketing copy.
-        
+
         Args:
             product: Product description
             target_audience: Target audience description
             format: Copy format (e.g., "landing_page", "email", "social_media")
-        
+
         Returns:
             Marketing copy
         """
@@ -448,49 +394,41 @@ Product: {product}
 Target Audience: {target_audience}
 
 Make it engaging, persuasive, and memorable."""
-        
+
         return await self.process(prompt)
-    
+
     async def generate_product_names(
-        self,
-        product_description: str,
-        count: int = 5,
-        style: Optional[str] = None
+        self, product_description: str, count: int = 5, style: Optional[str] = None
     ) -> Dict:
         """
         Generate product names and slogans.
-        
+
         Args:
             product_description: Description of product
             count: Number of name suggestions
             style: Naming style (e.g., "professional", "playful", "tech-focused")
-        
+
         Returns:
             Product name suggestions with slogans
         """
         prompt = f"Generate {count} creative product names for:\n\n{product_description}"
-        
+
         if style:
             prompt += f"\n\nStyle: {style}"
-        
+
         prompt += "\n\nFor each name, include a catchy slogan."
-        
+
         return await self.process(prompt)
-    
-    async def create_social_media_post(
-        self,
-        topic: str,
-        platform: str,
-        tone: Optional[str] = "engaging"
-    ) -> Dict:
+
+    async def create_social_media_post(self, topic: str, platform: str, tone: Optional[str] = "engaging") -> Dict:
         """
         Create social media post.
-        
+
         Args:
             topic: Post topic or message
             platform: Social platform (e.g., "twitter", "instagram", "linkedin")
             tone: Post tone (e.g., "engaging", "professional", "humorous")
-        
+
         Returns:
             Social media post with hashtags
         """
@@ -499,9 +437,9 @@ Make it engaging, persuasive, and memorable."""
 {topic}
 
 Include relevant hashtags and make it shareable."""
-        
+
         return await self.process(prompt)
-    
+
     def get_info(self) -> Dict:
         """
         Get agent information and capabilities.
@@ -516,13 +454,9 @@ Include relevant hashtags and make it shareable."""
             "fallback_models": self.fallback_models,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "creative_optimized": True
+            "creative_optimized": True,
         }
 
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
 
 async def run_lumi(message: str, context: Optional[Dict] = None) -> Dict:
     """
@@ -561,4 +495,3 @@ def create_lumi_instance() -> Agent:
     Create new Lumi agent instance.
     """
     return Agent()
-

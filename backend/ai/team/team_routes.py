@@ -12,17 +12,19 @@ Endpoints:
 - GET /team/health - Health check
 """
 
-from fastapi import APIRouter, Request, HTTPException
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from typing import Optional, List
+
 from .team_engine import team_engine
 
 router = APIRouter(prefix="/team", tags=["Team"])
 
-
 # ========================================
 # PYDANTIC MODELS
 # ========================================
+
 
 class CollaborateRequest(BaseModel):
     prompt: str
@@ -47,11 +49,12 @@ class RouteTaskRequest(BaseModel):
 # API ROUTES
 # ========================================
 
+
 @router.post("/collaborate")
 async def collaborate(request: Request):
     """
     Multi-agent collaboration on a task
-    
+
     Request body:
     {
         "prompt": "Build a login form with validation",
@@ -59,7 +62,7 @@ async def collaborate(request: Request):
         "mode": "parallel|sequential|consensus",
         "project_id": "demo-project"
     }
-    
+
     Response:
     {
         "success": true,
@@ -72,26 +75,22 @@ async def collaborate(request: Request):
         "summary": "..."
     }
     """
-    
+
     body = await request.json()
-    user_email = request.headers.get("x-user", "default")
-    
+    user = request.headers.get("x-user", "default")
+
     prompt = body.get("prompt")
     agents = body.get("agents")
     mode = body.get("mode", "parallel")
-    
+
     if not prompt:
         raise HTTPException(status_code=400, detail="Missing prompt")
-    
+
     if mode not in ["parallel", "sequential", "consensus"]:
         raise HTTPException(status_code=400, detail="Invalid mode")
-    
-    result = await team_engine.collaborate(
-        prompt=prompt,
-        agents=agents,
-        mode=mode
-    )
-    
+
+    result = await team_engine.collaborate(prompt=prompt, agents=agents, mode=mode)
+
     return result
 
 
@@ -99,14 +98,14 @@ async def collaborate(request: Request):
 async def ask_agent(request: Request):
     """
     Ask a specific agent for a response
-    
+
     Request body:
     {
         "agent": "frontend",
         "prompt": "How should I structure my React components?",
         "project_id": "demo-project"
     }
-    
+
     Response:
     {
         "success": true,
@@ -117,18 +116,18 @@ async def ask_agent(request: Request):
         "expertise": [...]
     }
     """
-    
+
     body = await request.json()
-    user_email = request.headers.get("x-user", "default")
-    
+    user = request.headers.get("x-user", "default")
+
     agent = body.get("agent")
     prompt = body.get("prompt")
-    
+
     if not all([agent, prompt]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    
+
     result = await team_engine.ask(agent, prompt)
-    
+
     return result
 
 
@@ -136,14 +135,14 @@ async def ask_agent(request: Request):
 async def route_task(request: Request):
     """
     Auto-route task to appropriate specialists
-    
+
     Request body:
     {
         "task_type": "ui_design|api_development|full_stack|testing|deployment",
         "prompt": "Create a user dashboard",
         "project_id": "demo-project"
     }
-    
+
     Response:
     {
         "success": true,
@@ -152,20 +151,20 @@ async def route_task(request: Request):
         "results": {...}
     }
     """
-    
+
     body = await request.json()
-    user_email = request.headers.get("x-user", "default")
-    
+    user = request.headers.get("x-user", "default")
+
     task_type = body.get("task_type")
     prompt = body.get("prompt")
-    
+
     if not all([task_type, prompt]):
         raise HTTPException(status_code=400, detail="Missing required fields")
-    
+
     result = await team_engine.route_task(task_type, prompt)
-    
+
     result["task_type"] = task_type
-    
+
     return result
 
 
@@ -173,7 +172,7 @@ async def route_task(request: Request):
 async def list_agents():
     """
     List all available agents and their capabilities
-    
+
     Response:
     {
         "agents": {
@@ -187,12 +186,12 @@ async def list_agents():
         "total": 7
     }
     """
-    
+
     return {
         "agents": team_engine.agents,
         "total": len(team_engine.agents),
         "collaboration_modes": list(team_engine.collaboration_modes.keys()),
-        "task_types": list(team_engine.task_routing.keys())
+        "task_types": list(team_engine.task_routing.keys()),
     }
 
 
@@ -200,7 +199,7 @@ async def list_agents():
 async def health_check():
     """
     Health check endpoint
-    
+
     Response:
     {
         "status": "online",
@@ -209,7 +208,7 @@ async def health_check():
         "models": {...}
     }
     """
-    
+
     return {
         "status": "online",
         "engine": "team",
@@ -222,6 +221,6 @@ async def health_check():
             "sequential_workflow",
             "consensus_building",
             "task_routing",
-            "model_fallback"
-        ]
+            "model_fallback",
+        ],
     }

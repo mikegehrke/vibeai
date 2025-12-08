@@ -21,10 +21,8 @@ Flow:
 User Prompt → Orchestrator → Agents → Results
 """
 
-from typing import Dict, List, Optional, Any
 from enum import Enum
-import asyncio
-import json
+from typing import Dict, List, Optional
 
 
 # -------------------------------------------------------------
@@ -61,14 +59,14 @@ class BaseAgent:
     async def execute(self, task: Dict) -> Dict:
         """
         Execute task.
-        
+
         Args:
             task: {
                 "task_id": "123",
                 "type": "create_ui",
                 "params": {...}
             }
-        
+
         Returns:
             {
                 "success": True,
@@ -91,7 +89,7 @@ class BaseAgent:
 class UIAgent(BaseAgent):
     """
     UI Agent - Erstellt UI-Strukturen aus Natural Language.
-    
+
     Capabilities:
     - create_ui: Natural Language → UI Structure
     - suggest_components: AI-powered component suggestions
@@ -104,7 +102,7 @@ class UIAgent(BaseAgent):
             "create_ui",
             "suggest_components",
             "improve_ui",
-            "validate_ui"
+            "validate_ui",
         ]
 
     async def execute(self, task: Dict) -> Dict:
@@ -126,13 +124,13 @@ class UIAgent(BaseAgent):
             return {
                 "success": False,
                 "error": f"Unknown task type: {task_type}",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
     async def _create_ui(self, params: Dict) -> Dict:
         """
         Create UI from natural language prompt.
-        
+
         Params:
             {
                 "prompt": "Login screen with email and password",
@@ -147,24 +145,16 @@ class UIAgent(BaseAgent):
         style = params.get("style", "material")
 
         try:
-            result = await ai_ui_generator.generate_ui_from_prompt(
-                prompt=prompt,
-                framework=framework,
-                style=style
-            )
+            result = await ai_ui_generator.generate_ui_from_prompt(prompt=prompt, framework=framework, style=style)
 
             return {
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "UI created from prompt"
+                "action": "UI created from prompt",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _suggest_components(self, params: Dict) -> Dict:
         """Suggest components based on description."""
@@ -175,22 +165,17 @@ class UIAgent(BaseAgent):
 
         try:
             suggestions = await ai_ui_generator.suggest_components(
-                description=description,
-                existing_components=existing
+                description=description, existing_components=existing
             )
 
             return {
                 "success": True,
                 "result": {"components": suggestions},
                 "agent": self.agent_type,
-                "action": "Component suggestions generated"
+                "action": "Component suggestions generated",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _improve_ui(self, params: Dict) -> Dict:
         """Improve existing UI."""
@@ -200,23 +185,16 @@ class UIAgent(BaseAgent):
         improvement = params.get("improvement_request")
 
         try:
-            result = await ai_ui_generator.improve_ui(
-                screen=screen,
-                improvement_request=improvement
-            )
+            result = await ai_ui_generator.improve_ui(screen=screen, improvement_request=improvement)
 
             return {
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "UI improved"
+                "action": "UI improved",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _validate_ui(self, params: Dict) -> Dict:
         """Validate UI structure."""
@@ -237,10 +215,10 @@ class UIAgent(BaseAgent):
             "result": {
                 "valid": len(errors) == 0,
                 "errors": errors,
-                "warnings": warnings
+                "warnings": warnings,
             },
             "agent": self.agent_type,
-            "action": "UI validated"
+            "action": "UI validated",
         }
 
 
@@ -250,7 +228,7 @@ class UIAgent(BaseAgent):
 class CodeAgent(BaseAgent):
     """
     Code Agent - Generiert Framework-spezifischen Code.
-    
+
     Capabilities:
     - generate_flutter: UI → Flutter/Dart Code
     - generate_react: UI → React/JSX Code
@@ -267,7 +245,7 @@ class CodeAgent(BaseAgent):
             "generate_vue",
             "generate_html",
             "generate_app",
-            "format_code"
+            "format_code",
         ]
 
     async def execute(self, task: Dict) -> Dict:
@@ -291,13 +269,13 @@ class CodeAgent(BaseAgent):
             return {
                 "success": False,
                 "error": f"Unknown task type: {task_type}",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
     async def _generate_flutter(self, params: Dict) -> Dict:
         """Generate Flutter code."""
-        from ai.code_generator.flutter_generator import flutter_generator
         from ai.code_generator.code_formatter import formatter
+        from ai.code_generator.flutter_generator import flutter_generator
 
         screen = params.get("screen")
 
@@ -310,22 +288,18 @@ class CodeAgent(BaseAgent):
                 "result": {
                     "code": code,
                     "language": "flutter",
-                    "screen_name": screen.get("name")
+                    "screen_name": screen.get("name"),
                 },
                 "agent": self.agent_type,
-                "action": "Flutter code generated"
+                "action": "Flutter code generated",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _generate_react(self, params: Dict) -> Dict:
         """Generate React code."""
-        from ai.code_generator.react_generator import react_generator
         from ai.code_generator.code_formatter import formatter
+        from ai.code_generator.react_generator import react_generator
 
         screen = params.get("screen")
 
@@ -338,17 +312,13 @@ class CodeAgent(BaseAgent):
                 "result": {
                     "code": code,
                     "language": "react",
-                    "screen_name": screen.get("name")
+                    "screen_name": screen.get("name"),
                 },
                 "agent": self.agent_type,
-                "action": "React code generated"
+                "action": "React code generated",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _generate_vue(self, params: Dict) -> Dict:
         """Generate Vue code."""
@@ -356,7 +326,7 @@ class CodeAgent(BaseAgent):
         return {
             "success": False,
             "error": "Vue generator not yet implemented",
-            "agent": self.agent_type
+            "agent": self.agent_type,
         }
 
     async def _generate_html(self, params: Dict) -> Dict:
@@ -373,17 +343,13 @@ class CodeAgent(BaseAgent):
                 "result": {
                     "code": html,
                     "language": "html",
-                    "screen_name": screen.get("name")
+                    "screen_name": screen.get("name"),
                 },
                 "agent": self.agent_type,
-                "action": "HTML code generated"
+                "action": "HTML code generated",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _generate_app(self, params: Dict) -> Dict:
         """Generate complete multi-screen app."""
@@ -406,17 +372,13 @@ class CodeAgent(BaseAgent):
                 "result": {
                     "files": files,
                     "framework": framework,
-                    "file_count": len(files)
+                    "file_count": len(files),
                 },
                 "agent": self.agent_type,
-                "action": f"Complete {framework} app generated"
+                "action": f"Complete {framework} app generated",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
 
 # -------------------------------------------------------------
@@ -425,7 +387,7 @@ class CodeAgent(BaseAgent):
 class PreviewAgent(BaseAgent):
     """
     Preview Agent - Managed Live Preview Servers.
-    
+
     Capabilities:
     - start_flutter_preview: Start Flutter web server
     - start_react_preview: Start React dev server
@@ -441,7 +403,7 @@ class PreviewAgent(BaseAgent):
             "start_react_preview",
             "stop_preview",
             "reload_preview",
-            "get_preview_status"
+            "get_preview_status",
         ]
 
     async def execute(self, task: Dict) -> Dict:
@@ -465,7 +427,7 @@ class PreviewAgent(BaseAgent):
             return {
                 "success": False,
                 "error": f"Unknown task type: {task_type}",
-                "agent": self.agent_type
+                "agent": self.agent_type,
             }
 
     async def _start_flutter_preview(self, params: Dict) -> Dict:
@@ -476,23 +438,16 @@ class PreviewAgent(BaseAgent):
         port = params.get("port")
 
         try:
-            result = await flutter_preview_manager.start_server(
-                project_path=project_path,
-                port=port
-            )
+            result = await flutter_preview_manager.start_server(project_path=project_path, port=port)
 
             return {
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "Flutter preview started"
+                "action": "Flutter preview started",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _start_react_preview(self, params: Dict) -> Dict:
         """Start React preview server."""
@@ -502,23 +457,16 @@ class PreviewAgent(BaseAgent):
         port = params.get("port")
 
         try:
-            result = await react_preview_manager.start_server(
-                project_path=project_path,
-                port=port
-            )
+            result = await react_preview_manager.start_server(project_path=project_path, port=port)
 
             return {
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "React preview started"
+                "action": "React preview started",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _stop_preview(self, params: Dict) -> Dict:
         """Stop preview server."""
@@ -540,14 +488,10 @@ class PreviewAgent(BaseAgent):
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "Preview stopped"
+                "action": "Preview stopped",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _reload_preview(self, params: Dict) -> Dict:
         """Reload preview."""
@@ -562,14 +506,10 @@ class PreviewAgent(BaseAgent):
                 "success": True,
                 "result": result,
                 "agent": self.agent_type,
-                "action": "Preview reloaded"
+                "action": "Preview reloaded",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
     async def _get_status(self, params: Dict) -> Dict:
         """Get preview status."""
@@ -590,14 +530,10 @@ class PreviewAgent(BaseAgent):
                 "success": True,
                 "result": status,
                 "agent": self.agent_type,
-                "action": "Status retrieved"
+                "action": "Status retrieved",
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": self.agent_type
-            }
+            return {"success": False, "error": str(e), "agent": self.agent_type}
 
 
 # -------------------------------------------------------------

@@ -1,9 +1,11 @@
 # -------------------------------------------------------------
 # VIBEAI – API CONNECTOR GENERATOR ROUTES
 # -------------------------------------------------------------
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, HttpUrl
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
+
 from .api_generator import api_connector_generator
 
 router = APIRouter(prefix="/api-gen", tags=["API Generator"])
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/api-gen", tags=["API Generator"])
 
 class GenerateAPIRequest(BaseModel):
     """Request für API Client Generierung"""
+
     framework: str  # flutter, react, nextjs, vue, nodejs
     protocol: str  # rest, graphql, websocket
     project_id: str
@@ -19,6 +22,7 @@ class GenerateAPIRequest(BaseModel):
 
 class SupportedAPIsResponse(BaseModel):
     """Verfügbare API Protokolle und Frameworks"""
+
     protocols: List[str]
     frameworks: List[str]
 
@@ -27,7 +31,7 @@ class SupportedAPIsResponse(BaseModel):
 async def generate_api_client(request: Request, data: GenerateAPIRequest):
     """
     Generiert API-Client Code
-    
+
     POST /api-gen/generate
     {
         "framework": "flutter",
@@ -39,7 +43,7 @@ async def generate_api_client(request: Request, data: GenerateAPIRequest):
             "timeout": 30000
         }
     }
-    
+
     Returns:
     {
         "success": true,
@@ -53,22 +57,19 @@ async def generate_api_client(request: Request, data: GenerateAPIRequest):
     try:
         # Bestimme Projekt-Pfad
         base_path = f"/tmp/vibeai_projects/{data.project_id}"
-        
+
         result = api_connector_generator.generate_api_client(
             framework=data.framework,
             protocol=data.protocol,
             base_path=base_path,
-            options=data.options
+            options=data.options,
         )
-        
+
         if not result.get("success"):
-            raise HTTPException(
-                status_code=400,
-                detail=result.get("error", "Fehler bei Generierung")
-            )
-        
+            raise HTTPException(status_code=400, detail=result.get("error", "Fehler bei Generierung"))
+
         return result
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fehler: {str(e)}")
 
@@ -77,9 +78,9 @@ async def generate_api_client(request: Request, data: GenerateAPIRequest):
 async def get_supported_protocols():
     """
     Gibt alle unterstützten API-Protokolle zurück
-    
+
     GET /api-gen/protocols
-    
+
     Returns:
     {
         "protocols": ["rest", "graphql", "websocket"],
@@ -88,7 +89,7 @@ async def get_supported_protocols():
     """
     return SupportedAPIsResponse(
         protocols=api_connector_generator.supported_protocols,
-        frameworks=api_connector_generator.supported_frameworks
+        frameworks=api_connector_generator.supported_frameworks,
     )
 
 
@@ -96,10 +97,10 @@ async def get_supported_protocols():
 async def get_api_example(protocol: str, framework: str):
     """
     Gibt Code-Beispiel für spezifisches Protokoll und Framework
-    
+
     GET /api-gen/examples/rest/flutter
     GET /api-gen/examples/graphql/react
-    
+
     Returns:
     {
         "protocol": "rest",
@@ -129,7 +130,7 @@ const api = require('./api/client');
 
 const users = await api.get('/users');
 const user = await api.post('/users', { name: 'Max' });
-"""
+""",
         },
         "graphql": {
             "flutter": """
@@ -146,7 +147,7 @@ import { useQuery, gql } from '@apollo/client';
 
 const GET_USERS = gql\`query { users { id name } }\`;
 const { data } = useQuery(GET_USERS);
-"""
+""",
         },
         "websocket": {
             "flutter": """
@@ -163,40 +164,33 @@ import { useWebSocket } from './api/useWebSocket';
 
 const { connected, messages, send } = useWebSocket();
 send({ type: 'message', data: 'Hello' });
-"""
-        }
+""",
+        },
     }
-    
+
     if protocol not in examples:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Protokoll '{protocol}' nicht gefunden"
-        )
-    
+        raise HTTPException(status_code=404, detail=f"Protokoll '{protocol}' nicht gefunden")
+
     if framework not in examples[protocol]:
         raise HTTPException(
             status_code=404,
-            detail=f"Framework '{framework}' für {protocol} nicht verfügbar"
+            detail=f"Framework '{framework}' für {protocol} nicht verfügbar",
         )
-    
+
     return {
         "protocol": protocol,
         "framework": framework,
-        "example": examples[protocol][framework].strip()
+        "example": examples[protocol][framework].strip(),
     }
 
 
 @router.post("/validate")
-async def validate_api_config(
-    base_url: str,
-    protocol: str,
-    auth_required: bool = False
-):
+async def validate_api_config(base_url: str, protocol: str, auth_required: bool = False):
     """
     Validiert API-Konfiguration
-    
+
     POST /api-gen/validate?base_url=https://api.example.com&protocol=rest&auth_required=true
-    
+
     Returns:
     {
         "valid": true,
@@ -206,29 +200,23 @@ async def validate_api_config(
     }
     """
     warnings = []
-    
+
     # URL validieren
     if not base_url.startswith("http://") and not base_url.startswith("https://"):
         return {
             "valid": False,
-            "error": "Base URL muss mit http:// oder https:// beginnen"
+            "error": "Base URL muss mit http:// oder https:// beginnen",
         }
-    
+
     # Protokoll validieren
     if protocol not in api_connector_generator.supported_protocols:
-        return {
-            "valid": False,
-            "error": f"Protokoll '{protocol}' nicht unterstützt"
-        }
-    
+        return {"valid": False, "error": f"Protokoll '{protocol}' nicht unterstützt"}
+
     # WebSocket URL validieren
     if protocol == "websocket":
         if not base_url.startswith("wss://") and not base_url.startswith("ws://"):
-            warnings.append(
-                "WebSocket URL sollte mit ws:// oder wss:// beginnen. "
-                "URL wird automatisch konvertiert."
-            )
-    
+            warnings.append("WebSocket URL sollte mit ws:// oder wss:// beginnen. " "URL wird automatisch konvertiert.")
+
     # GraphQL Endpoint
     if protocol == "graphql":
         if not base_url.endswith("/graphql"):
@@ -236,19 +224,16 @@ async def validate_api_config(
                 "GraphQL URL sollte normalerweise mit /graphql enden. "
                 "Stellen Sie sicher, dass der Endpoint korrekt ist."
             )
-    
+
     # Auth Warnung
     if auth_required and protocol == "rest":
-        warnings.append(
-            "Authentifizierung aktiviert. "
-            "Stellen Sie sicher, dass authToken gesetzt wird."
-        )
-    
+        warnings.append("Authentifizierung aktiviert. " "Stellen Sie sicher, dass authToken gesetzt wird.")
+
     return {
         "valid": True,
         "protocol": protocol,
         "base_url": base_url,
-        "warnings": warnings
+        "warnings": warnings,
     }
 
 
@@ -266,6 +251,6 @@ async def health_check():
             "Multi-Framework Support (Flutter, React, Next.js, Vue, Node.js)",
             "Auth Token Management",
             "Error Handling",
-            "Timeout Configuration"
-        ]
+            "Timeout Configuration",
+        ],
     }

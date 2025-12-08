@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # VIBEAI – NAVIGATION FLOW MODULE
 # -------------------------------------------------------------
-from .flow_generator import flow_generator
-from .flow_routes import router
+from .flow_generator import FlowGenerator
+from .flow_routes import Router
 
-__all__ = ["flow_generator", "router"]
+__all__ = ["FlowGenerator", "Router"]

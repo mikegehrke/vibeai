@@ -1,0 +1,319 @@
+const vscode = require("vscode");
+const path = require("path");
+const fs = require("fs");
+
+/**
+ * Sidebar webview provider for VIBE Agent status panel
+ */
+class SidebarViewProvider {
+  constructor(extensionUri) {
+    this._extensionUri = extensionUri;
+    this._view = null;
+  }
+
+  /**
+   * Called when view becomes visible
+   */
+  resolveWebviewView(webviewView) {
+    this._view = webviewView;
+
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri]
+    };
+
+    webviewView.webview.html = this._getHtmlContent(webviewView.webview);
+
+    // Handle messages from webview
+    webviewView.webview.onDidReceiveMessage(data => {
+      switch (data.type) {
+        case "clearLogs":
+          this.clearLogs();
+          break;
+      }
+    });
+  }
+
+  /**
+   * Update status message
+   */
+  updateStatus(message) {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "status",
+        text: message
+      });
+    }
+  }
+
+  /**
+   * Log file being processed
+   */
+  logFile(filename) {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "file",
+        file: filename
+      });
+    }
+  }
+
+  /**
+   * Log successfully fixed file
+   */
+  logFixed(filename) {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "fixed",
+        file: filename
+      });
+    }
+  }
+
+  /**
+   * Log skipped file
+   */
+  logSkip(filename) {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "skip",
+        file: filename
+      });
+    }
+  }
+
+  /**
+   * Log error
+   */
+  logError(filename, error) {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "error",
+        file: filename,
+        error: error
+      });
+    }
+  }
+
+  /**
+   * Clear all logs
+   */
+  clearLogs() {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "clear"
+      });
+    }
+  }
+
+  /**
+   * Generate HTML content for webview
+   */
+  _getHtmlContent(webview) {
+    const htmlPath = path.join(__dirname, "webview", "sidebar.html");
+
+    // Check if HTML file exists
+    if (fs.existsSync(htmlPath)) {
+      return fs.readFileSync(htmlPath, "utf8");
+    }
+
+    // Fallback inline HTML
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIBE Agent</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+      color: var(--vscode-foreground);
+      background: var(--vscode-editor-background);
+      padding: 16px;
+    }
+    
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--vscode-editor-foreground);
+      font-weight: 600;
+    }
+    
+    #status {
+      padding: 12px;
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    
+    .controls {
+      margin-bottom: 16px;
+    }
+    
+    button {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    button:hover {
+      background: var(--vscode-button-hoverBackground);
+    }
+    
+    .log-container {
+      margin-top: 20px;
+    }
+    
+    .log-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--vscode-editor-foreground);
+    }
+    
+    #log {
+      max-height: 500px;
+      overflow-y: auto;
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: 4px;
+    }
+    
+    .log-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--vscode-panel-border);
+      font-size: 12px;
+      font-family: var(--vscode-editor-font-family);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .log-item:last-child {
+      border-bottom: none;
+    }
+    
+    .log-item.file {
+      color: var(--vscode-foreground);
+    }
+    
+    .log-item.fixed {
+      color: var(--vscode-testing-iconPassed);
+      font-weight: 500;
+    }
+    
+    .log-item.skip {
+      color: var(--vscode-disabledForeground);
+    }
+    
+    .log-item.error {
+      color: var(--vscode-errorForeground);
+      font-weight: 500;
+    }
+    
+    .icon {
+      flex-shrink: 0;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--vscode-editor-background);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--vscode-scrollbarSlider-background);
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--vscode-scrollbarSlider-hoverBackground);
+    }
+  </style>
+</head>
+<body>
+  <h2>🔥 VIBE Auto-Fix Agent v3.0</h2>
+  
+  <div id="status">Waiting for command...</div>
+  
+  <div class="controls">
+    <button onclick="clearLogs()">Clear Logs</button>
+  </div>
+  
+  <div class="log-container">
+    <div class="log-title">Activity Log</div>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const logElement = document.getElementById("log");
+    const statusElement = document.getElementById("status");
+
+    // Handle messages from extension
+    window.addEventListener("message", event => {
+      const msg = event.data;
+
+      switch (msg.type) {
+        case "status":
+          statusElement.textContent = msg.text;
+          break;
+
+        case "file":
+          addLogItem("file", "➡️", msg.file);
+          break;
+
+        case "fixed":
+          addLogItem("fixed", "✅", msg.file);
+          break;
+
+        case "skip":
+          addLogItem("skip", "⏭️", msg.file);
+          break;
+
+        case "error":
+          addLogItem("error", "❌", msg.file + " - " + msg.error);
+          break;
+
+        case "clear":
+          logElement.innerHTML = "";
+          break;
+      }
+
+      // Auto-scroll to bottom
+      logElement.scrollTop = logElement.scrollHeight;
+    });
+
+    function addLogItem(type, icon, text) {
+      const item = document.createElement("div");
+      item.className = "log-item " + type;
+      item.innerHTML = '<span class="icon">' + icon + '</span><span>' + text + '</span>';
+      logElement.appendChild(item);
+    }
+
+    function clearLogs() {
+      vscode.postMessage({ type: "clearLogs" });
+    }
+  </script>
+</body>
+</html>`;
+  }
+}
+
+module.exports = SidebarViewProvider;

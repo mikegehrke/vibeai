@@ -1,0 +1,33 @@
+[flake8]
+max-line-length = 88
+extend-ignore = 
+    E203,
+    E266,
+    E501,
+    W503,
+    F401,
+    F841,
+    W0612,
+    W0613,
+    C901,
+    E722,
+    F811,
+    W0703,
+    W0702
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    .venv,
+    venv,
+    *.egg-info,
+    .pytest_cache,
+    .mypy_cache,
+    node_modules,
+    *_backup*,
+    vibeai_backup*
+per-file-ignores =
+    __init__.py:F401
+    **/migrations/*.py:E501
+max-complexity = 18

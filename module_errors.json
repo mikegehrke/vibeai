@@ -1,0 +1,307 @@
+{
+  "total": 232,
+  "ok": 202,
+  "broken": 30,
+  "modules": [
+    {
+      "path": "exports.py",
+      "full_path": "backend/exports.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Missing: get_db_context from db",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "agent_system.py",
+      "full_path": "backend/agent_system.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "no running event loop",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "schemas.py",
+      "full_path": "backend/schemas.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "`regex` is removed. use `pattern` instead\n\nFor further information visit https://errors.pydantic.dev",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "auth_production.py",
+      "full_path": "backend/auth_production.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: pyotp",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "main.py",
+      "full_path": "backend/main.py",
+      "status": "BROKEN",
+      "syntax_ok": false,
+      "syntax_error": "Line 359: EOL while scanning string literal",
+      "import_ok": false,
+      "import_error": "EOL while scanning string literal (main.py, line 359)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "chat/presence.py",
+      "full_path": "backend/chat/presence.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "no running event loop",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "chat/agent_router.py",
+      "full_path": "backend/chat/agent_router.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "no running event loop",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "chat/agent_manager.py",
+      "full_path": "backend/chat/agent_manager.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "no running event loop",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "chat/ai_responder.py",
+      "full_path": "backend/chat/ai_responder.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "no running event loop",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "buildsystem/admin_monitor.py",
+      "full_path": "backend/buildsystem/admin_monitor.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "attempted relative import beyond top-level package",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "buildsystem/artifact_routes.py",
+      "full_path": "backend/buildsystem/artifact_routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Invalid args for response field! Hint: check that {type_} is a valid Pydantic field type. If you are",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "admin/export.py",
+      "full_path": "backend/admin/export.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "`regex` is removed. use `pattern` instead\n\nFor further information visit https://errors.pydantic.dev",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "admin/routes.py",
+      "full_path": "backend/admin/routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "`regex` is removed. use `pattern` instead\n\nFor further information visit https://errors.pydantic.dev",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "admin/tickets/routes.py",
+      "full_path": "backend/admin/tickets/routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "`regex` is removed. use `pattern` instead\n\nFor further information visit https://errors.pydantic.dev",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "admin/notifications/routes.py",
+      "full_path": "backend/admin/notifications/routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "`regex` is removed. use `pattern` instead\n\nFor further information visit https://errors.pydantic.dev",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "ai/realtime_generator/realtime_routes.py",
+      "full_path": "backend/ai/realtime_generator/realtime_routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: ai.realtime_generator.realtime_generator",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "ai/realtime_generator/__init__.py",
+      "full_path": "backend/ai/realtime_generator/__init__.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: ai.realtime_generator.realtime_generator",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "ai/realtime_generator/demo.py",
+      "full_path": "backend/ai/realtime_generator/demo.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: ai.realtime_generator.realtime_generator",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "ai/payment_generator/demo.py",
+      "full_path": "backend/ai/payment_generator/demo.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: payment_generator",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "ai/store_generator/demo.py",
+      "full_path": "backend/ai/store_generator/demo.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: store_generator",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "preview/preview_routes.py",
+      "full_path": "backend/preview/preview_routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Invalid args for response field! Hint: check that {type_} is a valid Pydantic field type. If you are",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/node_generator.py",
+      "full_path": "backend/project_generator/node_generator.py",
+      "status": "BROKEN",
+      "syntax_ok": false,
+      "syntax_error": "Line 210: EOF while scanning triple-quoted string literal",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/react_generator.py",
+      "full_path": "backend/project_generator/react_generator.py",
+      "status": "BROKEN",
+      "syntax_ok": false,
+      "syntax_error": "Line 163: EOF while scanning triple-quoted string literal",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/__init__.py",
+      "full_path": "backend/project_generator/__init__.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/project_router.py",
+      "full_path": "backend/project_generator/project_router.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/next_generator.py",
+      "full_path": "backend/project_generator/next_generator.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/base_writer.py",
+      "full_path": "backend/project_generator/base_writer.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "project_generator/flutter_generator.py",
+      "full_path": "backend/project_generator/flutter_generator.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "EOF while scanning triple-quoted string literal (node_generator.py, line 210)",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "codestudio/routes.py",
+      "full_path": "backend/codestudio/routes.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Missing: limiter from billing.limiter",
+      "fix_suggestion": "Manual fix required"
+    },
+    {
+      "path": "codestudio/languages/python_executor.py",
+      "full_path": "backend/codestudio/languages/python_executor.py",
+      "status": "BROKEN",
+      "syntax_ok": true,
+      "syntax_error": "",
+      "import_ok": false,
+      "import_error": "Module not found: codestudio.languagesthon_executor",
+      "fix_suggestion": "Manual fix required"
+    }
+  ]
+}
