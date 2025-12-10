@@ -28,9 +28,12 @@ import asyncio
 import os
 import random
 import signal
+import socket
 import subprocess
 import time
 from typing import Dict, Optional
+
+import httpx
 
 from preview.preview_ws import preview_ws
 
@@ -148,7 +151,7 @@ class PreviewManager:
             raise FileNotFoundError("package.json not found. Not a valid Node.js project.")
 
         # npm run dev starten
-        cmd = ["npm", "run", "dev", "--", f"--port={port}"]
+        cmd = ["npm", "run", "dev", "--", f"--port={port}", "--host", "0.0.0.0"]
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -167,6 +170,9 @@ class PreviewManager:
 
         # Log Streaming starten
         asyncio.create_task(self._pipe_preview_logs(user, port))
+
+        # Warte bis Server bereit ist (max 30 Sekunden)
+        await self._wait_for_server_ready(port, max_wait=30)
 
         return {"port": port, "url": f"http://localhost:{port}", "type": "web"}
 
@@ -195,17 +201,77 @@ class PreviewManager:
         # Freien Port finden
         port = self.find_free_port()
 
-        # pubspec.yaml prüfen
+        # pubspec.yaml prüfen - falls nicht vorhanden, erstelle Flutter-Projekt
         pubspec = os.path.join(project_path, "pubspec.yaml")
         if not os.path.exists(pubspec):
-            raise FileNotFoundError("pubspec.yaml not found. Not a valid Flutter project.")
+            # Erstelle Flutter-Projekt-Struktur
+            lib_path = os.path.join(project_path, "lib")
+            os.makedirs(lib_path, exist_ok=True)
+            
+            # Erstelle pubspec.yaml
+            pubspec_content = """name: vibeai_app
+description: A VibeAI generated app
+version: 1.0.0
 
-        # Flutter Web Preview starten
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+"""
+            with open(pubspec, "w") as f:
+                f.write(pubspec_content)
+            
+            # Erstelle main.dart falls nicht vorhanden
+            main_dart = os.path.join(lib_path, "main.dart")
+            if not os.path.exists(main_dart):
+                main_content = """import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'VibeAI App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('VibeAI App'),
+      ),
+      body: Center(
+        child: Text('Welcome to VibeAI!'),
+      ),
+    );
+  }
+}
+"""
+                with open(main_dart, "w") as f:
+                    f.write(main_content)
+
+        # Flutter Web Preview starten - AUTOMATISCH IM BROWSER (Chrome)
+        # Verwende 'chrome' statt 'web-server' um Browser automatisch zu öffnen
         cmd = [
             "flutter",
             "run",
             "-d",
-            "web-server",
+            "chrome",
             "--web-port",
             str(port),
             "--web-hostname",
@@ -230,7 +296,68 @@ class PreviewManager:
         # Log Streaming starten
         asyncio.create_task(self._pipe_preview_logs(user, port))
 
+        # Warte bis Server bereit ist (max 60 Sekunden für Flutter)
+        await self._wait_for_server_ready(port, max_wait=60)
+
+        # Browser automatisch öffnen (Chrome wird von flutter run -d chrome automatisch geöffnet)
+        # Aber als Fallback öffnen wir auch manuell, falls nötig
+        import webbrowser
+        try:
+            # Warte kurz, dann öffne Browser
+            await asyncio.sleep(2)
+            webbrowser.open(f"http://localhost:{port}")
+        except Exception as e:
+            print(f"⚠️  Could not auto-open browser: {e}")
+            # Flutter öffnet Chrome automatisch, also ist das OK
+
         return {"port": port, "url": f"http://localhost:{port}", "type": "flutter"}
+
+    # ---------------------------------------------------------
+    # SERVER READINESS CHECK
+    # ---------------------------------------------------------
+    async def _wait_for_server_ready(self, port: int, max_wait: int = 30) -> bool:
+        """
+        Wartet bis der Preview-Server bereit ist.
+        
+        Args:
+            port: Port des Servers
+            max_wait: Maximale Wartezeit in Sekunden
+            
+        Returns:
+            True wenn Server bereit, False wenn Timeout
+        """
+        url = f"http://localhost:{port}"
+        start_time = time.time()
+        
+        while time.time() - start_time < max_wait:
+            try:
+                # Prüfe ob Port geöffnet ist
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                result = sock.connect_ex(('localhost', port))
+                sock.close()
+                
+                if result == 0:
+                    # Port ist offen, prüfe HTTP-Response
+                    try:
+                        async with httpx.AsyncClient(timeout=2.0) as client:
+                            response = await client.get(url)
+                            if response.status_code < 500:  # 2xx, 3xx, 4xx sind OK (Server läuft)
+                                print(f"✅ Preview server ready on {url}")
+                                return True
+                    except (httpx.RequestError, httpx.TimeoutException):
+                        # Server startet noch, warte weiter
+                        pass
+                
+                # Warte 500ms bevor nächster Versuch
+                await asyncio.sleep(0.5)
+                
+            except Exception as e:
+                print(f"⚠️  Error checking server readiness: {e}")
+                await asyncio.sleep(0.5)
+        
+        print(f"⚠️  Preview server not ready after {max_wait}s on {url}")
+        return False
 
     # ---------------------------------------------------------
     # LOG STREAMING → WebSocket

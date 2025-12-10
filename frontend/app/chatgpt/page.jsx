@@ -101,7 +101,7 @@ export default function ChatGPTPage() {
 
   const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8001/api/models')
+      const response = await fetch('http://localhost:8005/api/models')
       const data = await response.json()
 
       if (Array.isArray(data)) {
@@ -182,7 +182,7 @@ export default function ChatGPTPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('http://127.0.0.1:8001/api/chat', {
+      const response = await fetch('http://localhost:8005/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

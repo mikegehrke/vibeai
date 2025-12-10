@@ -42,6 +42,7 @@ passlib[bcrypt]
 beautifulsoup4
 youtube-dl
 requests
+httpx
 
 # Container & Deployment
 docker

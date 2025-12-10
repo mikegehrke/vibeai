@@ -97,7 +97,7 @@ export default function ChatGPTModule() {
 
   const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/models/available')
+      const response = await fetch('http://localhost:8005/api/models')
       const data = await response.json()
 
       if (data.models) {
@@ -174,7 +174,7 @@ export default function ChatGPTModule() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8000/chatgpt/stream', {
+      const response = await fetch('http://localhost:8005/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

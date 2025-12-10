@@ -272,17 +272,32 @@ export default function AppBuilderStart() {
 
   // AI Prompt Generator
   const generatePrompt = async () => {
-    if (!userIdea.trim() || !selectedPlatform) return;
+    if (!userIdea.trim() || !selectedPlatform) {
+      alert('Bitte gib eine App-Idee ein und wähle eine Plattform!');
+      return;
+    }
 
     setIsGeneratingPrompt(true);
     setGeneratedPrompt('');
 
     try {
-      const res = await fetch('http://127.0.0.1:8001/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Du bist ein Expert Prompt Generator für App-Entwicklung.
+      console.log('🚀 Starting prompt generation...');
+      console.log('User Idea:', userIdea);
+      console.log('Platform:', selectedPlatform);
+
+      // Check if backend is available
+      try {
+        const healthCheck = await fetch('http://localhost:8005/health', { method: 'GET' });
+        if (!healthCheck.ok) {
+          throw new Error('Backend nicht erreichbar. Bitte starte das Backend.');
+        }
+      } catch (e) {
+        throw new Error('Backend nicht erreichbar. Bitte starte das Backend auf Port 8005.');
+      }
+
+      const requestBody = {
+        model: 'gpt-4o',
+        prompt: `Du bist ein Expert Prompt Generator für App-Entwicklung.
 
 USER IDEE: "${userIdea}"
 GEWÄHLTE PLATFORM: ${selectedPlatform.name} (${selectedPlatform.language})
@@ -308,34 +323,91 @@ APP BUILDER PROMPT:
 
 [Dein generierter Prompt hier]
 \`\`\``,
-          model: 'gpt-4o',
-          session_id: 12345
-        })
+        agent: 'aura',
+        conversation_history: [],
+        system_prompt: 'Du bist ein Expert Prompt Generator für App-Entwicklung.'
+      };
+
+      console.log('📤 Sending request to:', 'http://localhost:8005/api/chat');
+      
+      const res = await fetch('http://localhost:8005/api/chat', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('📥 Response status:', res.status, res.statusText);
+
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        let errorData = {};
+        try {
+          errorData = await res.json();
+        } catch (e) {
+          const errorText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${res.statusText}\n${errorText}`);
+        }
+        throw new Error(errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`);
       }
 
       const data = await res.json();
+      console.log('✅ Received response:', data);
       
-      if (data.success && data.response) {
-        setGeneratedPrompt(data.response);
-        setStep(3);
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // Handle different response formats
+      let promptText = '';
+      if (data.response) {
+        promptText = data.response;
+      } else if (data.success && data.data) {
+        promptText = data.data;
+      } else if (data.content) {
+        promptText = data.content;
+      } else if (typeof data === 'string') {
+        promptText = data;
       } else {
-        throw new Error(data.error || 'Unbekannter Fehler');
+        console.error('Unexpected response format:', data);
+        throw new Error('Ungültige Antwort vom Server. Bitte prüfe die Backend-Verbindung.');
       }
-
+      
+      if (!promptText || promptText.trim().length === 0) {
+        throw new Error('Leere Antwort vom Server erhalten.');
+      }
+      
+      // Extract prompt from markdown code block if present
+      const promptMatch = promptText.match(/APP BUILDER PROMPT:\s*([\s\S]*?)(?:```|$)/i);
+      if (promptMatch) {
+        setGeneratedPrompt(promptMatch[1].trim());
+      } else {
+        // Try to extract from any code block
+        const codeBlockMatch = promptText.match(/```[\s\S]*?APP BUILDER PROMPT:\s*([\s\S]*?)```/i);
+        if (codeBlockMatch) {
+          setGeneratedPrompt(codeBlockMatch[1].trim());
+        } else {
+          setGeneratedPrompt(promptText.trim());
+        }
+      }
+      
+      setStep(3);
       setIsGeneratingPrompt(false);
+      
+      // Scroll to generated prompt
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
 
     } catch (err) {
-      setGeneratedPrompt(`❌ Fehler: ${err.message}`);
+      console.error('❌ Prompt generation error:', err);
+      const errorMessage = err.message || 'Unbekannter Fehler';
+      setGeneratedPrompt(`❌ Fehler beim Generieren des Prompts:\n\n${errorMessage}\n\nBitte:\n1. Prüfe ob das Backend läuft (http://localhost:8005)\n2. Prüfe die Browser-Konsole für Details\n3. Versuche es erneut`);
       setIsGeneratingPrompt(false);
+      
+      // Show alert for user feedback
+      alert(`Fehler: ${errorMessage}\n\nBitte prüfe die Browser-Konsole (F12) für Details.`);
     }
   };
 
-  // App Builder starten
+  // App Builder starten - LIVE mit sofortiger Navigation zum Editor
   const createProject = async () => {
     if (!selectedPlatform) {
       setProgress('❌ Bitte wähle eine Plattform!');
@@ -344,24 +416,6 @@ APP BUILDER PROMPT:
 
     setIsCreatingProject(true);
     setProgress('🚀 Starte App-Generierung...');
-
-    // Progress Animation
-    const progressSteps = [
-      '🚀 Starte App-Generierung...',
-      '📋 Erstelle Projektstruktur...',
-      '🤖 AI analysiert Anforderungen...',
-      '📦 Generiere Dateien...',
-      '⚙️ Konfiguriere Dependencies...',
-      '🎨 Erstelle UI-Komponenten...',
-      '📝 Schreibe Code...',
-      '🔧 Optimiere Struktur...'
-    ];
-
-    let currentStep = 0;
-    const progressInterval = setInterval(() => {
-      currentStep = (currentStep + 1) % progressSteps.length;
-      setProgress(progressSteps[currentStep]);
-    }, 800);
 
     try {
       // Extract prompt from markdown code block OR use userIdea as fallback
@@ -405,41 +459,29 @@ APP BUILDER PROMPT:
       };
 
       const backendFramework = frameworkMapping[selectedPlatform.id] || 'react';
+      const projectName = userIdea.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '-');
+      const projectId = projectName.toLowerCase().replace(/\s+/g, '-');
 
-      const res = await fetch('http://127.0.0.1:8001/api/projects/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_name: userIdea.slice(0, 50).replace(/[^a-zA-Z0-9]/g, '-'),
-          framework: backendFramework,
-          description: finalPrompt,
-          options: {}
-        })
-      });
+      // SOFORT zum Editor navigieren - Live-Updates werden dort empfangen
+      // Speichere Build-Parameter für den Editor
+      localStorage.setItem(`build_${projectId}_params`, JSON.stringify({
+        project_name: projectName,
+        project_type: backendFramework,
+        description: finalPrompt,
+        platform: selectedPlatform.id
+      }));
 
-      clearInterval(progressInterval);
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Project creation failed');
-      }
-
-      const data = await res.json();
-
-      // Speichere Projektdaten in localStorage
-      localStorage.setItem(`project_${data.project_id}`, JSON.stringify(data));
-
-      setProgress(`✅ ${data.files_created} Dateien erfolgreich erstellt!`);
-
-      // Redirect to Builder
-      setTimeout(() => {
-        router.push(`/builder/${data.project_id}`);
-      }, 1500);
+      // Navigiere sofort zum Editor
+      router.push(`/builder/${projectId}?live_build=true`);
 
     } catch (err) {
-      clearInterval(progressInterval);
-      setProgress(`❌ Fehler: ${err.message}`);
+      console.error('❌ Project creation error:', err);
+      const errorMessage = err.message || 'Unbekannter Fehler beim Erstellen des Projekts';
+      setProgress(`❌ Fehler: ${errorMessage}`);
       setIsCreatingProject(false);
+      
+      // Show detailed error to user
+      alert(`Fehler beim Erstellen der App:\n\n${errorMessage}\n\nBitte:\n1. Prüfe die Browser-Konsole (F12) für Details\n2. Stelle sicher, dass das Backend läuft\n3. Prüfe ob OpenAI API Key konfiguriert ist`);
     }
   };
 

@@ -128,7 +128,7 @@ export default function LiveAgentChat({ projectId, onCodeUpdate, onFileCreate })
 
     try {
       // Streaming-Request an Backend
-      const response = await fetch('http://localhost:8000/chatgpt/stream', {
+      const response = await fetch('http://localhost:8005/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

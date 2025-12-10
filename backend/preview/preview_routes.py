@@ -19,6 +19,7 @@ Features:
 - Live Logs über WebSocket
 """
 
+import os
 from typing import Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket
@@ -69,6 +70,15 @@ async def start_preview(request: Request) -> Dict[str, Any]:
         raise HTTPException(404, "Project not found")
 
     project_path = project_manager.get_project_path(user.email, project_id)
+    
+    # Prüfe ob Projekt-Verzeichnis existiert und Dateien hat
+    if not os.path.exists(project_path) or not os.listdir(project_path):
+        # Versuche Dateien aus Request Body zu speichern (falls vorhanden)
+        files = body.get("files", [])
+        if files:
+            project_manager.save_files_to_project(user.email, project_id, files)
+        else:
+            raise HTTPException(400, "Project directory is empty. Please save files first.")
 
     try:
         # Preview starten

@@ -13,6 +13,8 @@ from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from builder.builder_pipeline import builder_pipeline
+
 router = APIRouter(prefix="/api/builder", tags=["App Builder"])
 
 

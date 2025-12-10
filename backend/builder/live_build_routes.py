@@ -78,7 +78,7 @@ async def websocket_builder(websocket: WebSocket):
         print("❌ WebSocket Client disconnected")
 
 
-@router.post("/api/build-project-live", response_model=BuildProjectResponse)
+@router.post("/build-project-live", response_model=BuildProjectResponse)
 async def build_project_live(request: BuildProjectRequest):
     """
     🔥 LIVE PROJECT BUILDER
@@ -107,32 +107,64 @@ async def build_project_live(request: BuildProjectRequest):
             "project_type": request.project_type
         })
         
-        # Nutze den MASTER COORDINATOR mit ALLEN Agents!
-        result = await master_coordinator.build_complete_project(
-            project_name=request.project_name,
-            project_type=request.project_type,
+        # Nutze build_complete_app für VOLLSTÄNDIGE App mit 30-50+ Dateien
+        # Importiere die Funktion direkt
+        from builder.build_complete_app import build_complete_app, BuildCompleteAppRequest
+        
+        # Broadcast: Starte Generierung
+        await broadcast_to_all({
+            "event": "build.step",
+            "step": "generating",
+            "message": "🤖 AI generiert jetzt eine VOLLSTÄNDIGE App mit 30-50+ Dateien..."
+        })
+        
+        # Erstelle Request für build_complete_app
+        build_request = BuildCompleteAppRequest(
+            app_name=request.project_name,
+            platform=request.project_type,
             description=request.description,
-            user_id="default_user",
-            include_tests=True,
-            websocket_callback=broadcast_to_all
+            features=[]  # Kann später erweitert werden
         )
         
-        files = result.get("files", []) + result.get("tests", [])
+        # Rufe build_complete_app auf (gibt direkt Files zurück)
+        try:
+            build_result = await build_complete_app(build_request)
+        except Exception as e:
+            print(f"❌ build_complete_app error: {e}")
+            raise Exception(f"Build failed: {str(e)}")
         
-        # Sende jede Datei einzeln via WebSocket
+        if not build_result.get("success"):
+            raise Exception(f"Build failed: {build_result.get('message', 'Unknown error')}")
+        
+        files = build_result.get("files", [])
+        
+        print(f"✅ Build complete: {len(files)} files generated")
+        
+        # Broadcast: Parsing abgeschlossen
+        await broadcast_to_all({
+            "event": "build.step",
+            "step": "parsing",
+            "message": f"✅ {len(files)} Dateien generiert! Sende jetzt live..."
+        })
+        
+        # Sende jede Datei einzeln via WebSocket - LIVE Schritt für Schritt
+        total_files = len(files)
+        
         for idx, file in enumerate(files):
+            # Broadcast: Datei wird erstellt
             await broadcast_to_all({
                 "event": "file.created",
                 "path": file.get("path"),
                 "content": file.get("content"),
+                "language": file.get("language", "text"),
                 "progress": {
                     "current": idx + 1,
-                    "total": len(files)
+                    "total": total_files
                 }
             })
             
-            # Kleine Verzögerung damit Frontend es sieht
-            await asyncio.sleep(0.1)
+            # Verzögerung für visuellen Effekt (User sieht live wie Dateien erstellt werden)
+            await asyncio.sleep(0.15)  # 150ms zwischen Dateien für besseren visuellen Effekt
         
         # Broadcast: Finished
         await broadcast_to_all({

@@ -28,7 +28,7 @@ export default function FileExplorer({ projectId }) {
     async function loadFiles() {
         try {
             setLoading(true);
-            const res = await fetch(`http://localhost:8000/api/files/list?projectId=${projectId}`);
+            const res = await fetch(`http://localhost:8005/api/projects/${projectId}/files`);
             
             if (!res.ok) {
                 throw new Error("Failed to load files");

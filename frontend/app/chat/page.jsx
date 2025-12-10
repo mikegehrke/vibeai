@@ -18,7 +18,7 @@ export default function ChatPage() {
 
   const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/models/available')
+      const response = await fetch('http://localhost:8005/api/models')
       const data = await response.json()
 
       // Konvertiere zu flacher Liste

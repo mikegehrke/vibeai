@@ -67,7 +67,7 @@ Just ask me anything about your project!`,
         setLoading(true);
 
         try {
-            const res = await fetch("http://localhost:8000/ai/orchestrator", {
+            const res = await fetch("http://localhost:8005/api/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

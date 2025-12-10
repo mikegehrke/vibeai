@@ -126,6 +126,7 @@ class ChatRequest(BaseModel):
     system_prompt: Optional[str] = None
     conversation_history: Optional[List[Dict[str, Any]]] = []
     session_id: Optional[int] = None
+    project_id: Optional[str] = None  # For code access
 
 class ModelInfo(BaseModel):
     id: str
@@ -562,13 +563,25 @@ async def get_model(model_id: str):
 # -------------------------------------------------------------
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    """Chat with AI models - No authentication required for demo"""
+    """Chat with AI models - Supports streaming"""
     
     # Validate model
     if request.model not in MODELS:
         raise HTTPException(status_code=400, detail=f"Model {request.model} not supported")
     
     model_info = MODELS[request.model]
+    
+    # If streaming requested, return streaming response
+    if request.stream:
+        return StreamingResponse(
+            stream_chat_response(request, model_info),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
     
     try:
         response_content = ""
@@ -583,8 +596,112 @@ async def chat(request: ChatRequest):
             if msg.get("role") in ["user", "assistant"]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
         
-        # Add current prompt
-        if request.system_prompt and request.model in ["o1", "o1-mini"]:
+        # Get project context if project_id is provided
+        project_context = ""
+        project_files = []
+        project_id = getattr(request, 'project_id', None)
+        if project_id:
+            try:
+                from codestudio.project_manager import project_manager
+                # Try to load project files
+                project = project_manager.load_project("default_user", project_id)
+                if project:
+                    project_path = project_manager.get_project_path("default_user", project_id)
+                    # Read all files in project
+                    import os
+                    if os.path.exists(project_path):
+                        for root, dirs, files in os.walk(project_path):
+                            for file in files:
+                                if file.startswith('.') or '__pycache__' in root:
+                                    continue
+                                file_path = os.path.join(root, file)
+                                try:
+                                    with open(file_path, 'r', encoding='utf-8') as f:
+                                        content = f.read()
+                                        rel_path = os.path.relpath(file_path, project_path)
+                                        project_files.append({
+                                            "path": rel_path,
+                                            "content": content[:5000]  # Limit content size
+                                        })
+                                except:
+                                    pass
+                    
+                    if project_files:
+                        project_context = f"\n\n## PROJECT CONTEXT (Project: {request.project_id})\n\n"
+                        project_context += "You have access to the following files:\n\n"
+                        for file_info in project_files[:20]:  # Limit to 20 files
+                            project_context += f"### {file_info['path']}\n```\n{file_info['content'][:2000]}\n```\n\n"
+            except Exception as e:
+                print(f"⚠️  Error loading project context: {e}")
+        
+        # Add current prompt with intelligent system prompt if not provided
+        if not request.system_prompt:
+            # Default intelligent system prompt with FULL capabilities
+            request.system_prompt = """🚀 You are an intelligent Auto-Coder Agent in VibeAI Builder with DIRECT ACCESS to the user's code and FULL AUTOMATION capabilities.
+
+🔥 What you can do (AUTOMATICALLY):
+• 📁 CREATE & EDIT files - Automatically
+• 🤖 GENERATE code - With AI-Power
+• 🔧 FIX bugs - Instantly
+• 🎨 DESIGN UI/UX - Modern & responsive
+• 📊 ANALYZE data - Smart insights
+• 🚀 DEPLOY apps - One-click
+• ⚙️ EXECUTE terminal commands - npm install, flutter pub get, etc.
+• 📦 INSTALL packages - Automatically
+• 🏗️ BUILD projects - Run build commands
+• 🧪 TEST code - Run tests
+
+⚡ Quick Actions (you understand and execute automatically):
+• "erstelle eine React App" → Create complete React app with all files
+• "fixe alle Fehler" → Find and fix all errors in the project
+• "optimiere den Code" → Optimize code for performance and best practices
+• "erstelle ein Dashboard" → Create a complete dashboard UI
+• "installiere packages" → Install all required dependencies
+• "starte den Server" → Start development server
+• "baue die App" → Build the application
+
+📝 Code Format:
+When you create/modify code, format as:
+```language path/to/file
+[COMPLETE CODE HERE]
+```
+
+🔧 Terminal Format - CRITICAL:
+When you need to execute ANY command, you MUST format it as:
+TERMINAL: command here
+
+Examples:
+- "npm install" → TERMINAL: npm install
+- "flutter pub get" → TERMINAL: flutter pub get
+- "npm start" → TERMINAL: npm start
+- "flutter run -d chrome" → TERMINAL: flutter run -d chrome
+
+IMPORTANT: 
+- ALWAYS use "TERMINAL: " prefix for commands
+- DO NOT just say "I will run npm install" - ACTUALLY output "TERMINAL: npm install"
+- The system will SHOW the command and ASK the user for approval (like Cursor)
+- Show what you're doing, THEN show the command: "⚙️ Installing packages...\nTERMINAL: npm install"
+- The user will see a "Run" button and can approve or skip the command
+
+🎯 Your Workflow (EXECUTE REAL ACTIONS):
+1. UNDERSTAND the user's request completely
+2. ANALYZE the current project structure
+3. CREATE/MODIFY files automatically (use code blocks)
+4. EXECUTE necessary commands (ALWAYS use TERMINAL: prefix)
+5. FIX any errors that occur
+6. VERIFY everything works
+
+You work FULLY AUTOMATICALLY - when you say you'll do something, ACTUALLY DO IT by using the correct format!
+You have full context of the project. Use this to provide accurate, helpful suggestions.
+Be proactive, helpful, and provide complete, working solutions.
+Always explain what you're doing and why.
+CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: format for automatic execution."""
+        
+        # Add project context to system prompt
+        if project_context:
+            request.system_prompt += project_context
+        
+        if request.model in ["o1", "o1-mini"]:
             # O1 models: prepend system to user message
             full_prompt = f"{request.system_prompt}\n\n{request.prompt}"
         else:
@@ -594,6 +711,11 @@ async def chat(request: ChatRequest):
         
         # Route to appropriate provider
         if model_info["provider"] == "OpenAI":
+            if not openai_client:
+                raise HTTPException(
+                    status_code=503,
+                    detail="OpenAI API key not configured. Please set OPENAI_API_KEY environment variable."
+                )
             if request.model in ["o1", "o1-mini"]:
                 # O1 models have different parameters
                 response = openai_client.chat.completions.create(
@@ -606,11 +728,19 @@ async def chat(request: ChatRequest):
                     model=request.model,
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=2000
+                    max_tokens=4000,  # Increased for better responses
+                    top_p=0.9,
+                    frequency_penalty=0.0,
+                    presence_penalty=0.0
                 )
             response_content = response.choices[0].message.content
             
         elif model_info["provider"] == "Anthropic":
+            if not anthropic_client:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Anthropic API key not configured. Please set ANTHROPIC_API_KEY environment variable."
+                )
             # Convert messages format for Anthropic
             claude_messages = []
             system_content = None
@@ -634,6 +764,11 @@ async def chat(request: ChatRequest):
             response_content = response.content[0].text
             
         elif model_info["provider"] == "Google":
+            if not GENAI_AVAILABLE or not google_api_key:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Google API key not configured. Please set GOOGLE_API_KEY environment variable."
+                )
             # Use Gemini
             model = genai.GenerativeModel(request.model)
             
@@ -648,6 +783,11 @@ async def chat(request: ChatRequest):
             if gemini_messages:
                 response = model.generate_content([m["parts"][0] for m in gemini_messages])
                 response_content = response.text
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Provider {model_info['provider']} not supported or not configured"
+            )
             
         # Save to session if provided
         if request.session_id and request.session_id in sessions_db:
@@ -672,19 +812,424 @@ async def chat(request: ChatRequest):
             "response": response_content,
             "model": request.model,
             "provider": model_info["provider"],
-            "agent": request.agent,
+            "agent": request.agent or "aura",
             "success": True
         }
         
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         print(f"❌ Chat error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        
+        # Return error in response instead of raising exception for better UX
+        return {
+            "response": f"I apologize, but I encountered an error: {str(e)}. Please try again or check your API keys.",
+            "model": request.model,
+            "provider": model_info.get("provider", "unknown"),
+            "agent": request.agent or "aura",
+            "success": False,
+            "error": str(e)
+        }
+
+
+# Streaming Chat Response Generator
+async def stream_chat_response(request: ChatRequest, model_info: Dict):
+    """Stream chat responses with work steps - SHOWS REAL ACTIONS"""
+    import json
+    
+    try:
+        # Get project context
+        project_context = ""
+        project_files = []
+        project_id = getattr(request, 'project_id', None)
+        if project_id:
+            try:
+                from codestudio.project_manager import project_manager
+                project = project_manager.load_project("default_user", project_id)
+                if project:
+                    project_path = project_manager.get_project_path("default_user", project_id)
+                    import os
+                    if os.path.exists(project_path):
+                        for root, dirs, files in os.walk(project_path):
+                            for file in files:
+                                if file.startswith('.') or '__pycache__' in root:
+                                    continue
+                                file_path = os.path.join(root, file)
+                                try:
+                                    with open(file_path, 'r', encoding='utf-8') as f:
+                                        content = f.read()
+                                        rel_path = os.path.relpath(file_path, project_path)
+                                        project_files.append({
+                                            "path": rel_path,
+                                            "content": content[:5000]
+                                        })
+                                except:
+                                    pass
+                    
+                    if project_files:
+                        project_context = f"\n\n## PROJECT CONTEXT (Project: {project_id})\n\n"
+                        for file_info in project_files[:20]:
+                            project_context += f"### {file_info['path']}\n```\n{file_info['content'][:2000]}\n```\n\n"
+            except Exception as e:
+                print(f"⚠️  Error loading project context: {e}")
+        
+        # Build system prompt with REAL ACTION INSTRUCTIONS
+        if not request.system_prompt:
+            request.system_prompt = """🚀 You are an intelligent Auto-Coder Agent in VibeAI Builder with DIRECT ACCESS to the user's code and FULL AUTOMATION capabilities.
+
+🔥 What you can do (AUTOMATICALLY):
+• 📁 CREATE & EDIT files - Automatically
+• 🤖 GENERATE code - With AI-Power
+• 🔧 FIX bugs - Instantly
+• 🎨 DESIGN UI/UX - Modern & responsive
+• 📊 ANALYZE data - Smart insights
+• 🚀 DEPLOY apps - One-click
+• ⚙️ EXECUTE terminal commands - npm install, flutter pub get, etc.
+• 📦 INSTALL packages - Automatically
+• 🏗️ BUILD projects - Run build commands
+• 🧪 TEST code - Run tests
+
+⚡ Quick Actions (you understand and execute automatically):
+• "erstelle eine React App" → Create complete React app with all files
+• "fixe alle Fehler" → Find and fix all errors in the project
+• "optimiere den Code" → Optimize code for performance and best practices
+• "erstelle ein Dashboard" → Create a complete dashboard UI
+• "installiere packages" → Install all required dependencies
+• "starte den Server" → Start development server
+• "baue die App" → Build the application
+
+📝 Code Format:
+When you create/modify code, format as:
+```language path/to/file
+[COMPLETE CODE HERE]
+```
+
+🔧 Terminal Format - CRITICAL:
+When you need to execute ANY command, you MUST format it as:
+TERMINAL: command here
+
+Examples:
+- "npm install" → TERMINAL: npm install
+- "flutter pub get" → TERMINAL: flutter pub get
+- "npm start" → TERMINAL: npm start
+- "flutter run -d chrome" → TERMINAL: flutter run -d chrome
+
+IMPORTANT: 
+- ALWAYS use "TERMINAL: " prefix for commands
+- DO NOT just say "I will run npm install" - ACTUALLY output "TERMINAL: npm install"
+- The system will SHOW the command and ASK the user for approval (like Cursor)
+- Show what you're doing, THEN show the command: "⚙️ Installing packages...\nTERMINAL: npm install"
+- The user will see a "Run" button and can approve or skip the command
+
+🎯 Your Workflow (STEP BY STEP - LIKE A REAL DEVELOPER - CRITICAL):
+CRITICAL: You MUST work STEP BY STEP, showing ONE action at a time. The user watches you work LIVE.
+
+HOW TO WORK (EXACTLY LIKE A REAL DEVELOPER):
+
+1. FIRST: Show what you're about to do
+   Example: "📝 Analysiere Projektstruktur..."
+   [STOP HERE - let user read this]
+
+2. THEN: Show your findings/actions
+   Example: "🔍 Gefunden: 3 Fehler in main.dart (Zeilen 12, 45, 78)"
+   [STOP HERE - let user read this]
+
+3. THEN: Show what you're fixing
+   Example: "✅ Fixe Fehler in Zeile 45..."
+   [STOP HERE - let user read this]
+
+4. THEN: Show the code (ONE file at a time)
+   Example: "📁 Erstelle: src/components/Button.jsx"
+   [STOP HERE]
+   Then show: ```jsx src/components/Button.jsx
+   [code here]
+   ```
+   [STOP HERE - let user read this]
+
+5. THEN: Next step
+   Example: "⚙️ Installiere Packages..."
+   [STOP HERE]
+   Then show: "TERMINAL: npm install"
+   [STOP HERE - wait for user approval]
+
+CRITICAL RULES - YOU MUST FOLLOW:
+1. Write ONE sentence/step at a time
+2. After each step, add a newline and pause
+3. NEVER write multiple steps in one go
+4. Show emoji + action, then STOP
+5. Then show result, then STOP
+6. Then show next step, then STOP
+7. NEVER dump everything at once!
+
+Example of CORRECT output (word by word, step by step):
+"📝 Analysiere Projektstruktur...\n\n"
+[user reads this]
+"🔍 Scanne nach Fehlern...\n\n"
+[user reads this]
+"✅ Gefunden: 2 Fehler\n\n"
+[user reads this]
+"🔧 Fixe ersten Fehler...\n\n"
+[user reads this]
+"📁 Erstelle neue Datei: Button.jsx\n\n"
+[user reads this]
+"```jsx src/components/Button.jsx\n"
+[code appears word by word]
+"```\n\n"
+[user reads this]
+"⚙️ Installiere Packages...\n\n"
+[user reads this]
+"TERMINAL: npm install\n\n"
+[user approves]
+
+Example of WRONG output (DON'T DO THIS):
+"📝 Analysiere... 🔍 Finde... ✅ Fixe... 📁 Erstelle... [all code] ⚙️ TERMINAL: npm install"
+This is TERRIBLE - user can't follow!
+
+WORK LIKE YOU'RE TYPING LIVE:
+- Type one thought at a time
+- Pause between thoughts
+- Let user read each step
+- Show your thinking process
+- Be methodical, not rushed
+
+You work FULLY AUTOMATICALLY - but TYPE STEP BY STEP, like a real developer typing live!
+You have full context of the project. Use this to provide accurate, helpful suggestions.
+Be proactive, helpful, and provide complete, working solutions.
+Always explain what you're doing and why.
+CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: format for automatic execution."""
+        
+        if project_context:
+            request.system_prompt += project_context
+        
+        # Build messages
+        messages = []
+        if request.system_prompt and request.model not in ["o1", "o1-mini"]:
+            messages.append({"role": "system", "content": request.system_prompt})
+        
+        for msg in request.conversation_history:
+            if msg.get("role") in ["user", "assistant"]:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+        
+        if request.model in ["o1", "o1-mini"]:
+            full_prompt = f"{request.system_prompt}\n\n{request.prompt}"
+        else:
+            full_prompt = request.prompt
+            
+        messages.append({"role": "user", "content": full_prompt})
+        
+        # Stream response based on provider
+        if model_info["provider"] == "OpenAI":
+            if not openai_client:
+                yield f"data: {json.dumps({'error': 'OpenAI API key not configured', 'done': True})}\n\n"
+                return
+            
+            if request.model in ["o1", "o1-mini"]:
+                response = openai_client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    max_completion_tokens=16000
+                )
+                content = response.choices[0].message.content
+                yield f"data: {json.dumps({'content': content, 'done': True})}\n\n"
+            else:
+                stream = openai_client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=4000,
+                    stream=True
+                )
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
+        
+        elif model_info["provider"] == "Anthropic":
+            if not anthropic_client:
+                yield f"data: {json.dumps({'error': 'Anthropic API key not configured', 'done': True})}\n\n"
+                return
+            
+            claude_messages = []
+            system_content = None
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_content = msg["content"]
+                else:
+                    claude_messages.append(msg)
+            
+            kwargs = {
+                "model": request.model,
+                "max_tokens": 2000,
+                "messages": claude_messages,
+                "stream": True
+            }
+            if system_content:
+                kwargs["system"] = system_content
+            
+            async with anthropic_client.messages.stream(**kwargs) as stream:
+                async for text in stream.text_stream:
+                    yield f"data: {json.dumps({'content': text})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        
+        elif model_info["provider"] == "Google":
+            if not GENAI_AVAILABLE or not google_api_key:
+                yield f"data: {json.dumps({'error': 'Google API key not configured', 'done': True})}\n\n"
+                return
+            
+            model = genai.GenerativeModel(request.model)
+            gemini_messages = []
+            for msg in messages:
+                if msg["role"] == "user":
+                    gemini_messages.append({"role": "user", "parts": [msg["content"]]})
+                elif msg["role"] == "assistant":
+                    gemini_messages.append({"role": "model", "parts": [msg["content"]]})
+            
+            if gemini_messages:
+                response = model.generate_content(
+                    [m["parts"][0] for m in gemini_messages],
+                    stream=True
+                )
+                for chunk in response:
+                    if chunk.text:
+                        yield f"data: {json.dumps({'content': chunk.text})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Streaming error: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
 
 # -------------------------------------------------------------
 # PROJECT GENERATION
 # -------------------------------------------------------------
 from project_generator.project_router import router as project_router
 app.include_router(project_router, prefix="/api/projects", tags=["projects"])
+
+# -------------------------------------------------------------
+# BUILDER & CODE STUDIO
+# -------------------------------------------------------------
+try:
+    from builder.routes import router as builder_router
+    app.include_router(builder_router, tags=["App Builder"])
+    print("✅ Builder Router loaded")
+except Exception as e:
+    print(f"⚠️  Builder Router failed to load: {e}")
+
+try:
+    from builder.build_complete_app import router as build_complete_router
+    app.include_router(build_complete_router, tags=["App Builder"])
+    print("✅ Build Complete App Router loaded")
+except Exception as e:
+    print(f"⚠️  Build Complete App Router failed to load: {e}")
+
+try:
+    from builder.live_build_routes import router as live_build_router
+    app.include_router(live_build_router, prefix="/api", tags=["Live Builder"])
+    print("✅ Live Build Router loaded")
+except Exception as e:
+    print(f"⚠️  Live Build Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    from builder.smart_agent_routes import router as smart_agent_router
+    # Router hat Routen ohne prefix, dann mit /api/smart-agent prefix registrieren
+    app.include_router(smart_agent_router, prefix="/api/smart-agent", tags=["Smart Agent"])
+    print("✅ Smart Agent Router loaded")
+    print(f"   Endpoints: /api/smart-agent/generate, /api/smart-agent/ws")
+    print(f"   Router prefix: {smart_agent_router.prefix}")
+    print(f"   Router routes: {[r.path for r in smart_agent_router.routes if hasattr(r, 'path')]}")
+except Exception as e:
+    print(f"⚠️  Smart Agent Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
+    from builder.auto_fix_builder import router as autofix_router
+    app.include_router(autofix_router, tags=["App Builder"])
+    print("✅ Auto-Fix Builder Router loaded")
+except Exception as e:
+    print(f"⚠️  Auto-Fix Builder Router failed to load: {e}")
+
+try:
+    from builder.git_integration import router as git_router
+    app.include_router(git_router, tags=["Git"])
+    print("✅ Git Integration Router loaded")
+except Exception as e:
+    print(f"⚠️  Git Integration Router failed to load: {e}")
+
+try:
+    from codestudio.package_manager import router as package_router
+    app.include_router(package_router, tags=["Package Manager"])
+    print("✅ Package Manager Router loaded")
+except Exception as e:
+    print(f"⚠️  Package Manager Router failed to load: {e}")
+
+try:
+    from codestudio.terminal_routes import router as terminal_router
+    app.include_router(terminal_router, tags=["Terminal"])
+    print("✅ Terminal Router loaded")
+except Exception as e:
+    print(f"⚠️  Terminal Router failed to load: {e}")
+
+try:
+    from codestudio.routes import router as codestudio_router
+    app.include_router(codestudio_router, tags=["Code Studio"])
+    print("✅ Code Studio Router loaded")
+except Exception as e:
+    print(f"⚠️  Code Studio Router failed to load: {e}")
+
+try:
+    from preview.preview_routes import router as preview_router
+    app.include_router(preview_router, prefix="/api", tags=["Preview"])
+    print("✅ Preview Router loaded")
+except Exception as e:
+    print(f"⚠️  Preview Router failed to load: {e}")
+
+# -------------------------------------------------------------
+# CHAT & AGENTS
+# -------------------------------------------------------------
+try:
+    from chat.agent_router import router as chat_agent_router
+    app.include_router(chat_agent_router, prefix="/api/chat", tags=["Chat Agents"])
+    print("✅ Chat Agent Router loaded")
+except Exception as e:
+    print(f"⚠️  Chat Agent Router failed to load: {e}")
+
+# TEAM COLLABORATION
+# -------------------------------------------------------------
+try:
+    from ai.team.team_routes import router as team_router
+    app.include_router(team_router, prefix="/api", tags=["Team Collaboration"])
+    print("✅ Team Collaboration Router loaded")
+except Exception as e:
+    print(f"⚠️  Team Collaboration Router failed to load: {e}")
+
+# AUDIO TRANSCRIPTION (Whisper)
+# -------------------------------------------------------------
+import io
+@app.post("/api/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    """Transcribe audio using OpenAI Whisper API"""
+    try:
+        # Read audio file
+        audio_data = await file.read()
+        audio_file = io.BytesIO(audio_data)
+        audio_file.name = file.filename or "audio.webm"
+        
+        # Transcribe with Whisper
+        transcription = openai.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+        
+        return {"text": transcription.text, "status": "success"}
+    except Exception as e:
+        print(f"❌ Transcription error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # -------------------------------------------------------------
 # ROOT & HEALTH ENDPOINTS
@@ -738,4 +1283,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8005)
