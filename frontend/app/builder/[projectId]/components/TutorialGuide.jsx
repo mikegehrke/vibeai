@@ -23,38 +23,108 @@ const TUTORIALS = {
     steps: [
       {
         id: 1,
-        title: "Willkommen!",
-        content: "Willkommen im VibeAI App Builder! Hier kannst du Apps mit KI erstellen.",
+        title: "Willkommen im App Builder!",
+        content: "Willkommen im VibeAI App Builder! 🎉\n\nDies ist ein vollständiger, KI-gestützter App-Entwicklungseditor. Du kannst hier:\n• Apps mit KI erstellen (Flutter, React, Python, etc.)\n• Code live bearbeiten\n• Preview in Echtzeit sehen\n• Mit AI-Agenten chatten\n• Git, Terminal, Tests und mehr nutzen\n\nLass uns gemeinsam deine erste App erstellen!",
         target: null,
         action: null
       },
       {
         id: 2,
-        title: "Chat öffnen",
-        content: "Klicke auf das Chat-Icon rechts, um mit dem AI-Agenten zu sprechen.",
+        title: "Die Oberfläche verstehen",
+        content: "Der App Builder hat 4 Hauptbereiche:\n\n📁 **Links**: File Tree, Suche, Git, Run & Debug\n💻 **Mitte**: Code Editor (Monaco - wie VS Code)\n💬 **Rechts**: Chat Panel (AI-Agenten) und Review Panel\n📺 **Unten**: Terminal, Output, Debug Console\n\nDu kannst alle Panels ein-/ausblenden und ihre Größe anpassen.",
+        target: null,
+        action: null
+      },
+      {
+        id: 3,
+        title: "Chat Panel öffnen",
+        content: "Der Chat ist dein Hauptwerkzeug! Hier sprichst du mit den AI-Agenten.\n\n**So öffnest du den Chat:**\n1. Klicke auf das Chat-Icon in der rechten Sidebar\n2. Oder drücke `Ctrl/Cmd + L`\n\nDer Chat ist IMMER verfügbar - auch während der Agent arbeitet!",
         target: "#chat-panel",
         action: "highlight"
       },
       {
-        id: 3,
-        title: "App anfordern",
-        content: "Sage einfach: 'Erstelle eine Flutter App namens MyApp' oder ähnliches.",
+        id: 4,
+        title: "Die 4 AI-Agenten kennenlernen",
+        content: "Es gibt 4 spezialisierte Agenten:\n\n✨ **Aura**: Allgemeiner Assistant - beantwortet Fragen\n💡 **Cora**: Code Expert - programmiert und debuggt\n🧠 **Devra**: Deep Thinker - komplexe Analysen\n🎨 **Lumi**: Creative Genius - Design und Kreativität\n\n**Tipp**: Für App-Erstellung nutze Aura oder Cora. Du kannst jederzeit zwischen Agenten wechseln!",
+        target: null,
+        action: null
+      },
+      {
+        id: 5,
+        title: "Deine erste App anfordern",
+        content: "Jetzt erstellen wir deine erste App! 🚀\n\n**So funktioniert's:**\n1. Klicke in das Chat-Eingabefeld unten\n2. Schreibe z.B.: \"Erstelle eine Flutter App namens MyApp\"\n3. Oder: \"Erstelle eine React App mit Dark Mode\"\n4. Drücke Enter oder klicke auf Send\n\n**Der Smart Agent startet automatisch** und erstellt deine App Schritt für Schritt!",
         target: "#chat-input",
         action: "focus"
       },
       {
-        id: 4,
+        id: 6,
+        title: "Smart Agent verstehen",
+        content: "Der **Smart Agent** ist ein intelligenter AI-Agent, der:\n\n✅ **Projektstruktur plant** - erstellt alle nötigen Dateien\n✅ **Code schreibt** - Zeichen für Zeichen, wie ein echter Entwickler\n✅ **Erklärt** - sagt dir, was er macht und warum\n✅ **Assets erstellt** - Icons, Logos, App Store Beschreibungen\n✅ **Production-ready Code** - mit Best Practices\n\n**Du siehst alles live im Editor!**",
+        target: null,
+        action: null
+      },
+      {
+        id: 7,
         title: "Live-Erstellung beobachten",
-        content: "Schaue zu, wie der Agent Schritt für Schritt Dateien erstellt und Code schreibt!",
+        content: "Schaue jetzt zu, wie der Agent arbeitet! 👀\n\n**Was du siehst:**\n• Dateien werden im File Tree erstellt\n• Code wird Zeichen für Zeichen geschrieben\n• Erklärungen erscheinen im Chat\n• Fortschritt wird angezeigt\n\n**Wichtig:** Du kannst während der Generierung weiter chatten! Der Chat blockiert nicht.",
         target: "#editor",
         action: "highlight"
       },
       {
-        id: 5,
-        title: "Preview ansehen",
-        content: "Die Live-Preview zeigt dir deine App in Echtzeit!",
+        id: 8,
+        title: "File Tree verstehen",
+        content: "Der **File Tree** (links) zeigt alle Dateien deines Projekts.\n\n**Was du hier siehst:**\n• 📁 Ordner (klicken zum Expandieren)\n• 📄 Dateien (klicken zum Öffnen)\n• 🎨 Framework-Icons (Flutter, React, etc.)\n• ⚡ Markierungen für geänderte Dateien\n\n**Tipp**: Klicke auf eine Datei, um sie im Editor zu öffnen!",
+        target: "#file-tree",
+        action: "highlight"
+      },
+      {
+        id: 9,
+        title: "Code im Editor ansehen",
+        content: "Der **Monaco Editor** ist die gleiche Engine wie VS Code! 💻\n\n**Features:**\n• Syntax Highlighting\n• Auto-Completion (IntelliSense)\n• Multi-Cursor\n• Code Folding\n• Go to Definition\n• Und vieles mehr!\n\n**Tipp**: Du kannst den Code direkt bearbeiten. Änderungen werden automatisch gespeichert!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 10,
+        title: "Preview starten",
+        content: "Zeit, deine App zu sehen! 📺\n\n**So startest du die Preview:**\n1. Klicke auf das **Run & Debug Panel** (Play-Icon links)\n2. Klicke auf **\"Launch App\"**\n3. Der Preview-Server startet automatisch\n4. Ein Browser-Tab öffnet sich im Editor\n\n**Die Preview zeigt deine App live!** Änderungen werden sofort sichtbar (Hot Reload).",
+        target: null,
+        action: null
+      },
+      {
+        id: 11,
+        title: "Preview verstehen",
+        content: "Die **Live Preview** ist direkt im Editor integriert! 🌐\n\n**Features:**\n• Browser-Tabs im Editor (nicht separat)\n• Hot Reload - Änderungen sofort sichtbar\n• Multi-Framework Support (Flutter, React, HTML)\n• URL Navigation möglich\n• Reload-Button zum Neuladen\n\n**Tipp**: Du kannst mehrere Browser-Tabs öffnen für verschiedene URLs!",
         target: "#preview-panel",
         action: "highlight"
+      },
+      {
+        id: 12,
+        title: "Code anpassen",
+        content: "Du kannst den generierten Code jederzeit anpassen! ✏️\n\n**Option 1: Im Editor**\n• Öffne eine Datei\n• Bearbeite den Code direkt\n• Änderungen werden automatisch gespeichert\n\n**Option 2: Mit Chat**\n• Sage: \"Ändere die Farbe zu Blau\"\n• Oder: \"Füge einen Button hinzu\"\n• Der Agent macht die Änderungen für dich!\n\n**Beide Methoden funktionieren parallel!**",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 13,
+        title: "Mit dem Agent chatten",
+        content: "Der Chat ist dein mächtigstes Werkzeug! 💬\n\n**Was du machen kannst:**\n• Fragen stellen: \"Wie funktioniert das?\"\n• Code ändern: \"Mache den Button größer\"\n• Features hinzufügen: \"Füge Dark Mode hinzu\"\n• Erklärungen: \"Erkläre mir diesen Code\"\n• Terminal-Befehle: Agent schlägt Befehle vor\n\n**Der Agent arbeitet parallel** - auch während Smart Agent läuft!",
+        target: "#chat-panel",
+        action: "highlight"
+      },
+      {
+        id: 14,
+        title: "Weitere Features entdecken",
+        content: "Der App Builder hat noch viel mehr! 🔍\n\n**Entdecke:**\n• 🔍 **Suche**: Projektweite Suche mit Regex\n• 🔧 **Git**: Version Control direkt im Editor\n• 💻 **Terminal**: Vollständiges Terminal\n• ▶️ **Run & Debug**: Launch, Test, Build\n• 📦 **Extensions**: VS Code Marketplace\n• ⌨️ **Shortcuts**: Alle VS Code Shortcuts\n\n**Nutze das \"?\" Icon** für weitere Tutorials zu jedem Feature!",
+        target: null,
+        action: null
+      },
+      {
+        id: 15,
+        title: "Fertig! 🎉",
+        content: "Glückwunsch! Du hast deine erste App erstellt! 🎊\n\n**Was du jetzt weißt:**\n✅ Wie du Apps mit KI erstellst\n✅ Wie der Editor funktioniert\n✅ Wie du Code anpasst\n✅ Wie die Preview funktioniert\n✅ Wie du mit Agenten chatten kannst\n\n**Nächste Schritte:**\n• Probiere andere Tutorials aus (\"?\" Button)\n• Experimentiere mit verschiedenen Frameworks\n• Nutze Team Agent für komplexere Apps\n• Entdecke alle Features!\n\n**Viel Erfolg mit deiner App! 🚀**",
+        target: null,
+        action: null
       }
     ]
   },
