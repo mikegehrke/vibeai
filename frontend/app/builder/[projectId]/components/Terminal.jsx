@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { X, Plus, Trash2, Terminal as TerminalIcon, BarChart3, AlertTriangle } from 'lucide-react';
 
-const Terminal = forwardRef(function Terminal({ projectId }, ref) {
+const Terminal = forwardRef(function Terminal({ projectId, onUrlDetected, onProblemDetected }, ref) {
   const [terminalSessions, setTerminalSessions] = useState([
     { 
       id: '1', 
@@ -18,6 +18,9 @@ const Terminal = forwardRef(function Terminal({ projectId }, ref) {
   const [activeTopTab, setActiveTopTab] = useState('terminal'); // terminal, output, problems
   const [activeBottomTab, setActiveBottomTab] = useState('terminal'); // terminal, problems, output, debug, ports
   const [problems, setProblems] = useState([]); // Array of {file, line, message, severity: 'error'|'warning'}
+  const [outputLogs, setOutputLogs] = useState([]); // Array of {source, message, timestamp}
+  const [debugLogs, setDebugLogs] = useState([]); // Array of {level, message, timestamp}
+  const [ports, setPorts] = useState([]); // Array of {port, process, name, url}
   const terminalRefs = useRef({});
   const inputRefs = useRef({});
   
@@ -28,10 +31,24 @@ const Terminal = forwardRef(function Terminal({ projectId }, ref) {
   const activeHistory = activeSession?.history || [];
   const activeHistoryIndex = activeSession?.historyIndex || -1;
 
-  // Expose executeCommand to parent via ref
+  // Expose executeCommand and addProblem to parent via ref
   useImperativeHandle(ref, () => ({
-    executeCommand: (command) => {
-      executeCommand(command, activeSession.id);
+    executeCommand: async (command) => {
+      // ⚡ WICHTIG: Führe Befehl wirklich aus und warte auf Ergebnis
+      return await executeCommand(command, activeSession.id);
+    },
+    addProblem: (problem) => {
+      setProblems(prev => [...prev, problem]);
+      if (onProblemDetected) {
+        onProblemDetected(problem);
+      }
+    },
+    addDebugLog: (level, message) => {
+      setDebugLogs(prev => [...prev, {
+        level: level || 'info',
+        message: message,
+        timestamp: new Date().toISOString()
+      }]);
     }
   }));
 
@@ -100,6 +117,77 @@ const Terminal = forwardRef(function Terminal({ projectId }, ref) {
               lines.forEach((line, index) => {
                 if (line.trim() || index === lines.length - 1) {
                   newOutput.push(line);
+                  
+                  // Detect URLs in output (like http://localhost:3000)
+                  const urlRegex = /(https?:\/\/[^\s]+|localhost:\d+|127\.0\.0\.1:\d+)/gi;
+                  const urls = line.match(urlRegex);
+                  if (urls && onUrlDetected) {
+                    urls.forEach(url => {
+                      const fullUrl = url.startsWith('http') ? url : `http://${url}`;
+                      onUrlDetected(fullUrl, trimmedCommand);
+                    });
+                  }
+                  
+                  // Detect errors and add to problems
+                  if (line.match(/error|Error|ERROR|failed|Failed|FAILED/i)) {
+                    const problem = {
+                      file: null,
+                      line: newOutput.length,
+                      message: line,
+                      severity: 'error',
+                      source: 'terminal'
+                    };
+                    setProblems(prev => [...prev, problem]);
+                    if (onProblemDetected) {
+                      onProblemDetected(problem);
+                    }
+                  }
+                  
+                  // Detect warnings
+                  if (line.match(/warning|Warning|WARNING|warn|Warn/i)) {
+                    const problem = {
+                      file: null,
+                      line: newOutput.length,
+                      message: line,
+                      severity: 'warning',
+                      source: 'terminal'
+                    };
+                    setProblems(prev => [...prev, problem]);
+                  }
+                  
+                  // Add to output logs
+                  setOutputLogs(prev => [...prev, {
+                    source: trimmedCommand,
+                    message: line,
+                    timestamp: new Date().toISOString()
+                  }]);
+                  
+                  // Detect running servers and ports
+                  const portMatch = line.match(/(?:listening|running|started).*?(\d{4,5})|port\s+(\d{4,5})|:(\d{4,5})/i);
+                  if (portMatch) {
+                    const port = parseInt(portMatch[1] || portMatch[2] || portMatch[3]);
+                    if (port && port > 1000 && port < 65535) {
+                      setPorts(prev => {
+                        const existingPort = prev.find(p => p.port === port);
+                        if (!existingPort) {
+                          const newPort = {
+                            port: port,
+                            process: trimmedCommand,
+                            name: `${trimmedCommand} (${port})`,
+                            url: `http://localhost:${port}`
+                          };
+                          // Auto-open browser tab if it's a server
+                          if (trimmedCommand.includes('start') || trimmedCommand.includes('dev') || trimmedCommand.includes('serve')) {
+                            if (onUrlDetected) {
+                              onUrlDetected(newPort.url, trimmedCommand);
+                            }
+                          }
+                          return [...prev, newPort];
+                        }
+                        return prev;
+                      });
+                    }
+                  }
                 }
               });
             } else if (data.success) {
@@ -313,78 +401,292 @@ const Terminal = forwardRef(function Terminal({ projectId }, ref) {
         })}
       </div>
 
-      {/* Main Terminal Content Area */}
+      {/* Main Content Area - Different panels based on active tab */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Terminal Output */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div 
-            ref={(el) => {
-              if (activeSession?.id) {
-                terminalRefs.current[activeSession.id] = el;
-              }
-            }}
-            style={{ 
+        {/* Problems Panel */}
+        {activeBottomTab === 'problems' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ 
               flex: 1, 
               overflow: 'auto', 
               padding: '8px 12px',
-              color: '#cccccc',
-              fontFamily: 'inherit',
-              fontSize: '13px',
-              lineHeight: '1.4',
-              background: '#1e1e1e',
-              scrollBehavior: 'smooth'
-            }}
-          >
-            {activeOutput.length === 0 ? (
-              <div style={{ color: '#858585', fontStyle: 'italic', marginBottom: '8px' }}>
-                No output yet. Type a command to get started.
-              </div>
-            ) : (
-              activeOutput.map((line, idx) => formatLine(line, idx))
-            )}
-            
-            {/* Input Prompt - DIRECTLY IN OUTPUT AREA (like VS Code) */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px',
-              marginTop: '4px'
+              background: '#1e1e1e'
             }}>
-              <span style={{ 
-                color: '#58a6ff',
-                fontWeight: '400',
-                fontFamily: 'inherit',
-                userSelect: 'none'
-              }}>$ </span>
-              <input
-                ref={(el) => {
-                  if (activeSession?.id) {
-                    inputRefs.current[activeSession.id] = el;
-                  }
-                }}
-                type="text"
-                value={activeInput}
-                onChange={(e) => handleInputChange(e.target.value, activeSession?.id)}
-                onKeyDown={(e) => handleKeyDown(e, activeSession?.id)}
-                placeholder=""
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#cccccc',
-                  fontSize: '13px',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  caretColor: '#58a6ff',
-                  lineHeight: '1.4',
-                  padding: '0',
-                  minWidth: '200px'
-                }}
-                autoFocus
-              />
+              {problems.length === 0 ? (
+                <div style={{ color: '#858585', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+                  No problems detected
+                </div>
+              ) : (
+                <div>
+                  <div style={{ color: '#858585', fontSize: '11px', marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #3c3c3c' }}>
+                    {problems.filter(p => p.severity === 'error').length} errors, {problems.filter(p => p.severity === 'warning').length} warnings
+                  </div>
+                  {problems.map((problem, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (problem.file && onProblemDetected) {
+                          onProblemDetected(problem);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 8px',
+                        marginBottom: '2px',
+                        background: problem.severity === 'error' ? 'rgba(248, 81, 73, 0.1)' : 'rgba(212, 153, 34, 0.1)',
+                        borderLeft: `3px solid ${problem.severity === 'error' ? '#f85149' : '#d29922'}`,
+                        cursor: problem.file ? 'pointer' : 'default',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (problem.file) {
+                          e.currentTarget.style.background = problem.severity === 'error' ? 'rgba(248, 81, 73, 0.2)' : 'rgba(212, 153, 34, 0.2)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (problem.file) {
+                          e.currentTarget.style.background = problem.severity === 'error' ? 'rgba(248, 81, 73, 0.1)' : 'rgba(212, 153, 34, 0.1)';
+                        }
+                      }}
+                    >
+                      <span style={{ color: problem.severity === 'error' ? '#f85149' : '#d29922', fontSize: '14px' }}>
+                        {problem.severity === 'error' ? '❌' : '⚠️'}
+                      </span>
+                      <span style={{ color: '#cccccc', flex: 1 }}>
+                        {problem.file ? `${problem.file}:${problem.line}` : `Line ${problem.line}`}
+                      </span>
+                      <span style={{ color: '#858585', fontSize: '11px' }}>
+                        {problem.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Output Panel */}
+        {activeBottomTab === 'output' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ 
+              flex: 1, 
+              overflow: 'auto', 
+              padding: '8px 12px',
+              background: '#1e1e1e',
+              fontFamily: 'inherit',
+              fontSize: '13px',
+              color: '#cccccc'
+            }}>
+              {outputLogs.length === 0 ? (
+                <div style={{ color: '#858585', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+                  No output logs yet
+                </div>
+              ) : (
+                outputLogs.map((log, idx) => (
+                  <div key={idx} style={{ marginBottom: '4px', whiteSpace: 'pre-wrap' }}>
+                    <span style={{ color: '#858585', fontSize: '11px' }}>
+                      [{new Date(log.timestamp).toLocaleTimeString()}] {log.source}:
+                    </span>
+                    <span style={{ color: '#cccccc', marginLeft: '8px' }}>
+                      {log.message}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Debug Console */}
+        {activeBottomTab === 'debugconsole' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ 
+              flex: 1, 
+              overflow: 'auto', 
+              padding: '8px 12px',
+              background: '#1e1e1e',
+              fontFamily: 'inherit',
+              fontSize: '13px',
+              color: '#cccccc'
+            }}>
+              {debugLogs.length === 0 ? (
+                <div style={{ color: '#858585', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+                  No debug logs yet
+                </div>
+              ) : (
+                debugLogs.map((log, idx) => (
+                  <div key={idx} style={{ marginBottom: '4px', whiteSpace: 'pre-wrap' }}>
+                    <span style={{ 
+                      color: log.level === 'error' ? '#f85149' : log.level === 'warn' ? '#d29922' : '#58a6ff',
+                      fontSize: '11px',
+                      fontWeight: '500'
+                    }}>
+                      [{log.level.toUpperCase()}]
+                    </span>
+                    <span style={{ color: '#cccccc', marginLeft: '8px' }}>
+                      {log.message}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Ports Panel */}
+        {activeBottomTab === 'ports' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ 
+              flex: 1, 
+              overflow: 'auto', 
+              padding: '8px 12px',
+              background: '#1e1e1e'
+            }}>
+              {ports.length === 0 ? (
+                <div style={{ color: '#858585', fontStyle: 'italic', textAlign: 'center', marginTop: '40px' }}>
+                  No ports detected. Start a server to see ports here.
+                </div>
+              ) : (
+                <div>
+                  <div style={{ color: '#858585', fontSize: '11px', marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #3c3c3c' }}>
+                    {ports.length} port{ports.length > 1 ? 's' : ''} detected
+                  </div>
+                  {ports.map((portInfo, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '8px 12px',
+                        marginBottom: '4px',
+                        background: '#2d2d30',
+                        border: '1px solid #3c3c3c',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: '#4ec9b0', fontWeight: '500', marginBottom: '4px' }}>
+                          Port {portInfo.port}
+                        </div>
+                        <div style={{ color: '#858585', fontSize: '11px' }}>
+                          {portInfo.name}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <a
+                          href={portInfo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (onUrlDetected) {
+                              onUrlDetected(portInfo.url, portInfo.process);
+                            }
+                          }}
+                          style={{
+                            color: '#58a6ff',
+                            textDecoration: 'none',
+                            fontSize: '11px',
+                            padding: '4px 8px',
+                            background: '#094771',
+                            borderRadius: '3px',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#0e639c';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#094771';
+                          }}
+                        >
+                          Open
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Terminal Output */}
+        {activeBottomTab === 'terminal' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div 
+              ref={(el) => {
+                if (activeSession?.id) {
+                  terminalRefs.current[activeSession.id] = el;
+                }
+              }}
+              style={{ 
+                flex: 1, 
+                overflow: 'auto', 
+                padding: '8px 12px',
+                color: '#cccccc',
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                lineHeight: '1.4',
+                background: '#1e1e1e',
+                scrollBehavior: 'smooth'
+              }}
+            >
+              {activeOutput.length === 0 ? (
+                <div style={{ color: '#858585', fontStyle: 'italic', marginBottom: '8px' }}>
+                  No output yet. Type a command to get started.
+                </div>
+              ) : (
+                activeOutput.map((line, idx) => formatLine(line, idx))
+              )}
+              
+              {/* Input Prompt - DIRECTLY IN OUTPUT AREA (like VS Code) */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                marginTop: '4px'
+              }}>
+                <span style={{ 
+                  color: '#58a6ff',
+                  fontWeight: '400',
+                  fontFamily: 'inherit',
+                  userSelect: 'none'
+                }}>$ </span>
+                <input
+                  ref={(el) => {
+                    if (activeSession?.id) {
+                      inputRefs.current[activeSession.id] = el;
+                    }
+                  }}
+                  type="text"
+                  value={activeInput}
+                  onChange={(e) => handleInputChange(e.target.value, activeSession?.id)}
+                  onKeyDown={(e) => handleKeyDown(e, activeSession?.id)}
+                  placeholder=""
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#cccccc',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    caretColor: '#58a6ff',
+                    lineHeight: '1.4',
+                    padding: '0',
+                    minWidth: '200px'
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Right Sidebar - Terminal Sessions */}
         <div style={{

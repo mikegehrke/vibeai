@@ -1,0 +1,13 @@
+name: vibeai_app
+description: A VibeAI generated app
+version: 1.0.0
+
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

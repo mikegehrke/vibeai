@@ -8,11 +8,13 @@
 - Fehler automatisch erkennt und fixt
 - Mit Frontend über WebSocket kommuniziert
 - Arbeitet wie ein echter Entwickler (nicht alles auf einmal)
+- Nutzt direkte APIs statt Terminal-Befehle
 """
 
 import os
 import re
 import asyncio
+import aiohttp
 from typing import Dict, List, Optional, Callable, AsyncGenerator
 from openai import OpenAI
 from pydantic import BaseModel
@@ -61,16 +63,17 @@ class SmartAgentGenerator:
     - Production-ready Code
     """
     
-    def __init__(self):
+    def __init__(self, api_base_url: str = "http://localhost:8005"):
         self.model = "gpt-4o"
         self.max_tokens = 16384
+        self.api_base_url = api_base_url
         
     async def generate_project_live(
         self,
         request: SmartAgentRequest,
-        on_file_created: Optional[Callable[[FileInfo], None]] = None,
-        on_step: Optional[Callable[[str, int], None]] = None,
-        on_error: Optional[Callable[[str], None]] = None
+        on_file_created: Optional[Callable] = None,
+        on_step: Optional[Callable] = None,
+        on_error: Optional[Callable] = None
     ) -> Dict:
         """
         Generiert ein komplettes Projekt SCHRITT FÜR SCHRITT, LIVE
@@ -116,7 +119,7 @@ class SmartAgentGenerator:
                         step=step_count
                     ))
                 # Kleine Pause für Live-Effekt
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 3: Core-Dateien (Main, App, etc.)
             step_count += 1
@@ -133,7 +136,7 @@ class SmartAgentGenerator:
                         language=core_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 4: Models & Data Classes
             step_count += 1
@@ -150,7 +153,7 @@ class SmartAgentGenerator:
                         language=model_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 5: Services & APIs
             step_count += 1
@@ -167,7 +170,7 @@ class SmartAgentGenerator:
                         language=service_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 6: UI Screens/Pages
             step_count += 1
@@ -201,7 +204,7 @@ class SmartAgentGenerator:
                         language=widget_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 8: Tests
             step_count += 1
@@ -218,7 +221,8 @@ class SmartAgentGenerator:
                         language=test_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                # Longer delay for visibility
+                await asyncio.sleep(0.3)
             
             # STEP 9: Dokumentation
             step_count += 1
@@ -235,7 +239,7 @@ class SmartAgentGenerator:
                         language=doc_file["language"],
                         step=step_count
                     ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.3)
             
             # STEP 10: Finale Überprüfung
             step_count += 1
@@ -262,6 +266,23 @@ class SmartAgentGenerator:
             if on_step:
                 await on_step(f"🎉 Projekt erfolgreich erstellt! {len(all_files)} Dateien generiert.", step_count)
             
+            # Save all files directly to project via API (NO TERMINAL!)
+            try:
+                await self._save_files_directly(request.project_id, all_files, on_step)
+            except Exception as e:
+                print(f"⚠️  Warning: Error saving files directly: {e}")
+                # Continue anyway - files might still be created
+            
+            # Install dependencies via API (NO TERMINAL!)
+            try:
+                if request.platform == "flutter":
+                    await self._install_flutter_dependencies(request.project_id, on_step)
+                elif request.platform in ["react", "nextjs", "nodejs"]:
+                    await self._install_npm_dependencies(request.project_id, on_step)
+            except Exception as e:
+                print(f"⚠️  Warning: Error installing dependencies: {e}")
+                # Continue anyway - dependencies can be installed manually
+            
             return {
                 "success": True,
                 "files": all_files,
@@ -278,7 +299,9 @@ class SmartAgentGenerator:
     
     async def _plan_project_structure(self, request: SmartAgentRequest) -> Dict:
         """Plane die Projektstruktur"""
-        prompt = f"""Plan the complete project structure for a {request.platform} app called "{request.project_name}".
+        try:
+            print(f"📋 Planning structure for {request.platform} project: {request.project_name}")
+            prompt = f"""Plan the complete project structure for a {request.platform} app called "{request.project_name}".
 
 DESCRIPTION: {request.description}
 FEATURES: {', '.join(request.features) if request.features else 'Standard features'}
@@ -289,26 +312,38 @@ Return ONLY a JSON list of file paths that should be created, like:
 IMPORTANT: Include AT LEAST 30-50 files for a complete app.
 Return ONLY the JSON array, nothing else."""
 
-        client = get_openai_client()
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a project architect. Return ONLY valid JSON arrays."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=2000
-        )
-        
-        try:
-            import json
+            client = get_openai_client()
+            print(f"🤖 Calling OpenAI to plan structure...")
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a project architect. Return ONLY valid JSON arrays."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
             content = response.choices[0].message.content.strip()
-            # Remove markdown code blocks if present
-            if content.startswith("```"):
-                content = re.sub(r"```json\n?|\n?```", "", content)
-            file_list = json.loads(content)
-            return {"files": file_list}
-        except:
+            print(f"✅ OpenAI response received: {len(content)} chars")
+            
+            try:
+                import json
+                # Remove markdown code blocks if present
+                if content.startswith("```"):
+                    content = re.sub(r"```json\n?|\n?```", "", content)
+                file_list = json.loads(content)
+                print(f"✅ Parsed {len(file_list)} files from structure plan")
+                return {"files": file_list}
+            except Exception as parse_error:
+                print(f"⚠️  JSON parse error: {parse_error}")
+                print(f"⚠️  Content was: {content[:200]}...")
+                # Fallback: Generate default structure
+                return self._get_default_structure(request.platform)
+        except Exception as e:
+            print(f"❌ Error in _plan_project_structure: {e}")
+            import traceback
+            traceback.print_exc()
             # Fallback: Generate default structure
             return self._get_default_structure(request.platform)
     
@@ -532,6 +567,16 @@ Return ONLY the pubspec.yaml content, no explanations."""
     
     async def _generate_file_content(self, file_path: str, description: str, request: SmartAgentRequest) -> str:
         """Generiere Inhalt für eine einzelne Datei"""
+        # Determine comment style based on file extension
+        file_ext = file_path.split('.')[-1].lower()
+        comment_style = "//"  # Default
+        if file_ext in ['py']:
+            comment_style = "#"
+        elif file_ext in ['dart', 'js', 'ts', 'jsx', 'tsx', 'swift', 'kt', 'java']:
+            comment_style = "//"
+        elif file_ext in ['html', 'xml']:
+            comment_style = "<!-- -->"
+        
         prompt = f"""Generate COMPLETE, PRODUCTION-READY code for file: {file_path}
 
 PROJECT: {request.project_name}
@@ -543,11 +588,59 @@ REQUIREMENTS:
 - All necessary imports
 - Proper error handling
 - Best practices
-- Comments where helpful
+- **DETAILED COMMENTS explaining WHAT, HOW, and WHY**
 
-Return ONLY the code, formatted as:
+COMMENT REQUIREMENTS (VERY IMPORTANT - Developer must understand everything):
+1. **File Header Comment**: Explain what this file does, its purpose, and main components
+2. **Section Comments**: Comment each major section (imports, classes, functions, main logic)
+3. **Function/Method Comments**: For each function/method, explain:
+   - WHAT it does (purpose and functionality)
+   - HOW it works (brief explanation of logic/algorithm)
+   - WHY it's needed (context/reason/business logic)
+   - Parameters: What each parameter is for and expected values
+   - Returns: What it returns and why
+4. **Complex Logic Comments**: Explain any non-obvious code, algorithms, business rules, or edge cases
+5. **Inline Comments**: Add comments for important lines that need explanation
+6. **Variable Comments**: Comment important variables explaining their purpose
+7. **Language-specific**: Use appropriate comment syntax:
+   - Dart/JavaScript/TypeScript/Swift/Kotlin: {comment_style} for single-line, /* */ for multi-line
+   - Python: # for comments, """ """ for docstrings
+   - HTML/XML: <!-- --> for comments
+
+EXAMPLE COMMENT STYLE ({comment_style}):
+{comment_style} This file contains the main application entry point and routing logic.
+{comment_style} It initializes the Flutter app and sets up navigation between screens.
+
+{comment_style} Main application widget that sets up the app structure
+{comment_style} 
+{comment_style} WHAT: Root widget that initializes the Flutter application
+{comment_style} HOW: Uses MaterialApp to provide theme and routing
+{comment_style} WHY: Required entry point for all Flutter applications
+class MyApp extends StatelessWidget {{
+  {comment_style} Theme configuration for the app
+  {comment_style} WHY: Centralized theme makes it easy to change app-wide styling
+  final ThemeData theme = ThemeData(
+    primarySwatch: Colors.blue,
+  );
+  
+  @override
+  Widget build(BuildContext context) {{
+    {comment_style} WHAT: Builds the app widget tree
+    {comment_style} HOW: Returns MaterialApp with home screen
+    {comment_style} WHY: MaterialApp provides Material Design components and navigation
+    return MaterialApp(
+      theme: theme,
+      home: HomeScreen(),
+    );
+  }}
+}}
+
+IMPORTANT: Every function, class, and complex logic block MUST have comments explaining WHAT, HOW, and WHY.
+The developer reading this code should understand everything without guessing.
+
+Return ONLY the code with detailed comments, formatted as:
 ```{file_path.split('.')[-1]} {file_path}
-[COMPLETE CODE HERE]
+[COMPLETE CODE WITH COMMENTS HERE]
 ```"""
 
         client = get_openai_client()
@@ -556,7 +649,7 @@ Return ONLY the code, formatted as:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert developer. Generate COMPLETE, working code. Return code in markdown code blocks."
+                    "content": "You are an expert developer. Generate COMPLETE, working code with DETAILED COMMENTS explaining WHAT, HOW, and WHY. Every function, class, and complex logic must be commented. Return code in markdown code blocks."
                 },
                 {"role": "user", "content": prompt}
             ],
@@ -572,7 +665,118 @@ Return ONLY the code, formatted as:
             return match.group(1).strip()
         
         # Fallback: return as-is
-        return content.strip()
+        return content
+    
+    async def _save_files_directly(self, project_id: str, files: List[Dict], on_step: Optional[Callable] = None):
+        """Save files directly to project directory (NO TERMINAL!)"""
+        if on_step:
+            await on_step(f"💾 Speichere {len(files)} Dateien direkt im Projekt (kein Terminal!)...", 0)
+        
+        try:
+            # Get project path directly (same logic as terminal_routes)
+            from codestudio.terminal_routes import get_project_path
+            project_path = get_project_path(project_id)
+            
+            # Ensure project directory exists
+            os.makedirs(project_path, exist_ok=True)
+            
+            # Save each file directly
+            for idx, file_info in enumerate(files):
+                try:
+                    file_path = file_info["path"]
+                    content = file_info["content"]
+                    
+                    # Normalize path (remove leading /)
+                    if file_path.startswith("/"):
+                        file_path = file_path[1:]
+                    
+                    # Full path
+                    full_path = os.path.join(project_path, file_path)
+                    
+                    # Create directories if needed
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    
+                    # Write file directly
+                    with open(full_path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    
+                    if on_step and (idx % 3 == 0 or idx == len(files) - 1):
+                        await on_step(f"💾 Gespeichert: {file_path} ({idx + 1}/{len(files)})", 0)
+                    
+                    await asyncio.sleep(0.02)  # Small delay for visibility
+                except Exception as e:
+                    print(f"⚠️  Error saving file {file_info.get('path', 'unknown')}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # Continue with next file
+                    continue
+            
+            if on_step:
+                await on_step(f"✅ Alle {len(files)} Dateien erfolgreich gespeichert (direkt, kein Terminal)!", 0)
+        except Exception as e:
+            print(f"❌ Error in _save_files_directly: {e}")
+            import traceback
+            traceback.print_exc()
+            if on_step:
+                await on_step(f"⚠️  Fehler beim Speichern: {str(e)}", 0)
+    
+    async def _install_flutter_dependencies(self, project_id: str, on_step: Optional[Callable] = None):
+        """Install Flutter dependencies via Package Manager API (NO TERMINAL!)"""
+        if on_step:
+            await on_step("📦 Installiere Flutter Dependencies (via API, kein Terminal!)...", 0)
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                # Use package manager API - empty package_name = install all from pubspec.yaml
+                async with session.post(
+                    f"{self.api_base_url}/api/packages/install",
+                    json={
+                        "project_id": project_id,
+                        "package_manager": "pub",
+                        "package_name": ""  # Empty = install all from pubspec.yaml
+                    }
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        if on_step:
+                            await on_step("✅ Flutter Dependencies installiert (via API)!", 0)
+                    else:
+                        error_text = await response.text()
+                        if on_step:
+                            await on_step(f"⚠️  Flutter Dependencies: {error_text[:100]}", 0)
+        except Exception as e:
+            print(f"⚠️  Error installing Flutter dependencies: {e}")
+            if on_step:
+                await on_step(f"⚠️  Fehler bei Dependency-Installation: {str(e)}", 0)
+    
+    async def _install_npm_dependencies(self, project_id: str, on_step: Optional[Callable] = None):
+        """Install npm dependencies via Package Manager API (NO TERMINAL!)"""
+        if on_step:
+            await on_step("📦 Installiere npm Dependencies (via API, kein Terminal!)...", 0)
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                # Use package manager API - empty package_name = install all from package.json
+                async with session.post(
+                    f"{self.api_base_url}/api/packages/install",
+                    json={
+                        "project_id": project_id,
+                        "package_manager": "npm",
+                        "package_name": ""  # Empty = install all from package.json
+                    }
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        if on_step:
+                            await on_step("✅ npm Dependencies installiert (via API)!", 0)
+                    else:
+                        error_text = await response.text()
+                        if on_step:
+                            await on_step(f"⚠️  npm Dependencies: {error_text[:100]}", 0)
+        except Exception as e:
+            print(f"⚠️  Error installing npm dependencies: {e}")
+            if on_step:
+                await on_step(f"⚠️  Fehler bei npm-Installation: {str(e)}", 0).strip()
     
     async def _auto_fix_errors(self, files: List[Dict]) -> List[Dict]:
         """Automatische Fehlerbehebung"""

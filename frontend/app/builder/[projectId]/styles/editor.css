@@ -133,10 +133,14 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
+  min-width: 0; /* WICHTIG: Verhindert Overflow */
+  overflow: hidden; /* WICHTIG: Verhindert Verschiebung */
 }
 
 .editor-tabs {
   height: 35px;
+  min-height: 35px;
+  max-height: 35px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -145,22 +149,44 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--bg-secondary);
   -webkit-overflow-scrolling: touch;
+  flex-shrink: 0; /* WICHTIG: Verhindert Verschiebung */
+  position: relative;
+  z-index: 5;
 }
 
-.editor-tabs::-webkit-scrollbar {
-  height: 4px;
+.editor-tabs-container {
+  height: 35px;
+  min-height: 35px;
+  max-height: 35px;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg-secondary);
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0; /* WICHTIG: Verhindert Verschiebung */
+  position: relative;
+  z-index: 5;
 }
 
-.editor-tabs::-webkit-scrollbar-track {
+.editor-tabs::-webkit-scrollbar,
+.editor-tabs-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.editor-tabs::-webkit-scrollbar-track,
+.editor-tabs-container::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-.editor-tabs::-webkit-scrollbar-thumb {
+.editor-tabs::-webkit-scrollbar-thumb,
+.editor-tabs-container::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
-.editor-tabs::-webkit-scrollbar-thumb:hover {
+.editor-tabs::-webkit-scrollbar-thumb:hover,
+.editor-tabs-container::-webkit-scrollbar-thumb:hover {
   background: var(--border-light);
 }
 

@@ -1,0 +1,49 @@
+name: ich_mchte_eine_moderne_flutter_app_entwickeln_di
+description: Ich möchte eine moderne Flutter-App entwickeln, die Leuten hilft, ihren Alltag besser zu organisieren.
+version: 1.0.0+1
+publish_to: "none"
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.5
+  provider: ^6.0.5
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.0
+  shared_preferences: ^2.0.15
+  flutter_riverpod: ^2.0.0
+  flutter_local_notifications: ^12.0.0
+  table_calendar: ^3.0.6
+  flutter_hooks: ^0.18.0
+  hooks_riverpod: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/translations/
+
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+
+flutter_intl:
+  enabled: true
+  default_locale: de
+  locales:
+    - de
+    - en

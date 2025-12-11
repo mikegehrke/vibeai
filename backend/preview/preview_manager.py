@@ -265,13 +265,29 @@ class HomeScreen extends StatelessWidget {
                 with open(main_dart, "w") as f:
                     f.write(main_content)
 
-        # Flutter Web Preview starten - AUTOMATISCH IM BROWSER (Chrome)
-        # Verwende 'chrome' statt 'web-server' um Browser automatisch zu öffnen
+        # Prüfe ob Flutter Web-Support aktiviert ist, falls nicht aktivieren
+        # Prüfe ob web-Verzeichnis existiert
+        web_dir = os.path.join(project_path, "web")
+        if not os.path.exists(web_dir):
+            # Aktiviere Web-Support für Flutter-Projekt
+            enable_web_cmd = ["flutter", "create", ".", "--platforms=web"]
+            enable_process = await asyncio.create_subprocess_exec(
+                *enable_web_cmd,
+                cwd=project_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await enable_process.wait()
+            if enable_process.returncode != 0:
+                # Falls flutter create fehlschlägt, versuche manuell web-Verzeichnis zu erstellen
+                os.makedirs(web_dir, exist_ok=True)
+        
+        # Flutter Web Preview starten - verwende web-server für iframe
         cmd = [
             "flutter",
             "run",
             "-d",
-            "chrome",
+            "web-server",
             "--web-port",
             str(port),
             "--web-hostname",

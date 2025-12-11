@@ -62,6 +62,7 @@ export default function BuilderPage({ params, searchParams }) {
   const [files, setFiles] = useState([]);
   const [activeFile, setActiveFile] = useState(null);
   const [openTabs, setOpenTabs] = useState([]);
+  const [activeBrowserTab, setActiveBrowserTab] = useState(null); // Currently active browser tab ID
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [leftSidebarContentWidth, setLeftSidebarContentWidth] = useState(232); // 280 - 48 (icons)
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
@@ -109,6 +110,8 @@ export default function BuilderPage({ params, searchParams }) {
   const [previewType, setPreviewType] = useState(null); // 'web', 'flutter', 'html'
   const [previewStatus, setPreviewStatus] = useState('stopped'); // 'stopped', 'starting', 'running', 'error'
   const [previewError, setPreviewError] = useState(null);
+  const [previewDevice, setPreviewDevice] = useState('iphone15'); // 'iphone15', 'pixel8', 'ipad', 'desktop'
+  const [browserTabs, setBrowserTabs] = useState([]); // Array of {id, url, title}
   
   // Project State
   const [projectStats, setProjectStats] = useState({
@@ -124,6 +127,14 @@ export default function BuilderPage({ params, searchParams }) {
   const editorRef = useRef(null);
   const terminalRef = useRef(null);
   const resizeRef = useRef({ isResizing: false, type: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
+  
+  // ⚡ PERFORMANCE: Throttling/Debouncing Refs für optimierte Updates
+  const lastChatUpdateRef = useRef(0);
+  const lastEditorUpdateRef = useRef(0);
+  const chatUpdateQueueRef = useRef([]);
+  const editorUpdateQueueRef = useRef(null);
+  const chatUpdateTimeoutRef = useRef(null);
+  const editorUpdateTimeoutRef = useRef(null);
 
   // Resize handlers
   const startResize = (e, type) => {
@@ -531,16 +542,7 @@ Bitte versuche es erneut.`);
       setIsLiveBuilding(true);
       setBuildProgress({ current: 0, total: 0, currentFile: null });
       
-      // Add welcome message to chat
-      addChatMessage('assistant', `🚀 **Starte Smart Agent Generator für:** \`${projectName}\`
-      
-📦 **Framework:** ${framework}
-📝 **Beschreibung:** ${description.slice(0, 100)}${description.length > 100 ? '...' : ''}
-
-⏱️ **Ich erstelle jetzt Schritt für Schritt alle Dateien...**
-📁 Du siehst live, wie ich jede Datei erstelle und den Code schreibe!`);
-      
-      // 🔥 NEUER SMART AGENT: Nutze den neuen Smart Agent Generator
+      // 🔥 KEINE DUMMY-TEXTE - Agent arbeitet ECHT!
       const response = await fetch('http://localhost:8005/api/smart-agent/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -558,24 +560,13 @@ Bitte versuche es erneut.`);
         throw new Error(errorData.error || errorData.message || `Build failed: ${response.statusText}`);
       }
       
-      // Response will come via WebSocket
-      const result = await response.json();
-      if (result.success) {
-        addChatMessage('assistant', `✅ **Smart Agent gestartet!**
-        
-📊 Generiere jetzt ${result.total_files || 'viele'} Dateien Schritt für Schritt...
-📁 Du siehst jede Datei live im Editor!`);
-      }
+      // Response kommt via WebSocket - ECHTE Updates, keine Dummy-Texte!
+      await response.json();
     } catch (error) {
       console.error('Live build from chat error:', error);
       setIsLiveBuilding(false);
-      addChatMessage('assistant', `❌ **Fehler beim Starten des Smart Agent:**
-      
-\`\`\`
-${error.message}
-\`\`\`
-
-Bitte versuche es erneut.`);
+      // Nur bei Fehler: Echte Fehlermeldung
+      addChatMessage('assistant', `❌ Fehler: ${error.message}`);
     }
   };
   
@@ -587,56 +578,284 @@ Bitte versuche es erneut.`);
       case 'build.started':
         setIsLiveBuilding(true);
         setBuildProgress({ current: 0, total: 0, currentFile: null });
-        addChatMessage('assistant', `🚀 **Smart Agent gestartet!**
-        
-📁 Projekt: \`${data.project_name || 'Unbekannt'}\`
-🔧 Typ: \`${data.platform || data.project_type || 'Unbekannt'}\`
-
-⏱️ Ich beginne jetzt Schritt für Schritt mit der Erstellung...`);
+        // KEINE DUMMY-NACHRICHT - Agent arbeitet ECHT, Updates kommen via WebSocket!
         break;
       
       case 'generation.step':
-        // Smart Agent Schritt-Update
-        addChatMessage('assistant', data.message || '🔄 Arbeite...');
+        // Smart Agent Schritt-Update - NUR wenn echte Nachricht vorhanden
+        if (data.message && data.message.trim() && !data.message.includes('🔄 Arbeite')) {
+          addChatMessage('assistant', data.message);
+        }
+        break;
+      
+      case 'generation.progress':
+        // Progress update
+        setBuildProgress({
+          current: data.current || 0,
+          total: data.total || 0,
+          currentFile: data.file || null
+        });
         break;
         
-      case 'file.created':
-        // Add file to files list
-        const newFile = {
+      case 'file.announced':
+        // ⚡ Datei wird angekündigt - zeige im Chat!
+        const announcedFile = {
           name: data.path.split('/').pop() || data.path,
           path: data.path,
-          content: data.content || '',
+          content: '',  // Start with empty content
           language: data.path.split('.').pop() || 'text',
-          size: (data.content || '').length,
+          size: 0,
           lastModified: new Date(),
           gitStatus: 'U',
           untracked: true
         };
         
+        // ⚡ ZEIGE IM CHAT: "Ich erstelle jetzt: lib/main.dart"
+        addChatMessage('assistant', data.message || `📝 **Erstelle jetzt:** \`${data.path}\``);
+        
+        // Add to files list immediately (empty)
         setFiles(prev => {
-          // Check if file already exists
+          const exists = prev.some(f => f.path === announcedFile.path);
+          if (exists) {
+            return prev.map(f => f.path === announcedFile.path ? announcedFile : f);
+          }
+          return [...prev, announcedFile];
+        });
+        
+        // Open in editor immediately
+        setOpenTabs(prev => {
+          const exists = prev.find(t => t.path === announcedFile.path);
+          if (!exists) {
+            return [...prev, announcedFile];
+          }
+          return prev;
+        });
+        
+        // ⚡ WICHTIG: ÖFFNE DATEI AUTOMATISCH IM EDITOR!
+        // Damit der Code live geschrieben werden kann!
+        setActiveFile(announcedFile);
+        break;
+      
+      case 'code_section':
+        // ⚡ Zeige Code-Sektionen (Imports, Struktur) im Chat mit Erklärung
+        if (data.message) {
+          addChatMessage('assistant', data.message);
+        }
+        break;
+      
+      case 'code_explanation':
+        // ⚡ Zeige Code-Erklärungen während des Schreibens
+        if (data.message) {
+          addChatMessage('assistant', data.message);
+        }
+        break;
+      
+      case 'code.character_written':
+      case 'code_character_written':
+      case 'code_written':
+        // ⚡ LIVE TYPING: Update file content ZEILE FÜR ZEILE in REAL TIME!
+        // ⚡ PERFORMANCE: Optimiert mit Throttling/Debouncing
+        const newContent = data.content || data.data?.content || '';
+        const filePath = data.path || data.data?.path;
+        
+        if (!filePath) break;
+        
+        // ⚡ WICHTIG: ÖFFNE DATEI IM EDITOR wenn sie noch nicht aktiv ist! (Nur einmal!)
+        if (!activeFile || activeFile.path !== filePath) {
+          const fileToOpen = files.find(f => f.path === filePath) || {
+            name: filePath.split('/').pop() || filePath,
+            path: filePath,
+            content: newContent,
+            language: filePath.split('.').pop() || 'text',
+            size: newContent.length,
+            lastModified: new Date(),
+            gitStatus: 'U',
+            untracked: true
+          };
+          setActiveFile(fileToOpen);
+          setOpenTabs(prev => {
+            const exists = prev.find(t => t.path === filePath);
+            if (!exists) {
+              return [...prev, fileToOpen];
+            }
+            return prev;
+          });
+        }
+        
+        // ⚡ PERFORMANCE: Batch State Updates - Update files, activeFile, tabs zusammen
+        const fileUpdate = {
+          name: filePath.split('/').pop() || filePath,
+          path: filePath,
+          content: newContent,
+          language: filePath.split('.').pop() || 'text',
+          size: newContent.length,
+          lastModified: new Date(),
+          gitStatus: 'U',
+          untracked: true
+        };
+        
+        // Batch update: files, activeFile, tabs in einem React Batch
+        startTransition(() => {
+          setFiles(prev => prev.map(f => f.path === filePath ? fileUpdate : f));
+          setActiveFile(prev => prev?.path === filePath ? fileUpdate : prev);
+          setOpenTabs(prev => prev.map(t => t.path === filePath ? fileUpdate : t));
+        });
+        
+        // ⚡ PERFORMANCE: Monaco Editor Updates DEBOUNCED (nur alle 200ms)
+        const now = Date.now();
+        if (now - lastEditorUpdateRef.current > 200) {
+          lastEditorUpdateRef.current = now;
+          
+          // Clear previous timeout
+          if (editorUpdateTimeoutRef.current) {
+            clearTimeout(editorUpdateTimeoutRef.current);
+          }
+          
+          // Debounce: Warte 100ms, dann update
+          editorUpdateTimeoutRef.current = setTimeout(() => {
+            if (editorRef.current) {
+              try {
+                const lineNum = data.line || newContent.split('\n').length;
+                const column = data.line_content ? data.line_content.length + 1 : 1;
+                
+                // ⚡ PERFORMANCE: Nur setValue wenn sich Content geändert hat
+                const currentValue = editorRef.current.getValue();
+                if (currentValue !== newContent) {
+                  editorRef.current.setValue(newContent);
+                }
+                
+                // Position nur alle 500ms updaten (weniger häufig)
+                if (now - lastEditorUpdateRef.current > 500 || !data.line) {
+                  editorRef.current.setPosition({ lineNumber: lineNum, column: column });
+                  editorRef.current.revealLineInCenter(lineNum);
+                }
+              } catch (err) {
+                console.log('Editor update error:', err);
+              }
+            }
+          }, 100);
+        } else {
+          // Queue für späteres Update
+          editorUpdateQueueRef.current = { content: newContent, data };
+        }
+        
+        // ⚡ PERFORMANCE: Chat Updates THROTTLED (nur alle 500ms)
+        if (data.line && data.line_content) {
+          const lineNum = data.line;
+          const lineContent = data.line_content;
+          const totalLines = data.total_lines || 0;
+          
+          // Zeige jede 10. Zeile oder wichtige Zeilen (weniger häufig!)
+          const isImportantLine = /(class|function|def|void|Widget|const|final|import|from)\s+/.test(lineContent);
+          
+          if ((lineNum % 10 === 0 || isImportantLine || lineNum === totalLines) && 
+              (now - lastChatUpdateRef.current > 500)) {
+            lastChatUpdateRef.current = now;
+            
+            // Clear previous timeout
+            if (chatUpdateTimeoutRef.current) {
+              clearTimeout(chatUpdateTimeoutRef.current);
+            }
+            
+            // Debounce Chat Update
+            chatUpdateTimeoutRef.current = setTimeout(() => {
+              const allLines = newContent.split('\n');
+              const startLine = Math.max(0, lineNum - 3);
+              const contextLines = allLines.slice(startLine, lineNum);
+              const contextText = contextLines.join('\n');
+              
+              // ⚡ PERFORMANCE: Batch Chat Update mit startTransition
+              startTransition(() => {
+                setChatMessages(prev => {
+                  const existingMsgIndex = prev.findIndex(msg => 
+                    msg.role === 'assistant' && msg.path === filePath && msg.isCodeUpdate
+                  );
+                  
+                  if (existingMsgIndex >= 0) {
+                    // Update bestehende Nachricht
+                    return prev.map((msg, idx) => 
+                      idx === existingMsgIndex
+                        ? { 
+                            ...msg, 
+                            content: `📝 **Schreibe:** \`${filePath}\` (Zeile ${lineNum}/${totalLines})\n\n\`\`\`${data.language || 'text'}\n${contextText}\n\`\`\``,
+                            line: lineNum
+                          }
+                        : msg
+                    );
+                  } else {
+                    // Neue Nachricht
+                    return [...prev, {
+                      role: 'assistant',
+                      content: `📝 **Schreibe:** \`${filePath}\` (Zeile ${lineNum}/${totalLines})\n\n\`\`\`${data.language || 'text'}\n${contextText}\n\`\`\``,
+                      timestamp: new Date().toISOString(),
+                      path: filePath,
+                      line: lineNum,
+                      isCodeUpdate: true
+                    }];
+                  }
+                });
+              });
+            }, 200);
+          }
+        }
+        break;
+      
+      case 'editor.content_updated':
+      case 'editor_content_updated':
+        // Editor content updated - sync with file
+        setFiles(prev => prev.map(f => {
+          if (f.path === data.path) {
+            return {
+              ...f,
+              content: data.content,
+              size: data.length || data.content.length
+            };
+          }
+          return f;
+        }));
+        
+        if (activeFile?.path === data.path) {
+          setActiveFile(prev => ({
+            ...prev,
+            content: data.content,
+            size: data.length || data.content.length
+          }));
+        }
+        
+        setOpenTabs(prev => prev.map(t => {
+          if (t.path === data.path) {
+            return {
+              ...t,
+              content: data.content,
+              size: data.length || data.content.length
+            };
+          }
+          return t;
+        }));
+        break;
+      
+      case 'file.created':
+        // File creation complete
+        const newFile = {
+          name: data.path.split('/').pop() || data.path,
+          path: data.path,
+          content: data.content || '',
+          language: data.path.split('.').pop() || 'text',
+          size: data.size || (data.content || '').length,
+          lastModified: new Date(),
+          gitStatus: 'U',
+          untracked: true
+        };
+        
+        console.log(`✅ File created: ${data.path} (${newFile.size} bytes)`);
+        
+        setFiles(prev => {
           const exists = prev.some(f => f.path === newFile.path);
           if (exists) {
             return prev.map(f => f.path === newFile.path ? newFile : f);
           }
           return [...prev, newFile];
         });
-        
-        // Update progress
-        setBuildProgress({
-          current: data.progress?.current || 0,
-          total: data.progress?.total || 0,
-          currentFile: data.path
-        });
-        
-        // Add message to chat
-        addChatMessage('assistant', `📝 **Erstelle:** \`${data.path}\` (${data.progress?.current || 0}/${data.progress?.total || 0})`);
-        
-        // Open first file in editor
-        if (files.length === 0) {
-          setActiveFile(newFile);
-          setOpenTabs([newFile]);
-        }
         
         // Update preview if it's an HTML file
         if (data.path.endsWith('.html') || data.path.endsWith('.htm')) {
@@ -659,21 +878,112 @@ Bitte versuche es erneut.`);
 
 💬 **Du kannst jetzt mit mir im Chat sprechen**, um Änderungen zu wünschen oder Fragen zu stellen.`);
         
-        // Auto-start preview
+        // Auto-start preview and open browser tab
         setTimeout(() => {
           detectProjectTypeAndStartPreview();
+          
+          // Auto-open browser tab when preview URL is available
+          setTimeout(() => {
+            if (previewUrl) {
+              const tabId = `browser-${Date.now()}`;
+              const newTab = {
+                id: tabId,
+                url: previewUrl,
+                title: previewUrl.includes('://') ? new URL(previewUrl).hostname : previewUrl,
+                command: 'Smart Agent'
+              };
+              setBrowserTabs(prev => {
+                const existing = prev.find(t => t.url === previewUrl);
+                if (existing) {
+                  setActiveBrowserTab(existing.id);
+                  return prev;
+                }
+                return [...prev, newTab];
+              });
+              setActiveBrowserTab(tabId);
+              setActiveFile(null);
+            }
+          }, 2000);
         }, 1000);
         break;
       
       case 'generation.error':
         setIsLiveBuilding(false);
-        addChatMessage('assistant', `❌ **Fehler beim Generieren:**
-        
-\`\`\`
-${data.error || 'Unbekannter Fehler'}
-\`\`\`
-
-Bitte versuche es erneut.`);
+        addChatMessage('assistant', `❌ **Fehler beim Generieren:**\n\n\`\`\`\n${data.error || 'Unbekannter Fehler'}\n\`\`\`\n\nBitte versuche es erneut.`);
+        break;
+      
+      // ⚡ AUTONOMER MODUS - Fehlende Komponenten
+      case 'missing_components_detected':
+        addChatMessage('assistant', `🔍 **${data.count} fehlende Komponenten erkannt!**\n\nIch generiere sie automatisch...`);
+        break;
+      
+      case 'generating_missing_components':
+        addChatMessage('assistant', `⚙️ **Generiere ${data.count} fehlende Komponenten...**`);
+        break;
+      
+      // ⚡ FEHLERANALYSE & AUTO-FIX
+      case 'errors_detected':
+        addChatMessage('assistant', `🔍 **${data.count} Fehler erkannt!**\n\nIch fixe sie automatisch...`);
+        break;
+      
+      case 'error_detected':
+        if (data.auto_fixable) {
+          addChatMessage('assistant', `🔧 **Fehler erkannt:** \`${data.file || 'Unbekannt'}\` (Zeile ${data.line || '?'})\n\n\`\`\`\n${data.error}\n\`\`\`\n\n⚙️ Fixe automatisch...`);
+        } else {
+          addChatMessage('assistant', `⚠️ **Fehler:** \`${data.file || 'Unbekannt'}\`\n\n\`\`\`\n${data.error}\n\`\`\``);
+        }
+        break;
+      
+      case 'error_fix_started':
+        addChatMessage('assistant', `🔧 **Fixe Fehler in:** \`${data.path}\`\n\nFehler: ${data.error.message || data.error}`);
+        break;
+      
+      case 'error_fixed':
+        addChatMessage('assistant', `✅ **Fehler behoben!** \`${data.path}\`\n\nFix: ${data.fix || 'Automatisch behoben'}`);
+        break;
+      
+      // ⚡ DEPENDENCIES & BUILD
+      case 'installing_dependencies':
+        addChatMessage('assistant', `📦 **Installiere Dependencies...**\n\n${data.message || ''}`);
+        break;
+      
+      case 'dependencies_installed':
+        addChatMessage('assistant', `✅ **Dependencies installiert!**\n\n${data.message || ''}`);
+        break;
+      
+      case 'building_project':
+        addChatMessage('assistant', `🏗️ **Baue Projekt...**\n\n${data.message || ''}`);
+        break;
+      
+      case 'build_success':
+        addChatMessage('assistant', `✅ **Build erfolgreich!**\n\n${data.message || ''}`);
+        break;
+      
+      case 'build_failed':
+        addChatMessage('assistant', `❌ **Build fehlgeschlagen**\n\nAnalysiere Fehler...`);
+        // Fehler werden automatisch analysiert und gefixt
+        break;
+      
+      // ⚡ PREVIEW
+      case 'starting_preview':
+        addChatMessage('assistant', `🚀 **Starte Preview...**\n\n${data.message || ''}`);
+        break;
+      
+      case 'preview_started':
+        addChatMessage('assistant', `✅ **Preview gestartet!**\n\nURL: ${data.url || 'N/A'}`);
+        if (data.url) {
+          setPreviewUrl(data.url);
+          setPreviewStatus('running');
+        }
+        break;
+      
+      // ⚡ GIT
+      case 'git_auto_commit':
+        addChatMessage('assistant', `📝 **Erstelle Git Commit...**\n\n${data.message || ''}`);
+        break;
+      
+      case 'git_committed':
+        addChatMessage('assistant', `✅ **Git Commit erstellt!**\n\nHash: \`${data.commit_hash || 'N/A'}\`\n\n${data.message || ''}`);
         break;
         
       case 'connected':
@@ -918,46 +1228,83 @@ Bitte versuche es erneut.`);
   const executeApprovedCommand = async (command) => {
     console.log(`🔧 Executing approved terminal command: ${command}`);
     
+    // ⚡ WICHTIG: Öffne Terminal-Panel automatisch, damit User sieht was passiert
+    setShowBottomPanel(true);
+    setActiveBottomPanel('terminal');
+    
     // Update approval message to show "Running..."
     setChatMessages(prev => prev.map(msg => 
       msg.needsApproval && msg.command === command
-        ? { ...msg, content: `⚙️ **Running command...**\n\n\`\`\`bash\n$ ${command}\n\`\`\``, isRunning: true }
+        ? { ...msg, content: `⚙️ **Running command in terminal...**\n\n\`\`\`bash\n$ ${command}\n\`\`\``, isRunning: true }
         : msg
     ));
     
-    const result = await executeTerminalCommand(command);
+    // ⚡ WICHTIG: Führe Befehl ZUERST im Terminal aus (sichtbar für User!)
+    // Warte kurz, damit Terminal-Panel geöffnet ist
+    await new Promise(resolve => setTimeout(resolve, 200));
     
-    // Update approval message with result
-    setChatMessages(prev => prev.map(msg => 
-      msg.needsApproval && msg.command === command
-        ? {
-            ...msg,
-            needsApproval: false,
-            isRunning: false,
-            content: result.success 
-              ? `✅ **Terminal command executed**\n\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
-              : `❌ **Terminal command failed**\n\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
-          }
-        : msg
-    ));
-    
-    // Also add result to chat as separate message
-    const terminalMsg = {
-      role: 'assistant',
-      content: result.success 
-        ? `✅ Terminal command executed:\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
-        : `❌ Terminal command failed:\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``,
-      timestamp: new Date().toISOString()
-    };
-    setChatMessages(prev => [...prev, terminalMsg]);
-    
-    // IMPORTANT: Also execute in Terminal component to show output there (like my terminal)
-    if (terminalRef.current && terminalRef.current.executeCommand) {
-      terminalRef.current.executeCommand(command);
+    // ⚡ Führe Befehl im Terminal aus (sichtbar!)
+    let commandExecuted = false;
+    if (terminalRef.current && typeof terminalRef.current.executeCommand === 'function') {
+      console.log(`✅ Terminal ref gefunden, führe Befehl aus: ${command}`);
+      try {
+        // ⚡ WICHTIG: Warte auf Ausführung (async!)
+        await terminalRef.current.executeCommand(command);
+        commandExecuted = true;
+        console.log(`✅ Befehl im Terminal erfolgreich ausgeführt: ${command}`);
+      } catch (error) {
+        console.error(`❌ Fehler beim Ausführen im Terminal:`, error);
+        commandExecuted = false;
+      }
     } else {
-      // Fallback: Add to terminal output manually if ref not available
-      console.log(`🔧 Terminal command executed: ${command}`);
+      console.warn(`⚠️ Terminal ref nicht verfügbar (ref:`, terminalRef.current, `), verwende API-Call`);
+      commandExecuted = false;
     }
+    
+    // ⚡ Fallback: Wenn Terminal-Ref nicht funktioniert, verwende API-Call
+    if (!commandExecuted) {
+      console.log(`🔄 Fallback: Führe Befehl über API aus: ${command}`);
+      const result = await executeTerminalCommand(command);
+      
+      // Update approval message with result
+      setChatMessages(prev => prev.map(msg => 
+        msg.needsApproval && msg.command === command
+          ? {
+              ...msg,
+              needsApproval: false,
+              isRunning: false,
+              content: result.success 
+                ? `✅ **Terminal command executed**\n\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
+                : `❌ **Terminal command failed**\n\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
+            }
+          : msg
+      ));
+      
+      // Also add result to chat as separate message
+      const terminalMsg = {
+        role: 'assistant',
+        content: result.success 
+          ? `✅ Terminal command executed:\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``
+          : `❌ Terminal command failed:\n\`\`\`bash\n$ ${command}\n${result.output}\n\`\`\``,
+        timestamp: new Date().toISOString()
+      };
+      setChatMessages(prev => [...prev, terminalMsg]);
+      return;
+    }
+    
+    // ⚡ Update approval message nach Terminal-Ausführung (wenn Terminal-Ref funktioniert hat)
+    setTimeout(() => {
+      setChatMessages(prev => prev.map(msg => 
+        msg.needsApproval && msg.command === command
+          ? {
+              ...msg,
+              needsApproval: false,
+              isRunning: false,
+              content: `✅ **Terminal command executed**\n\n\`\`\`bash\n$ ${command}\n\`\`\`\n\n📺 **Sieh dir das Terminal-Panel unten an für die Ausgabe!**`
+            }
+          : msg
+      ));
+    }, 500);
   };
 
   // Parse code blocks from AI response and apply to files
@@ -1090,11 +1437,25 @@ Bitte versuche es erneut.`);
   };
 
   const closeTab = (file) => {
+    console.log(`🔴 Closing tab: ${file.path}`);
+    console.log(`📊 Current tabs:`, openTabs.map(t => t.path));
+    
     const newTabs = openTabs.filter(tab => tab.path !== file.path);
+    console.log(`📊 New tabs after close:`, newTabs.map(t => t.path));
+    
     setOpenTabs(newTabs);
     
+    // ⚡ WICHTIG: Wenn geschlossene Datei aktiv war, öffne nächste oder null
     if (activeFile?.path === file.path) {
-      setActiveFile(newTabs.length > 0 ? newTabs[newTabs.length - 1] : null);
+      if (newTabs.length > 0) {
+        // Öffne letzte Datei (wie VS Code)
+        setActiveFile(newTabs[newTabs.length - 1]);
+        console.log(`✅ Activated next tab: ${newTabs[newTabs.length - 1].path}`);
+      } else {
+        // Keine Tabs mehr offen
+        setActiveFile(null);
+        console.log(`✅ No tabs left, activeFile set to null`);
+      }
     }
   };
 
@@ -1500,10 +1861,10 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
          lowerPrompt.includes('react') || lowerPrompt.includes('nextjs'))
       );
       
+      // ⚡ WICHTIG: Chat-Agent antwortet IMMER, auch wenn Smart Agent startet!
+      // Beide arbeiten parallel!
+      
       if (isAppCreationRequest) {
-        // Starte Live-Build direkt!
-        console.log('🚀 Detected app creation request - starting live build');
-        
         // Extrahiere Framework und Projektname
         let framework = 'flutter';
         if (lowerPrompt.includes('react native')) framework = 'react-native';
@@ -1518,22 +1879,26 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
                          prompt.match(/"([a-zA-Z0-9_-]+)"/);
         const projectName = nameMatch ? nameMatch[1] : projectId;
         
-        // Starte Live-Build
-        setIsChatLoading(false);
-        await startLiveBuildFromChat(projectName, framework, prompt);
-        return;
+        // ⚡ Starte Smart Agent im Hintergrund (NICHT warten!)
+        startLiveBuildFromChat(projectName, framework, prompt).catch(err => {
+          console.error('Smart Agent error:', err);
+        });
+        
+        // ⚡ WICHTIG: Chat-Agent antwortet TROTZDEM normal weiter!
+        // Kein return - Chat läuft weiter und Agent gibt ECHTE Antwort!
       }
       
       // Echte API-Integration
+      // ⚡ STREAMING AKTIVIEREN für sofortige Antworten!
       const response = await fetch('http://localhost:8005/api/chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'text/event-stream' // Streaming!
         },
-        // Timeout für lange Requests
-        signal: AbortSignal.timeout(120000), // 2 Minuten
+        // ⚡ KEIN Timeout - Streaming läuft kontinuierlich, Agent antwortet sofort!
         body: JSON.stringify({
+          stream: true, // ⚡ STREAMING IMMER AKTIV!
           model: currentModel || 'gpt-4o',
           prompt: prompt,
           agent: currentAgent || 'aura',
@@ -1649,12 +2014,18 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                 
                 if (data.content) {
                   fullContent += data.content;
-                  // Update streaming message IMMEDIATELY for live typing effect
-                  setChatMessages(prev => prev.map((msg, idx) => 
-                    idx === prev.length - 1 && msg.isStreaming
-                      ? { ...msg, content: fullContent }
-                      : msg
-                  ));
+                  // ⚡ PERFORMANCE: Update streaming message THROTTLED (nur alle 100ms)
+                  const now = Date.now();
+                  if (now - lastChatUpdateRef.current > 100) {
+                    lastChatUpdateRef.current = now;
+                    startTransition(() => {
+                      setChatMessages(prev => prev.map((msg, idx) => 
+                        idx === prev.length - 1 && msg.isStreaming
+                          ? { ...msg, content: fullContent }
+                          : msg
+                      ));
+                    });
+                  }
                   
                   // 🔥 LIVE CODE PARSING: Parse code blocks as they appear, not just at the end!
                   // Check for complete code blocks in the current content
@@ -1709,10 +2080,15 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     }
                   }
                   
-                  // Auto-scroll to bottom as content streams
-                  setTimeout(() => {
-                    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  }, 10);
+                  // ⚡ PERFORMANCE: Auto-scroll DEBOUNCED (nur alle 500ms)
+                  if (chatUpdateTimeoutRef.current) {
+                    clearTimeout(chatUpdateTimeoutRef.current);
+                  }
+                  chatUpdateTimeoutRef.current = setTimeout(() => {
+                    if (chatEndRef.current) {
+                      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }, 500);
                 }
                 
                 if (data.done) {
@@ -1792,19 +2168,56 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
 
     } catch (error) {
       console.error('❌ Chat error:', error);
-      const errorMsg = {
-        role: 'assistant', 
-        content: `**Fehler:** ${error.message}\n\nVersuche es erneut oder prüfe die Backend-Verbindung.`,
-        timestamp: new Date().toISOString()
-      };
-      setChatMessages(prev => [...prev, errorMsg]);
+      
+      // ⚡ ECHTE ANTWORT statt "Failed to fetch"!
+      // Wenn während Generierung gefragt wird, gebe echte Antwort
+      if (isLiveBuilding) {
+        const contextMsg = {
+          role: 'assistant',
+          content: `✅ **Ich arbeite gerade an der Code-Generierung!**\n\n📝 **Aktueller Status:**\n- ${buildProgress.currentFile ? `Erstelle: \`${buildProgress.currentFile}\`` : 'Generiere Projektstruktur...'}\n- Fortschritt: ${buildProgress.current}/${buildProgress.total} Dateien\n\n💬 **Deine Frage:** "${prompt}"\n\nIch kann während der Generierung weiterarbeiten. Sobald ich fertig bin, beantworte ich deine Frage gerne!\n\nOder soll ich die Generierung pausieren und deine Frage sofort beantworten?`,
+          timestamp: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, contextMsg]);
+      } else {
+        // Normale Fehlerbehandlung mit echten Antworten
+        let errorContent = '';
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorContent = `⚠️ **Verbindungsproblem**\n\nIch konnte die Verbindung zum Backend nicht herstellen.\n\n**Mögliche Lösungen:**\n1. Prüfe ob das Backend läuft (Port 8005)\n2. Warte einen Moment und versuche es erneut\n3. Prüfe deine Internetverbindung\n\n**Deine Frage:** "${prompt}"\n\nIch kann deine Frage trotzdem beantworten, sobald die Verbindung wiederhergestellt ist.`;
+        } else if (error.message.includes('timeout')) {
+          errorContent = `⏱️ **Zeitüberschreitung**\n\nDie Anfrage hat zu lange gedauert.\n\n**Deine Frage:** "${prompt}"\n\nBitte versuche es erneut oder formuliere die Frage kürzer.`;
+        } else {
+          errorContent = `❌ **Fehler aufgetreten**\n\n\`\`\`\n${error.message}\n\`\`\`\n\n**Deine Frage:** "${prompt}"\n\nBitte versuche es erneut. Falls das Problem weiterhin besteht, prüfe die Backend-Verbindung.`;
+        }
+        
+        const errorMsg = {
+          role: 'assistant',
+          content: errorContent,
+          timestamp: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, errorMsg]);
+      }
+      
       setIsChatLoading(false);
     }
   };
 
+  // ⚡ PERFORMANCE: Auto-scroll DEBOUNCED (nur wenn Chat wirklich geändert)
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+    if (chatUpdateTimeoutRef.current) {
+      clearTimeout(chatUpdateTimeoutRef.current);
+    }
+    chatUpdateTimeoutRef.current = setTimeout(() => {
+      if (chatEndRef.current) {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 300);
+    
+    return () => {
+      if (chatUpdateTimeoutRef.current) {
+        clearTimeout(chatUpdateTimeoutRef.current);
+      }
+    };
+  }, [chatMessages.length]); // Nur bei Längen-Änderung, nicht bei jedem Update
 
   // Find main HTML file for preview
   const findMainHTMLFile = useCallback(() => {
@@ -2582,7 +2995,13 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
         </div>
 
         {/* Center - Editor */}
-        <div className="editor-area" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div className="editor-area" style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          minWidth: 0, // WICHTIG: Verhindert Overflow
+          overflow: 'hidden' // WICHTIG: Verhindert Verschiebung
+        }}>
           {/* Preview oben im Editor (wie im Bild) */}
           {activeRightPanel === 'preview' && previewStatus === 'running' && previewUrl && (
             <div style={{
@@ -2606,8 +3025,24 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                 <button
                   onClick={() => {
                     const frame = document.getElementById('preview-frame-top');
-                    if (frame && frame.contentWindow) {
-                      frame.contentWindow.location.reload();
+                    if (!frame) {
+                      console.warn('Preview frame top not found');
+                      return;
+                    }
+                    
+                    // Force reload by setting src to empty and back
+                    if (frame.src) {
+                      const currentSrc = frame.src;
+                      frame.src = '';
+                      setTimeout(() => {
+                        frame.src = currentSrc;
+                      }, 10);
+                    } else if (frame.contentWindow) {
+                      try {
+                        frame.contentWindow.location.reload();
+                      } catch (e) {
+                        console.error('Error reloading frame:', e);
+                      }
                     }
                   }}
                   style={{
@@ -2635,31 +3070,47 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
             </div>
           )}
 
-          {/* Tabs - Scrollable when many tabs */}
-          {openTabs.length > 0 && (
-            <div style={{
-              display: 'flex',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              height: '35px',
-              background: '#1e1e1e',
-              borderBottom: '1px solid #3c3c3c',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#3c3c3c #1e1e1e',
-              WebkitOverflowScrolling: 'touch'
-            }}
-            onWheel={(e) => {
-              // Horizontal scroll with mouse wheel
-              if (e.deltaY !== 0) {
-                e.currentTarget.scrollLeft += e.deltaY;
-                e.preventDefault();
-              }
-            }}
+          {/* Tabs - Scrollable when many tabs (Files + Browser Tabs) - FIXED HEIGHT */}
+          {(openTabs.length > 0 || browserTabs.length > 0) && (
+            <div 
+              className="editor-tabs-container"
+              style={{
+                display: 'flex',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                height: '35px',
+                minHeight: '35px',
+                maxHeight: '35px',
+                width: '100%', // WICHTIG: Volle Breite
+                background: '#1e1e1e',
+                borderBottom: '1px solid #3c3c3c',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#3c3c3c #1e1e1e',
+                WebkitOverflowScrolling: 'touch',
+                flexShrink: 0, // WICHTIG: Verhindert, dass Tabs den Editor verschieben
+                flexGrow: 0, // WICHTIG: Nie wachsen
+                position: 'relative',
+                zIndex: 5
+              }}
+              onWheel={(e) => {
+                // Horizontal scroll with mouse wheel (Shift + Wheel = horizontal)
+                if (e.shiftKey || e.deltaY !== 0) {
+                  e.currentTarget.scrollLeft += e.deltaY || e.deltaX;
+                  e.preventDefault();
+                }
+              }}
             >
+              {/* File Tabs */}
               {openTabs.map(file => (
                 <div
                   key={file.path}
-                  onClick={() => setActiveFile(file)}
+                  onClick={(e) => {
+                    // ⚡ WICHTIG: Nur Tab öffnen, wenn nicht auf Close-Button geklickt wurde
+                    if (!e.target.closest('.tab-close-btn')) {
+                      setActiveFile(file);
+                      setActiveBrowserTab(null);
+                    }
+                  }}
                   onMouseEnter={(e) => {
                     const closeBtn = e.currentTarget.querySelector('.tab-close-btn');
                     if (closeBtn) closeBtn.style.opacity = '1';
@@ -2673,15 +3124,16 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     alignItems: 'center',
                     gap: '6px',
                     padding: '6px 8px 6px 12px',
-                    background: activeFile?.path === file.path ? '#1e1e1e' : '#2d2d30',
+                    background: activeFile?.path === file.path && !activeBrowserTab ? '#1e1e1e' : '#2d2d30',
                     borderRight: '1px solid #3c3c3c',
-                    borderTop: activeFile?.path === file.path ? '2px solid #007acc' : '2px solid transparent',
-                    color: activeFile?.path === file.path ? '#cccccc' : '#858585',
+                    borderTop: activeFile?.path === file.path && !activeBrowserTab ? '2px solid #007acc' : '2px solid transparent',
+                    color: activeFile?.path === file.path && !activeBrowserTab ? '#cccccc' : '#858585',
                     fontSize: '12px',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     minWidth: '120px',
                     maxWidth: '200px',
+                    flexShrink: 0, // WICHTIG: Tabs werden nicht komprimiert
                     position: 'relative',
                     transition: 'all 0.2s',
                     userSelect: 'none'
@@ -2704,8 +3156,134 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   <button
                     className="tab-close-btn"
                     onClick={(e) => {
+                      // ⚡ WICHTIG: stopPropagation + preventDefault verhindert Tab-Öffnung!
                       e.stopPropagation();
+                      e.preventDefault();
+                      console.log(`🔴 Close tab clicked: ${file.path}`);
                       closeTab(file);
+                    }}
+                    onMouseDown={(e) => {
+                      // ⚡ WICHTIG: Auch onMouseDown stoppen, damit Tab nicht geöffnet wird
+                      e.stopPropagation();
+                    }}
+                    style={{
+                      marginLeft: '4px',
+                      padding: '2px 4px',
+                      borderRadius: '3px',
+                      opacity: '0.6',
+                      transition: 'opacity 0.2s, background 0.2s',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#cccccc',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      width: '16px',
+                      height: '16px',
+                      zIndex: 10, // WICHTIG: Über Tab-Content
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.opacity = '1';
+                      e.target.style.background = '#3c3c3c';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.opacity = '0.6';
+                      e.target.style.background = 'transparent';
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              
+              {/* Browser Tabs Separator */}
+              {openTabs.length > 0 && browserTabs.length > 0 && (
+                <div style={{
+                  width: '1px',
+                  height: '20px',
+                  background: '#3c3c3c',
+                  margin: '0 4px',
+                  alignSelf: 'center'
+                }} />
+              )}
+              
+              {/* Browser Tabs */}
+              {browserTabs.map(tab => (
+                <div
+                  key={tab.id}
+                  onClick={(e) => {
+                    // ⚡ WICHTIG: Nur Tab öffnen, wenn nicht auf Close-Button geklickt wurde
+                    if (!e.target.closest('.tab-close-btn')) {
+                      setActiveBrowserTab(tab.id);
+                      setActiveFile(null);
+                      setPreviewUrl(tab.url);
+                      setPreviewStatus('running');
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    const closeBtn = e.currentTarget.querySelector('.tab-close-btn');
+                    if (closeBtn) closeBtn.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    const closeBtn = e.currentTarget.querySelector('.tab-close-btn');
+                    if (closeBtn) closeBtn.style.opacity = '0.6';
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 8px 6px 12px',
+                    background: activeBrowserTab === tab.id ? '#1e1e1e' : '#2d2d30',
+                    borderRight: '1px solid #3c3c3c',
+                    borderTop: activeBrowserTab === tab.id ? '2px solid #4ec9b0' : '2px solid transparent',
+                    color: activeBrowserTab === tab.id ? '#cccccc' : '#858585',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    minWidth: '120px',
+                    maxWidth: '200px',
+                    flexShrink: 0, // WICHTIG: Tabs werden nicht komprimiert
+                    position: 'relative',
+                    transition: 'all 0.2s',
+                    userSelect: 'none'
+                  }}
+                >
+                  <Globe size={12} style={{ flexShrink: 0, color: '#4ec9b0' }} />
+                  <span style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flex: 1
+                  }}>{tab.title}</span>
+                  <button
+                    className="tab-close-btn"
+                    onClick={(e) => {
+                      // ⚡ WICHTIG: stopPropagation + preventDefault verhindert Tab-Öffnung!
+                      e.stopPropagation();
+                      e.preventDefault();
+                      console.log(`🔴 Close browser tab clicked: ${tab.id}`);
+                      
+                      // Wenn geschlossener Tab aktiv war, setze activeBrowserTab auf null oder nächsten
+                      if (activeBrowserTab === tab.id) {
+                        const remainingTabs = browserTabs.filter(t => t.id !== tab.id);
+                        if (remainingTabs.length > 0) {
+                          setActiveBrowserTab(remainingTabs[remainingTabs.length - 1].id);
+                        } else {
+                          setActiveBrowserTab(null);
+                          setActiveFile(null);
+                          setPreviewUrl(null);
+                          setPreviewStatus('stopped');
+                        }
+                      }
+                      
+                      setBrowserTabs(prev => prev.filter(t => t.id !== tab.id));
+                    }}
+                    onMouseDown={(e) => {
+                      // ⚡ WICHTIG: Auch onMouseDown stoppen
+                      e.stopPropagation();
                     }}
                     style={{
                       marginLeft: '4px',
@@ -2740,10 +3318,86 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
             </div>
           )}
 
-          {/* Editor */}
+          {/* Editor or Browser */}
           <div className="editor-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ flex: 1, minHeight: 0 }}>
-            {activeFile ? (
+            {activeBrowserTab ? (
+              // Browser Tab Content
+              (() => {
+                const activeTab = browserTabs.find(t => t.id === activeBrowserTab);
+                return activeTab ? (
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    background: '#1e1e1e'
+                  }}>
+                    {/* Browser Toolbar */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      background: '#252526',
+                      borderBottom: '1px solid #3c3c3c',
+                      fontSize: '12px'
+                    }}>
+                      <button
+                        onClick={() => {
+                          const iframe = document.getElementById('browser-iframe');
+                          if (iframe) iframe.src = iframe.src;
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#2d2d30',
+                          border: '1px solid #3c3c3c',
+                          borderRadius: '3px',
+                          color: '#cccccc',
+                          cursor: 'pointer',
+                          fontSize: '11px'
+                        }}
+                      >
+                        🔄 Reload
+                      </button>
+                      <div style={{ flex: 1, padding: '4px 8px', background: '#1e1e1e', borderRadius: '3px', color: '#858585' }}>
+                        {activeTab.url}
+                      </div>
+                      <button
+                        onClick={() => window.open(activeTab.url, '_blank')}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#2d2d30',
+                          border: '1px solid #3c3c3c',
+                          borderRadius: '3px',
+                          color: '#cccccc',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <ExternalLink size={12} />
+                        Open in Browser
+                      </button>
+                    </div>
+                    {/* Browser iframe */}
+                    <iframe
+                      id="browser-iframe"
+                      src={activeTab.url}
+                      style={{
+                        flex: 1,
+                        width: '100%',
+                        border: 'none',
+                        background: '#ffffff'
+                      }}
+                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                    />
+                  </div>
+                ) : null;
+              })()
+            ) : activeFile ? (
               <MonacoEditor
                 height="100%"
                 language={getLanguage(activeFile.name)}
@@ -2817,6 +3471,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   }
                 }}
                 onMount={(editor, monaco) => {
+                  // ⚡ WICHTIG: Editor Ref setzen für Live-Updates!
+                  editorRef.current = editor;
+                  console.log('✅ Monaco Editor mounted, ref set for:', activeFile?.path);
+                  
                   // Register additional language features
                   monaco.languages.registerCompletionItemProvider(getLanguage(activeFile.name), {
                     provideCompletionItems: () => {
@@ -2896,7 +3554,45 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   borderTop: '1px solid #3c3c3c'
                 }}>
                   {activeBottomPanel === 'terminal' ? (
-                    <Terminal ref={terminalRef} projectId={projectId} />
+                    <Terminal 
+                      ref={terminalRef} 
+                      projectId={projectId}
+                      onUrlDetected={(url, command) => {
+                        // Auto-open browser tab when URL is detected
+                        console.log('🌐 URL detected in terminal:', url);
+                        try {
+                          // Add to browser tabs
+                          const tabId = `browser-${Date.now()}`;
+                          setBrowserTabs(prev => [...prev, {
+                            id: tabId,
+                            url: url,
+                            title: url.includes('://') ? new URL(url).hostname : url,
+                            command: command
+                          }]);
+                          // Auto-open in new tab
+                          window.open(url, '_blank');
+                        } catch (error) {
+                          console.error('Error opening browser tab:', error);
+                        }
+                      }}
+                      onProblemDetected={(problem) => {
+                        // Handle problem detection
+                        console.log('⚠️ Problem detected:', problem);
+                        // Could open file if problem.file is set
+                        if (problem.file) {
+                          const file = files.find(f => f.path === problem.file || f.name === problem.file);
+                          if (file) {
+                            setActiveFile(file);
+                            setOpenTabs(prev => {
+                              if (!prev.find(t => t.path === file.path)) {
+                                return [...prev, file];
+                              }
+                              return prev;
+                            });
+                          }
+                        }
+                      }}
+                    />
                   ) : activeBottomPanel === 'output' ? (
                     <div style={{ padding: '12px', color: '#cccccc', fontSize: '12px', height: '100%' }}>
                       <div>Build output will appear here...</div>
@@ -3007,8 +3703,6 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   
                   <button
                     onClick={() => {
-                      // Reload preview - find and render main HTML file
-                      const mainHTML = findMainHTMLFile();
                       const frame = document.getElementById('preview-frame');
                       
                       if (!frame) {
@@ -3016,6 +3710,21 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                         return;
                       }
 
+                      // If previewUrl is set, reload the URL
+                      if (previewUrl && previewStatus === 'running') {
+                        console.log('🔄 Reloading preview URL:', previewUrl);
+                        // Force reload by setting src to empty and back
+                        const currentSrc = frame.src;
+                        frame.src = '';
+                        setTimeout(() => {
+                          frame.src = currentSrc;
+                        }, 10);
+                        return;
+                      }
+
+                      // Otherwise, reload HTML content
+                      const mainHTML = findMainHTMLFile();
+                      
                       if (mainHTML) {
                         console.log('🔄 Reloading preview with:', mainHTML.name);
                         
@@ -3047,27 +3756,42 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                           }
                         });
                         
-                        // Update preview
-                        import('./utils/editor-bridge.js').then(module => {
-                          if (module.updatePreview) {
-                            module.updatePreview(htmlContent, 'html');
-                          }
-                        }).catch(err => {
-                          console.error('Error reloading preview:', err);
-                          // Fallback: directly update iframe
+                        // Update preview by updating srcDoc
+                        try {
+                          // Force reload by clearing and setting srcDoc
+                          frame.srcDoc = '';
+                          setTimeout(() => {
+                            frame.srcDoc = htmlContent;
+                          }, 10);
+                        } catch (e) {
+                          console.error('Error reloading preview:', e);
+                          // Fallback: try to update via contentWindow
                           try {
                             const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write(htmlContent);
-                            iframeDoc.close();
-                          } catch (e) {
-                            console.error('Fallback error:', e);
+                            if (iframeDoc) {
+                              iframeDoc.open();
+                              iframeDoc.write(htmlContent);
+                              iframeDoc.close();
+                            }
+                          } catch (err) {
+                            console.error('Fallback error:', err);
                           }
-                        });
+                        }
                       } else {
                         // No HTML file found - reload iframe
-                        if (frame.contentWindow) {
-                          frame.contentWindow.location.reload();
+                        try {
+                          if (frame.contentWindow) {
+                            frame.contentWindow.location.reload();
+                          } else if (frame.srcDoc) {
+                            // Force reload srcDoc
+                            const currentSrcDoc = frame.srcDoc;
+                            frame.srcDoc = '';
+                            setTimeout(() => {
+                              frame.srcDoc = currentSrcDoc;
+                            }, 10);
+                          }
+                        } catch (e) {
+                          console.error('Error reloading iframe:', e);
                         }
                       }
                     }}
@@ -3103,7 +3827,41 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
                   title="Live Preview"
                   src={previewUrl && previewStatus === 'running' ? previewUrl : undefined}
-                  srcDoc={previewUrl && previewStatus === 'running' ? undefined : `
+                  srcDoc={(() => {
+                    if (previewUrl && previewStatus === 'running') return undefined;
+                    // Fallback: Zeige HTML-Inhalt direkt wenn verfügbar
+                    const mainHTML = findMainHTMLFile();
+                    if (mainHTML) {
+                      let htmlContent = mainHTML.content;
+                      // Embed CSS
+                      const cssFiles = files.filter(f => f.name.endsWith('.css'));
+                      cssFiles.forEach(cssFile => {
+                        if (!htmlContent.includes(cssFile.content)) {
+                          htmlContent = htmlContent.replace(
+                            '</head>',
+                            `<style>${cssFile.content}</style>\n</head>`
+                          );
+                        }
+                      });
+                      // Embed JS
+                      const jsFiles = files.filter(f => 
+                        f.name.endsWith('.js') && 
+                        !f.name.includes('node_modules')
+                      );
+                      jsFiles.forEach(jsFile => {
+                        if (!htmlContent.includes(jsFile.content)) {
+                          htmlContent = htmlContent.replace(
+                            '</body>',
+                            `<script>${jsFile.content}</script>\n</body>`
+                          );
+                        }
+                      });
+                      return htmlContent;
+                    }
+                    // Default fallback
+                    const statusMsg = previewStatus === 'starting' ? '<p style="color: #007acc;">⏳ Preview wird gestartet...</p>' : '';
+                    const errorMsg = previewStatus === 'error' ? `<p style="color: #f48771;">❌ Fehler: ${previewError || 'Unbekannter Fehler'}</p>` : '';
+                    return `
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -3118,6 +3876,8 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                         <div style="text-align: center;">
                           <h2>📱 Preview</h2>
                           <p>Wähle eine Datei aus, um die Vorschau zu sehen</p>
+                          ${statusMsg}
+                          ${errorMsg}
                         </div>
                       </div>
                       <script type="module">
@@ -3155,7 +3915,8 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                       </script>
                     </body>
                     </html>
-                  `}
+                  `;
+                  })()}
                   onLoad={() => {
                     // Initialize preview with active file
                     if (activeFile) {

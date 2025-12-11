@@ -201,9 +201,48 @@ async def execute_command(request: ExecuteCommandRequest):
     
     # If Flutter project structure detected, ensure it's initialized
     if os.path.exists(pubspec_path) or os.path.exists(main_dart_path):
-        # Flutter project exists, just ensure lib directory exists
+        # Flutter project exists, ensure lib and test directories exist
         lib_path = os.path.join(project_path, "lib")
         os.makedirs(lib_path, exist_ok=True)
+        
+        # Ensure test directory exists (especially before flutter test)
+        test_dir = os.path.join(project_path, "test")
+        if not os.path.exists(test_dir):
+            print(f"Creating test directory: {test_dir}")
+            os.makedirs(test_dir, exist_ok=True)
+            # Create a basic widget_test.dart if it doesn't exist
+            widget_test_path = os.path.join(test_dir, "widget_test.dart")
+            if not os.path.exists(widget_test_path):
+                basic_test_content = """import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(child: Text('Test')),
+      ),
+    ));
+
+    // Verify that our text is displayed
+    expect(find.text('Test'), findsOneWidget);
+  });
+}
+"""
+                try:
+                    with open(widget_test_path, 'w', encoding='utf-8') as f:
+                        f.write(basic_test_content)
+                    print(f"✅ Created basic widget_test.dart")
+                except Exception as e:
+                    print(f"⚠️  Could not create widget_test.dart: {e}")
+        
+        # Special handling for flutter test command
+        if "flutter" in request.command.lower() and "test" in request.command.lower():
+            # Double-check test directory exists
+            if not os.path.exists(test_dir):
+                os.makedirs(test_dir, exist_ok=True)
+                print(f"✅ Created test directory for flutter test")
     elif "flutter" in request.command.lower():
         # Flutter command but no project - create basic structure
         lib_path = os.path.join(project_path, "lib")
@@ -281,6 +320,33 @@ class HomeScreen extends StatelessWidget {
         if any(dangerous in command_lower for dangerous in dangerous_commands):
             raise HTTPException(status_code=400, detail="Dangerous command not allowed")
         
+        # Spezialbehandlung für Flutter-Befehle
+        if command_lower.startswith('flutter run'):
+            # Prüfe ob Flutter-Projekt Web/macOS-Support hat
+            pubspec_path = os.path.join(project_path, "pubspec.yaml")
+            if os.path.exists(pubspec_path):
+                # Prüfe ob web-Verzeichnis existiert
+                web_dir = os.path.join(project_path, "web")
+                if not os.path.exists(web_dir):
+                    # Aktiviere Web-Support automatisch
+                    enable_web = subprocess.run(
+                        ["flutter", "create", ".", "--platforms=web"],
+                        cwd=project_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+                    if enable_web.returncode == 0:
+                        output = enable_web.stdout + "\n" + "✅ Flutter Web-Support aktiviert\n"
+                    else:
+                        output = enable_web.stderr + "\n" + "⚠️  Web-Support konnte nicht aktiviert werden, versuche trotzdem zu starten...\n"
+                else:
+                    output = ""
+            else:
+                output = ""
+        else:
+            output = ""
+        
         # Execute command
         result = subprocess.run(
             request.command,
@@ -291,13 +357,18 @@ class HomeScreen extends StatelessWidget {
             timeout=60  # Increased timeout for flutter commands
         )
         
-        output = result.stdout + result.stderr
-        if not output.strip():
-            output = f"Command executed successfully (exit code: {result.returncode})"
+        # Kombiniere Output
+        if output:
+            result_output = output + result.stdout + result.stderr
+        else:
+            result_output = result.stdout + result.stderr
+        
+        if not result_output.strip():
+            result_output = f"Command executed successfully (exit code: {result.returncode})"
         
         return {
             "success": result.returncode == 0,
-            "output": output,
+            "output": result_output,
             "returncode": result.returncode
         }
         

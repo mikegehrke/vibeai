@@ -85,20 +85,34 @@ async def install_package(request: InstallPackageRequest):
     """Install a package."""
     project_path = get_project_path(request.project_id)
     
-    commands = {
-        "npm": ["npm", "install", request.package_name] + (["--save-dev"] if request.dev else []),
-        "pip": ["pip", "install", request.package_name],
-        "pub": ["flutter", "pub", "add", request.package_name],
-        "cargo": ["cargo", "add", request.package_name],
-        "go": ["go", "get", request.package_name]
-    }
-    
-    if request.package_manager not in commands:
-        raise HTTPException(status_code=400, detail=f"Unsupported package manager: {request.package_manager}")
-    
-    command = commands[request.package_manager]
-    if request.version:
-        command[-1] = f"{request.package_name}=={request.version}" if request.package_manager == "pip" else f"{request.package_name}@{request.version}"
+    # Special handling: empty package_name = install all from config file
+    if not request.package_name or request.package_name.strip() == "":
+        if request.package_manager == "npm":
+            # npm install (all from package.json)
+            command = ["npm", "install"]
+        elif request.package_manager == "pub":
+            # flutter pub get (all from pubspec.yaml)
+            command = ["flutter", "pub", "get"]
+        elif request.package_manager == "pip":
+            # pip install -r requirements.txt
+            command = ["pip", "install", "-r", "requirements.txt"]
+        else:
+            raise HTTPException(status_code=400, detail="Empty package_name only supported for npm, pub, pip")
+    else:
+        commands = {
+            "npm": ["npm", "install", request.package_name] + (["--save-dev"] if request.dev else []),
+            "pip": ["pip", "install", request.package_name],
+            "pub": ["flutter", "pub", "add", request.package_name],
+            "cargo": ["cargo", "add", request.package_name],
+            "go": ["go", "get", request.package_name]
+        }
+        
+        if request.package_manager not in commands:
+            raise HTTPException(status_code=400, detail=f"Unsupported package manager: {request.package_manager}")
+        
+        command = commands[request.package_manager]
+        if request.version:
+            command[-1] = f"{request.package_name}=={request.version}" if request.package_manager == "pip" else f"{request.package_name}@{request.version}"
     
     result = run_command(project_path, command)
     
@@ -107,7 +121,7 @@ async def install_package(request: InstallPackageRequest):
     
     return {
         "success": True,
-        "message": f"Package {request.package_name} installed successfully",
+        "message": f"Package {request.package_name or 'all dependencies'} installed successfully",
         "output": result["output"]
     }
 
@@ -212,6 +226,7 @@ async def search_packages(query: str, package_manager: str = "npm"):
             "query": query,
             "raw": True
         }
+
 
 
 
