@@ -28,22 +28,29 @@ class CodeStreamer:
         """
         Get realistic typing delay for a character.
         
-        Different characters have different typing speeds:
-        - Normal chars: 30-80ms
-        - Spaces: 20-40ms
-        - Newlines: 50-100ms
-        - Special chars: 40-100ms
+        ⚡ LERN-GESCHWINDIGKEIT: Langsam genug zum Lernen und Verstehen
+        - Normal chars: 150-250ms (langsam genug zum Mitlesen und Lernen)
+        - Spaces: 80-120ms
+        - Newlines: 400-600ms (längere Pause zum Nachdenken und Verstehen)
+        - Special chars: 200-300ms
+        - Klammern: 250-350ms (Überlegen beim Strukturieren)
         """
         if char == '\n':
-            return random.uniform(0.05, 0.1)  # 50-100ms for newline
+            # Neue Zeile = längere Pause zum Nachdenken und Verstehen
+            return random.uniform(0.4, 0.6)  # 400-600ms für neue Zeile (LERN-PAUSE)
         elif char == ' ':
-            return random.uniform(0.02, 0.04)  # 20-40ms for space
+            return random.uniform(0.08, 0.12)  # 80-120ms für Leerzeichen
         elif char in '{}[]()':
-            return random.uniform(0.04, 0.08)  # 40-80ms for brackets
+            # Klammern = langsamer (Überlegen beim Strukturieren)
+            return random.uniform(0.25, 0.35)  # 250-350ms für Klammern
         elif char in '.,;:':
-            return random.uniform(0.03, 0.06)  # 30-60ms for punctuation
+            return random.uniform(0.2, 0.3)  # 200-300ms für Satzzeichen
+        elif char in '=+-*/<>!&|':
+            # Operatoren = langsamer (Überlegen bei Logik)
+            return random.uniform(0.2, 0.28)  # 200-280ms für Operatoren
         else:
-            return random.uniform(0.03, 0.08)  # 30-80ms for normal chars
+            # Normale Zeichen = langsam genug zum Lernen und Verstehen
+            return random.uniform(0.15, 0.25)  # 150-250ms für normale Zeichen (LERN-GESCHWINDIGKEIT)
     
     async def stream_code(
         self,

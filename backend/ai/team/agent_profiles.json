@@ -202,6 +202,78 @@
       "prompt_prefix": "You are an Android Development Expert specializing in Kotlin and Jetpack Compose. You build modern native Android applications following Material Design guidelines. Provide production-ready Android code with MVVM architecture.",
       "temperature": 0.4,
       "max_tokens": 3500
+    },
+    "coder": {
+      "name": "Code Generator",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "Code Generation",
+        "File Creation",
+        "Implementation",
+        "Best Practices",
+        "Clean Code",
+        "Code Structure",
+        "Documentation",
+        "Comments"
+      ],
+      "prompt_prefix": "You are a Code Generation Expert. Your role is to write clean, well-documented, production-ready code. Always include comments explaining WHAT, HOW, and WHY. Generate complete, working code files.",
+      "temperature": 0.2,
+      "max_tokens": 4000
+    },
+    "reviewer": {
+      "name": "Code Reviewer & Bug Finder",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "Code Review",
+        "Bug Detection",
+        "Error Analysis",
+        "Code Quality",
+        "Security Issues",
+        "Performance Problems",
+        "Best Practices",
+        "Linting"
+      ],
+      "prompt_prefix": "You are a Code Review Expert. Your role is to analyze code, find bugs, errors, security issues, and suggest improvements. Be thorough and detailed. Always check for syntax errors, type errors, import errors, and logical issues.",
+      "temperature": 0.1,
+      "max_tokens": 3000
+    },
+    "packager": {
+      "name": "Package & Dependency Manager",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "Package Management",
+        "Dependency Installation",
+        "npm/yarn/pip/pub",
+        "Version Management",
+        "Dependency Conflicts",
+        "Package Updates",
+        "Security Updates",
+        "Build Configuration"
+      ],
+      "prompt_prefix": "You are a Package Management Expert. Your role is to manage dependencies, install packages, resolve conflicts, and ensure all required packages are correctly installed. You work with npm, yarn, pip, pub, and other package managers.",
+      "temperature": 0.2,
+      "max_tokens": 2000
+    },
+    "fixer": {
+      "name": "Auto-Fix Agent",
+      "model": "gpt-4o",
+      "fallback": "claude-3-5-sonnet-20241022",
+      "expertise": [
+        "Error Fixing",
+        "Bug Fixing",
+        "Syntax Errors",
+        "Type Errors",
+        "Import Errors",
+        "Dependency Fixes",
+        "Code Corrections",
+        "Quick Fixes"
+      ],
+      "prompt_prefix": "You are an Auto-Fix Expert. Your role is to automatically fix errors, bugs, and issues in code. Fix syntax errors, type errors, import errors, and other code problems quickly and accurately. Always return complete, working code.",
+      "temperature": 0.1,
+      "max_tokens": 3000
     }
   },
   "collaboration_modes": {

@@ -71,13 +71,17 @@ async def start_preview(request: Request) -> Dict[str, Any]:
 
     project_path = project_manager.get_project_path(user.email, project_id)
     
+    # ⚡ WICHTIG: Speichere Dateien IMMER, auch wenn Verzeichnis existiert
+    # (Smart Agent speichert Dateien direkt, aber Preview sollte sie auch haben)
+    files = body.get("files", [])
+    if files:
+        print(f"💾 Speichere {len(files)} Dateien für Preview...")
+        project_manager.save_files_to_project(user.email, project_id, files)
+        print(f"✅ Dateien gespeichert in: {project_path}")
+    
     # Prüfe ob Projekt-Verzeichnis existiert und Dateien hat
     if not os.path.exists(project_path) or not os.listdir(project_path):
-        # Versuche Dateien aus Request Body zu speichern (falls vorhanden)
-        files = body.get("files", [])
-        if files:
-            project_manager.save_files_to_project(user.email, project_id, files)
-        else:
+        if not files:
             raise HTTPException(400, "Project directory is empty. Please save files first.")
 
     try:

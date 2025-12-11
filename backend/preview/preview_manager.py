@@ -312,19 +312,17 @@ class HomeScreen extends StatelessWidget {
         # Log Streaming starten
         asyncio.create_task(self._pipe_preview_logs(user, port))
 
-        # Warte bis Server bereit ist (max 60 Sekunden für Flutter)
-        await self._wait_for_server_ready(port, max_wait=60)
+        # ⚡ ERHÖHTES TIMEOUT: Flutter braucht oft mehr Zeit zum Kompilieren
+        # Warte bis Server bereit ist (max 120 Sekunden für Flutter)
+        server_ready = await self._wait_for_server_ready(port, max_wait=120)
+        if not server_ready:
+            # Server nicht bereit, aber Prozess läuft - gib trotzdem URL zurück
+            # (Flutter kann im Hintergrund weiter kompilieren)
+            print(f"⚠️  Flutter server not ready after 120s, but process is running. URL: http://localhost:{port}")
 
-        # Browser automatisch öffnen (Chrome wird von flutter run -d chrome automatisch geöffnet)
-        # Aber als Fallback öffnen wir auch manuell, falls nötig
-        import webbrowser
-        try:
-            # Warte kurz, dann öffne Browser
-            await asyncio.sleep(2)
-            webbrowser.open(f"http://localhost:{port}")
-        except Exception as e:
-            print(f"⚠️  Could not auto-open browser: {e}")
-            # Flutter öffnet Chrome automatisch, also ist das OK
+        # ⚡ WICHTIG: KEIN separater Browser wird geöffnet!
+        # Der Browser-Tab wird automatisch im Editor geöffnet (Frontend macht das)
+        # webbrowser.open() wurde entfernt, damit kein separates Fenster öffnet
 
         return {"port": port, "url": f"http://localhost:{port}", "type": "flutter"}
 

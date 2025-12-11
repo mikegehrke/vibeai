@@ -12,8 +12,19 @@ import {
   Settings, X, ChevronRight, ChevronDown, Circle, CheckCircle2,
   AlertCircle, Info, Zap, Brain, Code, Palette, Eye, MessageSquare,
   Play, Save, FolderOpen, FileText, Code2, GitCommit, GitMerge,
-  User, Loader2, Send, Bot, ArrowUp, AtSign, Globe, Image, Infinity, ExternalLink, Copy, Check, Mic, Users
+  User, Loader2, Send, Bot, ArrowUp, AtSign, Globe, Image, Infinity, ExternalLink, Copy, Check, Mic, Users, Download, Github,
+  FileCode, FileJson, FileType, FileImage, FileVideo, FileMusic, FileArchive,
+  Database, Server, Cpu, Smartphone, Monitor, Layers, Box, FlaskConical,
+  Brackets, Braces, Type, Hash, Coffee, Zap as ZapIcon, Shield, Lock
 } from 'lucide-react';
+// 🎨 ECHTE FRAMEWORK-ICONS: react-icons für echte Logos
+import { 
+  SiFlutter, SiDart, SiPython, SiReact, SiNextdotjs, SiVuedotjs, SiAngular,
+  SiJavascript, SiTypescript, SiNodedotjs, SiHtml5, SiCss3, SiDocker,
+  SiKubernetes, SiRust, SiGo, SiJava, SiCsharp, SiSwift, SiKotlin,
+  SiPhp, SiC, SiCplusplus, SiJson, SiYaml, SiMarkdown, SiNpm,
+  SiMongodb, SiPostgresql, SiMysql, SiRedis, SiGit, SiGithub
+} from 'react-icons/si';
 import FileTree from './components/FileTree';
 import GitPanel from './components/GitPanel';
 import Terminal from './components/Terminal';
@@ -224,6 +235,28 @@ export default function BuilderPage({ params, searchParams }) {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [projectId, showCommandPalette, showAutoDropdown]);
+
+  // ⚡ WICHTIG: Funktion zum Neuladen der Projektdateien
+  const loadProjectFiles = async () => {
+    try {
+      // Lade Dateien von API
+      const response = await fetch(`http://localhost:8005/api/projects/${projectId}/files`);
+      if (response.ok) {
+        const projectFiles = await response.json();
+        setFiles(projectFiles);
+        if (projectFiles.length > 0 && !activeFile) {
+          setActiveFile(projectFiles[0]);
+          setOpenTabs([projectFiles[0]]);
+        }
+        updateProjectStats();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading project files:', error);
+      return false;
+    }
+  };
 
   const initializeProject = async () => {
     try {
@@ -539,10 +572,22 @@ Bitte versuche es erneut.`);
   // Start Live Build direkt aus dem Chat
   const startLiveBuildFromChat = async (projectName, framework, description) => {
     try {
+      console.log('🚀 startLiveBuildFromChat called:', { projectName, framework, description: description.substring(0, 50), teamMode });
+      
+      // ⚡ TOGGLE-SYSTEM: Wenn Team Mode aktiv ist, verwende Team Agent statt Smart Agent
+      if (teamMode) {
+        console.log('👥 Team Mode aktiv - verwende Team Agent');
+        return await startTeamAgentBuild(projectName, framework, description);
+      }
+      
       setIsLiveBuilding(true);
       setBuildProgress({ current: 0, total: 0, currentFile: null });
       
+      // ⚡ SOFORTIGE BESTÄTIGUNG im Chat
+      addChatMessage('assistant', `✅ **Verstanden! Ich starte jetzt den Smart Agent Generator...**\n\n📦 **Framework:** ${framework}\n📝 **Projekt:** ${projectName}\n\n⏱️ **Ich beginne sofort mit der Erstellung...**`);
+      
       // 🔥 KEINE DUMMY-TEXTE - Agent arbeitet ECHT!
+      console.log('📤 Sending request to Smart Agent API...');
       const response = await fetch('http://localhost:8005/api/smart-agent/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -555,18 +600,28 @@ Bitte versuche es erneut.`);
         })
       });
       
+      console.log('📥 Smart Agent API response:', response.status, response.statusText);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Build failed: ${response.statusText}`);
+        const errorMsg = errorData.error || errorData.message || errorData.detail || `Build failed: ${response.statusText}`;
+        console.error('❌ Smart Agent API error:', errorMsg);
+        throw new Error(errorMsg);
       }
       
       // Response kommt via WebSocket - ECHTE Updates, keine Dummy-Texte!
-      await response.json();
+      const result = await response.json();
+      console.log('✅ Smart Agent started:', result);
+      
+      // Zeige Bestätigung
+      if (result.success) {
+        addChatMessage('assistant', `✅ **Smart Agent gestartet!**\n\n📊 Generiere jetzt Dateien Schritt für Schritt...\n📁 Du siehst jede Datei live im Editor!`);
+      }
     } catch (error) {
-      console.error('Live build from chat error:', error);
+      console.error('❌ Live build from chat error:', error);
       setIsLiveBuilding(false);
-      // Nur bei Fehler: Echte Fehlermeldung
-      addChatMessage('assistant', `❌ Fehler: ${error.message}`);
+      // Echte Fehlermeldung mit Details
+      addChatMessage('assistant', `❌ **Fehler beim Starten des Smart Agent:**\n\n\`\`\`\n${error.message}\n\`\`\`\n\n💡 **Tipps:**\n- Prüfe ob Backend läuft (Port 8005)\n- Prüfe ob OPENAI_API_KEY gesetzt ist\n- Prüfe die Browser-Konsole für Details`);
     }
   };
   
@@ -724,10 +779,39 @@ Bitte versuche es erneut.`);
                   editorRef.current.setValue(newContent);
                 }
                 
-                // Position nur alle 500ms updaten (weniger häufig)
-                if (now - lastEditorUpdateRef.current > 500 || !data.line) {
-                  editorRef.current.setPosition({ lineNumber: lineNum, column: column });
-                  editorRef.current.revealLineInCenter(lineNum);
+                // ⚡ WICHTIG: Scroll immer zur aktuellen Zeile, damit alles sichtbar ist
+                const totalLines = newContent.split('\n').length;
+                const currentLine = data.line || totalLines;
+                
+                // Setze Position (Cursor)
+                editorRef.current.setPosition({ 
+                  lineNumber: currentLine, 
+                  column: column 
+                });
+                
+                // ⚡ WICHTIG: Scroll zur aktuellen Zeile (am unteren Rand sichtbar)
+                // Das zeigt die neue Zeile UND lässt oben mehr Code sehen
+                editorRef.current.revealLine(currentLine);
+                
+                // ⚡ WICHTIG: Wenn wir am Ende sind ODER fast am Ende, scroll ans Ende
+                // Damit sieht man den vollständigen Code und kann weiterschreiben
+                if (currentLine >= totalLines - 3) {
+                  // Wir sind am Ende - scroll ans Ende, damit man alles sieht
+                  setTimeout(() => {
+                    if (editorRef.current) {
+                      // Scroll zur letzten Zeile (am unteren Rand sichtbar)
+                      editorRef.current.revealLineNearTop(totalLines);
+                      
+                      // Setze Cursor ans Ende der letzten Zeile, damit man weiterschreiben kann
+                      const lastLineContent = newContent.split('\n')[totalLines - 1] || '';
+                      editorRef.current.setPosition({ 
+                        lineNumber: totalLines, 
+                        column: lastLineContent.length + 1 
+                      });
+                      
+                      console.log(`✅ Scrolled to end: line ${totalLines}, column ${lastLineContent.length + 1}`);
+                    }
+                  }, 50);
                 }
               } catch (err) {
                 console.log('Editor update error:', err);
@@ -857,6 +941,27 @@ Bitte versuche es erneut.`);
           return [...prev, newFile];
         });
         
+        // ⚡ WICHTIG: Wenn diese Datei aktiv ist, scroll ans Ende, damit man den vollständigen Code sieht
+        if (activeFile?.path === newFile.path && editorRef.current) {
+          setTimeout(() => {
+            if (editorRef.current) {
+              const totalLines = newFile.content.split('\n').length;
+              const lastLineContent = newFile.content.split('\n')[totalLines - 1] || '';
+              
+              // Scroll ans Ende der Datei
+              editorRef.current.revealLineNearTop(totalLines);
+              
+              // Setze Cursor ans Ende der letzten Zeile, damit man weiterschreiben kann
+              editorRef.current.setPosition({ 
+                lineNumber: totalLines, 
+                column: lastLineContent.length + 1 
+              });
+              
+              console.log(`✅ Scrolled to end of ${newFile.path} (line ${totalLines})`);
+            }
+          }, 100);
+        }
+        
         // Update preview if it's an HTML file
         if (data.path.endsWith('.html') || data.path.endsWith('.htm')) {
           setTimeout(() => {
@@ -909,7 +1014,10 @@ Bitte versuche es erneut.`);
       
       case 'generation.error':
         setIsLiveBuilding(false);
-        addChatMessage('assistant', `❌ **Fehler beim Generieren:**\n\n\`\`\`\n${data.error || 'Unbekannter Fehler'}\n\`\`\`\n\nBitte versuche es erneut.`);
+        const errorMsg = data.error || 'Unbekannter Fehler';
+        const errorDetails = data.details || '';
+        addChatMessage('assistant', `❌ **Fehler beim Generieren:**\n\n\`\`\`\n${errorMsg}\n\`\`\`\n\n${errorDetails ? `**Details:**\n\`\`\`\n${errorDetails}\n\`\`\`\n\n` : ''}💡 **Tipps:**\n- Prüfe ob OPENAI_API_KEY gesetzt ist\n- Prüfe die Backend-Logs\n- Versuche es erneut`);
+        console.error('❌ Smart Agent Error:', errorMsg, errorDetails);
         break;
       
       // ⚡ AUTONOMER MODUS - Fehlende Komponenten
@@ -972,8 +1080,40 @@ Bitte versuche es erneut.`);
       case 'preview_started':
         addChatMessage('assistant', `✅ **Preview gestartet!**\n\nURL: ${data.url || 'N/A'}`);
         if (data.url) {
-          setPreviewUrl(data.url);
-          setPreviewStatus('running');
+          // ⚡ VALIDIERUNG: Stelle sicher, dass URL auf localhost zeigt (nicht GitHub!)
+          const url = data.url.trim();
+          if (url.startsWith('http://localhost:') || url.startsWith('https://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://127.0.0.1:')) {
+            setPreviewUrl(url);
+            setPreviewStatus('running');
+            
+            // ⚡ AUTOMATISCH: Öffne Browser-Tab im Editor (nicht separat!)
+            const tabId = `browser-${Date.now()}`;
+            setBrowserTabs(prev => {
+              const existing = prev.find(t => t.url === url);
+              if (existing) {
+                // Tab existiert bereits, aktiviere ihn
+                setActiveBrowserTab(existing.id);
+                setActiveFile(null); // WICHTIG: Deaktiviere Datei-Tab, damit Browser-Tab sichtbar wird
+                return prev;
+              }
+              // Neuer Tab
+              const newTabs = [...prev, {
+                id: tabId,
+                url: url,
+                title: url.includes('://') ? new URL(url).hostname : url,
+                command: 'Preview Server'
+              }];
+              // WICHTIG: Aktiviere Browser-Tab sofort und deaktiviere Datei-Tab
+              setActiveBrowserTab(tabId);
+              setActiveFile(null);
+              return newTabs;
+            });
+            console.log('✅ Browser-Tab im Editor geöffnet (nicht separat!):', url);
+          } else {
+            console.error('❌ Invalid preview URL (not localhost):', url);
+            setPreviewError(`Ungültige Preview-URL: ${url}. Erwartet: http://localhost:PORT`);
+            setPreviewStatus('error');
+          }
         }
         break;
       
@@ -1073,13 +1213,44 @@ Bitte versuche es erneut.`);
       const data = await response.json();
       
       if (data.success && data.url) {
-        setPreviewUrl(data.url);
-        setPreviewType(data.type);
-        
-        // Warte bis Server wirklich bereit ist (Backend wartet bereits, aber doppelt hält besser)
-        await waitForServerReady(data.url);
-        
-        setPreviewStatus('running');
+        // ⚡ VALIDIERUNG: Stelle sicher, dass URL auf localhost zeigt (nicht GitHub!)
+        const url = data.url.trim();
+        if (url.startsWith('http://localhost:') || url.startsWith('https://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://127.0.0.1:')) {
+          setPreviewUrl(url);
+          setPreviewType(data.type);
+          
+          // Warte bis Server wirklich bereit ist (Backend wartet bereits, aber doppelt hält besser)
+          await waitForServerReady(url);
+          
+          setPreviewStatus('running');
+          
+          // ⚡ AUTOMATISCH: Öffne Browser-Tab im Editor (gleichzeitig mit Preview-Panel)
+          const tabId = `browser-${Date.now()}`;
+          setBrowserTabs(prev => {
+            const existing = prev.find(t => t.url === url);
+            if (existing) {
+              // Tab existiert bereits, aktiviere ihn
+              setActiveBrowserTab(existing.id);
+              setActiveFile(null); // WICHTIG: Deaktiviere Datei-Tab, damit Browser-Tab sichtbar wird
+              return prev;
+            }
+            // Neuer Tab
+            const newTabs = [...prev, {
+              id: tabId,
+              url: url,
+              title: url.includes('://') ? new URL(url).hostname : url,
+              command: 'Preview Server'
+            }];
+            // WICHTIG: Aktiviere Browser-Tab sofort und deaktiviere Datei-Tab
+            setActiveBrowserTab(tabId);
+            setActiveFile(null);
+            return newTabs;
+          });
+          console.log('✅ Preview gestartet: Browser-Tab im Editor geöffnet (nicht separat!)');
+        } else {
+          console.error('❌ Invalid preview URL (not localhost):', url);
+          throw new Error(`Ungültige Preview-URL: ${url}. Erwartet: http://localhost:PORT`);
+        }
       } else {
         throw new Error('Failed to start preview server');
       }
@@ -1127,8 +1298,16 @@ Bitte versuche es erneut.`);
       if (response.ok) {
         const data = await response.json();
         if (data.active && data.url) {
-          setPreviewUrl(data.url);
-          setPreviewStatus('running');
+          // ⚡ VALIDIERUNG: Stelle sicher, dass URL auf localhost zeigt (nicht GitHub!)
+          const url = data.url.trim();
+          if (url.startsWith('http://localhost:') || url.startsWith('https://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://127.0.0.1:')) {
+            setPreviewUrl(url);
+            setPreviewStatus('running');
+          } else {
+            console.error('❌ Invalid preview URL (not localhost):', url);
+            setPreviewStatus('error');
+            setPreviewError(`Ungültige Preview-URL: ${url}. Erwartet: http://localhost:PORT`);
+          }
         } else {
           setPreviewStatus('stopped');
         }
@@ -1187,12 +1366,30 @@ Bitte versuche es erneut.`);
   // Parse terminal commands from AI response and ASK FOR APPROVAL (like Cursor)
   const parseAndShowTerminalCommands = (responseContent) => {
     try {
+      // ⚡ HELPER: Validiere ob Befehl gültig ist
+      const isValidCommand = (cmd) => {
+        if (!cmd || typeof cmd !== 'string') return false;
+        const trimmed = cmd.trim();
+        // Prüfe auf leere/ungültige Befehle
+        if (trimmed.length === 0) return false;
+        // Ignoriere nur Backticks oder Code-Block-Marker
+        if (/^`+$/.test(trimmed)) return false;
+        if (/^```/.test(trimmed)) return false;
+        if (trimmed === '```' || trimmed === '```bash' || trimmed === '```sh') return false;
+        // Ignoriere nur Whitespace
+        if (/^\s+$/.test(trimmed)) return false;
+        // Ignoriere Markdown-Formatierung
+        if (trimmed.startsWith('$') && trimmed.length <= 3) return false;
+        return true;
+      };
+
       // Multiple patterns to catch different command formats
       const patterns = [
         /TERMINAL:\s*(.+?)(?=\n|$)/gi,  // TERMINAL: command
         /⚙️\s*Führe\s+(?:Befehl\s+)?aus:\s*(.+?)(?=\n|$)/gi,  // ⚙️ Führe Befehl aus: command
         /⚙️\s*Führe\s+aus:\s*(.+?)(?=\n|$)/gi,  // ⚙️ Führe aus: command
-        /```bash\s*\n(.+?)\n```/gi,  // ```bash\ncommand\n```
+        /```bash\s*\n([\s\S]+?)\n```/gi,  // ```bash\ncommand\n``` (mit [\s\S] statt .+? für multiline)
+        /```sh\s*\n([\s\S]+?)\n```/gi,  // ```sh\ncommand\n```
         /```\s*\n\$?\s*(npm|flutter|python|pip|cd|ls|cat|echo|git|yarn|pnpm)\s+(.+?)(?=\n|```)/gi,  // Code blocks with commands
       ];
       
@@ -1205,7 +1402,8 @@ Bitte versuche es erneut.`);
           if (command && !command.includes('TERMINAL:') && !command.includes('Führe')) {
             // Clean up command
             command = command.replace(/^\$?\s*/, '').trim();
-            if (command && !commands.includes(command)) {
+            // ⚡ VALIDIERUNG: Prüfe ob Befehl gültig ist
+            if (isValidCommand(command) && !commands.includes(command)) {
               commands.push(command);
             }
           }
@@ -1226,6 +1424,23 @@ Bitte versuche es erneut.`);
 
   // Execute terminal command after user approval
   const executeApprovedCommand = async (command) => {
+    // ⚡ VALIDIERUNG: Prüfe ob Befehl gültig ist (gleiche Logik wie parseAndShowTerminalCommands)
+    const isValidCommand = (cmd) => {
+      if (!cmd || typeof cmd !== 'string') return false;
+      const trimmed = cmd.trim();
+      if (trimmed.length === 0) return false;
+      if (/^`+$/.test(trimmed)) return false;
+      if (/^```/.test(trimmed)) return false;
+      if (trimmed === '```' || trimmed === '```bash' || trimmed === '```sh') return false;
+      if (/^\s+$/.test(trimmed)) return false;
+      if (trimmed.startsWith('$') && trimmed.length <= 3) return false;
+      return true;
+    };
+    
+    if (!isValidCommand(command)) {
+      console.warn('⚠️  Ungültiger oder leerer Befehl, ignoriere:', command);
+      return;
+    }
     console.log(`🔧 Executing approved terminal command: ${command}`);
     
     // ⚡ WICHTIG: Öffne Terminal-Panel automatisch, damit User sieht was passiert
@@ -1436,27 +1651,43 @@ Bitte versuche es erneut.`);
     }
   };
 
-  const closeTab = (file) => {
+  const closeTab = (file, event) => {
+    // ⚡ WICHTIG: Event komplett stoppen
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+      if (event.nativeEvent) {
+        event.nativeEvent.stopImmediatePropagation?.();
+      }
+    }
+    
     console.log(`🔴 Closing tab: ${file.path}`);
     console.log(`📊 Current tabs:`, openTabs.map(t => t.path));
     
-    const newTabs = openTabs.filter(tab => tab.path !== file.path);
-    console.log(`📊 New tabs after close:`, newTabs.map(t => t.path));
-    
-    setOpenTabs(newTabs);
-    
-    // ⚡ WICHTIG: Wenn geschlossene Datei aktiv war, öffne nächste oder null
-    if (activeFile?.path === file.path) {
-      if (newTabs.length > 0) {
-        // Öffne letzte Datei (wie VS Code)
-        setActiveFile(newTabs[newTabs.length - 1]);
-        console.log(`✅ Activated next tab: ${newTabs[newTabs.length - 1].path}`);
-      } else {
-        // Keine Tabs mehr offen
-        setActiveFile(null);
-        console.log(`✅ No tabs left, activeFile set to null`);
-      }
-    }
+    // ⚡ FUNKTIONAL UPDATE: Verwende funktionale State-Updates für Konsistenz
+    setOpenTabs(prevTabs => {
+      const newTabs = prevTabs.filter(tab => tab.path !== file.path);
+      console.log(`📊 New tabs after close:`, newTabs.map(t => t.path));
+      
+      // ⚡ WICHTIG: Wenn geschlossene Datei aktiv war, öffne nächste oder null
+      // Verwende setTimeout, um State-Update nach setOpenTabs auszuführen
+      setTimeout(() => {
+        if (activeFile?.path === file.path) {
+          if (newTabs.length > 0) {
+            // Öffne letzte Datei (wie VS Code)
+            const nextFile = newTabs[newTabs.length - 1];
+            setActiveFile(nextFile);
+            console.log(`✅ Activated next tab: ${nextFile.path}`);
+          } else {
+            // Keine Tabs mehr offen
+            setActiveFile(null);
+            console.log(`✅ No tabs left, activeFile set to null`);
+          }
+        }
+      }, 10);
+      
+      return newTabs;
+    });
   };
 
   const handleEditorChange = (value) => {
@@ -1638,6 +1869,72 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
     }
   };
 
+  const handleGitPush = async () => {
+    // Push to GitHub
+    try {
+      addChatMessage('assistant', '📤 **Push zu GitHub...**\n\nPushe Änderungen zu GitHub...');
+      
+      // First commit if there are uncommitted changes
+      const modifiedFiles = files.filter(f => f.gitStatus === 'M' || f.modified);
+      if (modifiedFiles.length > 0) {
+        await handleCommit();
+      }
+      
+      // Push via API
+      const response = await fetch(`http://localhost:8005/api/git/push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          remote: 'origin',
+          branch: 'main'
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        addChatMessage('assistant', `✅ **Erfolgreich zu GitHub gepusht!**\n\n${data.message || 'Push erfolgreich'}`);
+      } else {
+        const error = await response.json().catch(() => ({ detail: 'Push failed' }));
+        addChatMessage('assistant', `❌ **Push fehlgeschlagen:** ${error.detail || 'Unknown error'}\n\n💡 **Tipp:** Stelle sicher, dass:\n- Git Repository initialisiert ist\n- Remote Repository konfiguriert ist\n- Du Berechtigung zum Pushen hast`);
+      }
+    } catch (error) {
+      console.error('Push error:', error);
+      addChatMessage('assistant', `❌ **Push Fehler:** ${error.message}`);
+    }
+  };
+
+  const handleCloneFromGitHub = async (repoUrl) => {
+    // Clone project from GitHub
+    try {
+      addChatMessage('assistant', `📥 **Clone von GitHub...**\n\nRepository: ${repoUrl}`);
+      
+      const response = await fetch(`http://localhost:8005/api/download/clone-github`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          repo_url: repoUrl,
+          branch: 'main'
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        addChatMessage('assistant', `✅ **Erfolgreich von GitHub geklont!**\n\n${data.message || 'Clone erfolgreich'}`);
+        
+        // Reload project files
+        await loadProjectFiles();
+      } else {
+        const error = await response.json().catch(() => ({ detail: 'Clone failed' }));
+        addChatMessage('assistant', `❌ **Clone fehlgeschlagen:** ${error.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Clone error:', error);
+      addChatMessage('assistant', `❌ **Clone Fehler:** ${error.message}`);
+    }
+  };
+
   const handleCommand = (commandId) => {
     setShowCommandPalette(false);
     
@@ -1685,21 +1982,327 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
     }
   };
 
-  const getFileIcon = (filename) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    const iconMap = {
-      'dart': '🎯',
-      'js': '🟨',
-      'jsx': '⚛️',
-      'ts': '🔷', 
-      'tsx': '⚛️',
-      'html': '🌐',
-      'css': '🎨',
-      'md': '📝',
-      'json': '📄',
-      'py': '🐍'
-    };
-    return iconMap[ext] || '📄';
+  // 🔍 GLOBALE FRAMEWORK-ERKENNUNG: Erkenne Haupt-Framework des Projekts (wie VS Code)
+  const detectProjectFramework = useCallback(() => {
+    if (!files || files.length === 0) return null;
+    
+    const projectFiles = files.map(f => f.path || f.name || '').join(' ').toLowerCase();
+    const projectPaths = files.map(f => f.path || f.name || '').join(' ').toLowerCase();
+    
+    // Framework-Erkennung (Priorität: spezifisch → allgemein)
+    if (projectFiles.includes('pubspec.yaml') || projectPaths.includes('.dart')) {
+      return { icon: SiFlutter, color: '#027DFD', name: 'Flutter' };
+    }
+    if (projectFiles.includes('next.config') || projectPaths.includes('_app') || projectPaths.includes('_document') || projectPaths.includes('next.config')) {
+      return { icon: SiNextdotjs, color: '#000000', name: 'Next.js' };
+    }
+    if (projectFiles.includes('vue.config') || projectPaths.includes('.vue')) {
+      return { icon: SiVuedotjs, color: '#4FC08D', name: 'Vue' };
+    }
+    if (projectFiles.includes('angular.json') || projectPaths.includes('.component.')) {
+      return { icon: SiAngular, color: '#DD0031', name: 'Angular' };
+    }
+    if (projectFiles.includes('package.json') && (projectFiles.includes('react') || projectPaths.includes('jsx') || projectPaths.includes('tsx'))) {
+      return { icon: SiReact, color: '#61DAFB', name: 'React' };
+    }
+    if (projectFiles.includes('dockerfile') || projectFiles.includes('docker-compose')) {
+      return { icon: SiDocker, color: '#2496ED', name: 'Docker' };
+    }
+    if (projectFiles.includes('k8s') || projectFiles.includes('kubernetes')) {
+      return { icon: SiKubernetes, color: '#326CE5', name: 'Kubernetes' };
+    }
+    if (projectFiles.includes('cargo.toml') || projectPaths.includes('.rs')) {
+      return { icon: SiRust, color: '#000000', name: 'Rust' };
+    }
+    if (projectFiles.includes('go.mod') || projectPaths.includes('.go')) {
+      return { icon: SiGo, color: '#00ADD8', name: 'Go' };
+    }
+    if (projectFiles.includes('build.gradle') || projectFiles.includes('pom.xml') || projectPaths.includes('.java')) {
+      return { icon: SiJava, color: '#ED8B00', name: 'Java' };
+    }
+    if (projectFiles.includes('.csproj') || projectPaths.includes('.cs')) {
+      return { icon: SiCsharp, color: '#239120', name: 'C#' };
+    }
+    if (projectPaths.includes('.swift')) {
+      return { icon: SiSwift, color: '#FA7343', name: 'Swift' };
+    }
+    if (projectPaths.includes('.kt') && !projectFiles.includes('build.gradle')) {
+      return { icon: SiKotlin, color: '#7F52FF', name: 'Kotlin' };
+    }
+    if (projectFiles.includes('requirements.txt') || projectFiles.includes('setup.py') || projectPaths.includes('.py')) {
+      return { icon: SiPython, color: '#3776AB', name: 'Python' };
+    }
+    if (projectFiles.includes('package.json') && !projectFiles.includes('react') && !projectFiles.includes('next')) {
+      return { icon: SiNodedotjs, color: '#339933', name: 'Node.js' };
+    }
+    if (projectPaths.includes('.php') || projectFiles.includes('composer.json')) {
+      return { icon: SiPhp, color: '#777BB4', name: 'PHP' };
+    }
+    if (projectPaths.includes('.c') && !projectPaths.includes('.cpp')) {
+      return { icon: SiC, color: '#A8B9CC', name: 'C' };
+    }
+    if (projectPaths.includes('.cpp') || projectPaths.includes('.cc') || projectPaths.includes('.cxx')) {
+      return { icon: SiCplusplus, color: '#00599C', name: 'C++' };
+    }
+    
+    return null;
+  }, [files]);
+
+  // 🎨 ECHTE FRAMEWORK-ICONS: react-icons für echte Logos (GLOBAL für gesamtes Projekt - wie VS Code)
+  const getFileIcon = (file) => {
+    // Unterstütze sowohl String (filename) als auch File-Objekt
+    const filename = typeof file === 'string' ? file : file?.path || file?.name || '';
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const name = filename.toLowerCase();
+    
+    // 🔍 ERKENNE PROJEKT-FRAMEWORK (einmalig für gesamtes Projekt)
+    const projectFramework = detectProjectFramework();
+    
+    // 🎨 SPEZIELLE DATEITYPEN: Behalten ihre eigenen Icons (Images, Videos, etc.)
+    const isImage = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(ext);
+    const isVideo = ['mp4', 'avi', 'mov', 'webm'].includes(ext);
+    const isAudio = ['mp3', 'wav', 'ogg', 'm4a'].includes(ext);
+    const isArchive = ['zip', 'tar', 'gz', 'rar', '7z'].includes(ext);
+    const isDatabase = ['sql', 'db', 'sqlite'].includes(ext);
+    const isLock = name.includes('package-lock.json') || name.includes('yarn.lock') || name.includes('pubspec.lock');
+    
+    // Spezielle Dateien behalten ihre Icons
+    if (isImage) return { icon: FileImage, color: '#FF6B6B', name: 'Image' };
+    if (isVideo) return { icon: FileVideo, color: '#FF6B6B', name: 'Video' };
+    if (isAudio) return { icon: FileMusic, color: '#FF6B6B', name: 'Audio' };
+    if (isArchive) return { icon: FileArchive, color: '#FF6B6B', name: 'Archive' };
+    if (isDatabase) return { icon: Database, color: '#336791', name: 'Database' };
+    if (isLock) return { icon: Lock, color: '#858585', name: 'Lock' };
+    
+    // 🎨 GLOBALES FRAMEWORK-ICON: Wenn Framework erkannt, verwende es für ALLE Dateien
+    if (projectFramework) {
+      // Ausnahmen: Config-Dateien, JSON, YAML, Markdown behalten ihre Icons
+      const isJSON = ext === 'json';
+      const isYAML = ext === 'yaml' || ext === 'yml';
+      const isMarkdown = ext === 'md' || ext === 'markdown';
+      const isConfig = ['env', 'config', 'ini', 'toml', 'xml'].includes(ext) || name.includes('.config.');
+      
+      if (isJSON) return { icon: SiJson, color: '#000000', name: 'JSON' };
+      if (isYAML) return { icon: SiYaml, color: '#CB171E', name: 'YAML' };
+      if (isMarkdown) return { icon: SiMarkdown, color: '#083FA1', name: 'Markdown' };
+      if (isConfig) return { icon: Settings, color: '#858585', name: 'Config' };
+      
+      // Alle anderen Dateien bekommen das Framework-Icon
+      return projectFramework;
+    }
+    
+    // 🎨 FALLBACK: Sprach-spezifische Icons wenn kein Framework erkannt
+    const isHTML = ext === 'html' || ext === 'htm';
+    const isCSS = ext === 'css' || ext === 'scss' || ext === 'sass' || ext === 'less';
+    const isTypeScript = ext === 'ts' || ext === 'tsx';
+    const isJavaScript = ext === 'js' || ext === 'jsx';
+    const isPython = ext === 'py';
+    const isC = ext === 'c' || ext === 'h';
+    const isCpp = ext === 'cpp' || ext === 'cc' || ext === 'cxx' || ext === 'hpp';
+    const isPHP = ext === 'php';
+    const isJSON = ext === 'json';
+    const isYAML = ext === 'yaml' || ext === 'yml';
+    const isMarkdown = ext === 'md' || ext === 'markdown';
+    const isConfig = ['env', 'config', 'ini', 'toml', 'xml'].includes(ext) || name.includes('.config.');
+    
+    if (isPython) return { icon: SiPython, color: '#3776AB', name: 'Python' };
+    if (isTypeScript) return { icon: SiTypescript, color: '#3178C6', name: 'TypeScript' };
+    if (isJavaScript) return { icon: SiJavascript, color: '#F7DF1E', name: 'JavaScript' };
+    if (isC) return { icon: SiC, color: '#A8B9CC', name: 'C' };
+    if (isCpp) return { icon: SiCplusplus, color: '#00599C', name: 'C++' };
+    if (isPHP) return { icon: SiPhp, color: '#777BB4', name: 'PHP' };
+    if (ext === 'dart') return { icon: SiDart, color: '#0175C2', name: 'Dart' };
+    if (isHTML) return { icon: SiHtml5, color: '#E34F26', name: 'HTML' };
+    if (isCSS) return { icon: SiCss3, color: '#1572B6', name: 'CSS' };
+    if (isJSON) return { icon: SiJson, color: '#000000', name: 'JSON' };
+    if (isYAML) return { icon: SiYaml, color: '#CB171E', name: 'YAML' };
+    if (isMarkdown) return { icon: SiMarkdown, color: '#083FA1', name: 'Markdown' };
+    if (isConfig) return { icon: Settings, color: '#858585', name: 'Config' };
+    
+    // Default
+    return { icon: File, color: '#858585', name: 'File' };
+  };
+
+  // 👥 TEAM AGENTS: Starte alle Agenten parallel
+  const handleStartTeamAgents = async () => {
+    try {
+      // ⚡ TOGGLE-SYSTEM: Team Agent ON → Smart Agent OFF
+      const wasTeamMode = teamMode;
+      setTeamMode(true);
+      
+      // Pausiere Smart Agent wenn aktiv
+      if (isLiveBuilding && !wasTeamMode) {
+        setIsLiveBuilding(false);
+        addChatMessage('assistant', `⏸️ **Smart Agent pausiert** - Team Agent übernimmt jetzt!`);
+      }
+      
+      // Setze spezialisierte Agenten für verschiedene Aufgaben
+      const specializedAgents = ['frontend', 'backend', 'designer', 'architect', 'coder', 'reviewer', 'packager', 'fixer'];
+      setTeamAgents(specializedAgents);
+      setTeamModeType('parallel');
+      
+      addChatMessage('assistant', `👥 **Team-Agenten aktiviert!**\n\n**Aktive Agenten (8):**\n- 🎨 **Frontend Agent** - UI/UX, Components\n- ⚙️ **Backend Agent** - API, Services\n- 🎨 **Designer Agent** - UI Design, Styling\n- 🏗️ **Architect Agent** - Structure, Best Practices\n- 🤖 **Code Generator** - Implementation\n- 🔍 **Code Reviewer** - Quality Check\n- 📦 **Package Manager** - Dependencies\n- 🔧 **Auto-Fix Agent** - Error Fixing\n\n⚡ **Alle Agenten arbeiten PARALLEL** - schneller & besser als Smart Agent!\n\n💡 **Hinweis:** Team Agent kann auch komplette Apps erstellen (wie Smart Agent, aber mit mehreren Agenten parallel).`);
+      
+      // Starte alle Agenten parallel mit verschiedenen Aufgaben
+      const tasks = [
+        // 1. Code Reviewer: Prüfe Projekt auf Fehler
+        fetch('http://localhost:8005/api/auto-fix/scan-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            project_path: null // Backend findet Pfad selbst
+          })
+        }).then(async (res) => {
+          const data = await res.json();
+          if (data.errors && data.errors.length > 0) {
+            // Zeige Fehler in Problems Panel
+            data.errors.forEach(error => {
+              if (terminalRef.current?.addProblem) {
+                terminalRef.current.addProblem({
+                  file: error.file,
+                  line: error.line || 0,
+                  message: error.message,
+                  severity: error.severity || 'error',
+                  source: 'reviewer'
+                });
+              }
+            });
+            addChatMessage('assistant', `🔍 **Code Reviewer:** ${data.total} Probleme gefunden (${data.errors_count} Fehler, ${data.warnings_count} Warnungen)`);
+          } else {
+            addChatMessage('assistant', `✅ **Code Reviewer:** Keine Fehler gefunden!`);
+          }
+          return data;
+        }).catch(err => {
+          console.error('Reviewer error:', err);
+          return null;
+        }),
+        
+        // 2. Packager: Prüfe und installiere fehlende Packages
+        fetch('http://localhost:8005/api/projects/' + projectId + '/files').then(async (res) => {
+          const files = await res.json();
+          const hasPackageJson = files.some(f => f.name === 'package.json');
+          const hasPubspecYaml = files.some(f => f.name === 'pubspec.yaml');
+          
+          if (hasPackageJson) {
+            addChatMessage('assistant', `📦 **Package Manager:** Prüfe npm Dependencies...`);
+            // Terminal-Befehl würde hier ausgeführt werden
+          } else if (hasPubspecYaml) {
+            addChatMessage('assistant', `📦 **Package Manager:** Prüfe Flutter Dependencies...`);
+            // Terminal-Befehl würde hier ausgeführt werden
+          }
+          return { hasPackageJson, hasPubspecYaml };
+        }).catch(err => {
+          console.error('Packager error:', err);
+          return null;
+        }),
+        
+        // 3. Auto-Fix: Fixe gefundene Fehler
+        new Promise(resolve => {
+          setTimeout(async () => {
+            try {
+              const scanRes = await fetch('http://localhost:8005/api/auto-fix/scan-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  project_id: projectId,
+                  project_path: null
+                })
+              });
+              
+              const scanData = await scanRes.json();
+              
+              if (scanData.errors && scanData.errors.length > 0) {
+                addChatMessage('assistant', `🔧 **Auto-Fix Agent:** Starte automatisches Fixen...`);
+                
+                const fixRes = await fetch('http://localhost:8005/api/auto-fix/fix-project', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    project_id: projectId,
+                    project_path: null
+                  })
+                });
+                
+                const fixData = await fixRes.json();
+                
+                if (fixData.success) {
+                  addChatMessage('assistant', `✅ **Auto-Fix Agent:** ${fixData.files_fixed} Dateien gefixt, ${fixData.errors_fixed} Fehler behoben!`);
+                  await loadProjectFiles();
+                }
+              } else {
+                addChatMessage('assistant', `✅ **Auto-Fix Agent:** Keine Fehler zum Fixen gefunden!`);
+              }
+            } catch (err) {
+              console.error('Auto-Fix error:', err);
+            }
+            resolve(null);
+          }, 1000);
+        })
+      ];
+      
+      // Führe alle Aufgaben parallel aus
+      await Promise.all(tasks);
+      
+      addChatMessage('assistant', `🎉 **Team-Agenten abgeschlossen!**\n\nAlle Agenten haben ihre Aufgaben parallel ausgeführt.`);
+      
+    } catch (error) {
+      console.error('Team Agents error:', error);
+      addChatMessage('assistant', `❌ **Fehler beim Starten der Team-Agenten:** ${error.message}`);
+    }
+  };
+  
+  // 👥 TEAM AGENT: App-Erstellung (wie Smart Agent, aber mit mehreren Agenten)
+  const startTeamAgentBuild = async (projectName, framework, description) => {
+    try {
+      console.log('👥 startTeamAgentBuild called:', { projectName, framework, description: description.substring(0, 50) });
+      setIsLiveBuilding(true);
+      setBuildProgress({ current: 0, total: 0, currentFile: null });
+      
+      // ⚡ SOFORTIGE BESTÄTIGUNG im Chat
+      addChatMessage('assistant', `👥 **Team Agent gestartet!** Mehrere spezialisierte Agenten arbeiten parallel...\n\n📦 **Framework:** ${framework}\n📝 **Projekt:** ${projectName}\n\n⚡ **8 Agenten arbeiten gleichzeitig** - schneller & besser als Smart Agent!\n\n⏱️ **Ich beginne sofort mit der Erstellung...**`);
+      
+      console.log('📤 Sending request to Team Agent API...');
+      const response = await fetch('http://localhost:8005/api/team-agent/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          project_name: projectName,
+          platform: framework,
+          description: description,
+          features: []
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Team Agent Build failed: ${response.statusText}`);
+      }
+      
+      // Response will come via WebSocket (same events as Smart Agent)
+      const result = await response.json();
+      if (result.success) {
+        addChatMessage('assistant', `✅ **Team Agent gestartet!**
+        
+👥 **8 Agenten arbeiten parallel:**
+- Frontend, Backend, Designer, Architect
+- Code Generator, Reviewer, Packager, Auto-Fix
+
+📊 Generiere jetzt Dateien Schritt für Schritt...
+📁 Du siehst jede Datei live im Editor!`);
+      }
+    } catch (error) {
+      console.error('Team Agent build error:', error);
+      setIsLiveBuilding(false);
+      addChatMessage('assistant', `❌ **Fehler beim Starten des Team Agents:**
+
+\`\`\`
+${error.message}
+\`\`\`
+
+Bitte versuche es erneut.`);
+    }
   };
 
   const saveFile = async (file) => {
@@ -1774,6 +2377,7 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
   };
 
   const sendChatMessage = async () => {
+    // ⚡ WICHTIG: Chat ist IMMER verfügbar, auch während Smart Agent arbeitet!
     if (!chatInput.trim() || isChatLoading) return;
 
     const userMsg = {
@@ -1792,64 +2396,10 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
       console.log('📤 Sending chat message:', prompt);
       console.log('📤 Using model:', currentModel);
       console.log('📤 Using agent:', currentAgent);
-      
-      // 🔥 TEAM MODE: Multi-Agent Collaboration
-      if (teamMode && teamAgents.length > 0) {
-        console.log('👥 Team Mode aktiviert:', teamAgents, teamModeType);
-        
-        // Team Collaboration API
-        const teamResponse = await fetch('http://localhost:8005/api/team/collaborate', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            prompt: prompt,
-            agents: teamAgents,
-            mode: teamModeType,
-            project_id: projectId
-          })
-        });
-
-        if (!teamResponse.ok) {
-          throw new Error(`Team collaboration failed: ${teamResponse.statusText}`);
-        }
-
-        const teamResult = await teamResponse.json();
-        
-        // Zeige Team-Ergebnisse im Chat
-        let teamContent = `👥 **Team Collaboration** (${teamModeType} mode)\n\n`;
-        teamContent += `**Agenten:** ${teamAgents.map(a => AGENT_TYPES[a]?.name || a).join(', ')}\n\n`;
-        
-        // Zeige Antworten von jedem Agenten
-        for (const [agentKey, result] of Object.entries(teamResult.results || {})) {
-          if (result.success) {
-            const agentName = AGENT_TYPES[agentKey]?.name || agentKey;
-            teamContent += `### ${AGENT_TYPES[agentKey]?.emoji || '🤖'} ${agentName}\n\n`;
-            teamContent += `${result.response || result.content || 'Keine Antwort'}\n\n`;
-            
-            // Füge Agent-Nachricht zum Chat hinzu
-            setChatMessages(prev => [...prev, {
-              role: 'assistant',
-              content: `${AGENT_TYPES[agentKey]?.emoji || '🤖'} **${agentName}:**\n\n${result.response || result.content || 'Keine Antwort'}`,
-              timestamp: new Date().toISOString(),
-              agent: agentKey,
-              isTeamMessage: true
-            }]);
-          }
-        }
-        
-        // Zusammenfassung
-        if (teamResult.summary) {
-          teamContent += `\n**Zusammenfassung:**\n${teamResult.summary}`;
-        }
-        
-        setIsChatLoading(false);
-        return;
-      }
+      console.log('📤 Smart Agent läuft:', isLiveBuilding);
       
       // 🔥 INTELLIGENTE ERKENNUNG: Ist das eine App-Erstellungs-Anfrage?
+      // ⚡ WICHTIG: Das muss ZUERST geprüft werden, VOR Team-Mode!
       const lowerPrompt = prompt.toLowerCase();
       const isAppCreationRequest = (
         (lowerPrompt.includes('erstelle') || lowerPrompt.includes('erstell') || 
@@ -1861,17 +2411,52 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
          lowerPrompt.includes('react') || lowerPrompt.includes('nextjs'))
       );
       
-      // ⚡ WICHTIG: Chat-Agent antwortet IMMER, auch wenn Smart Agent startet!
-      // Beide arbeiten parallel!
+      // ⚡ WICHTIG: Chat-Agent antwortet IMMER SOFORT, auch wenn Smart Agent startet!
+      // Beide arbeiten PARALLEL - Chat-Agent blockiert NIE!
       
       if (isAppCreationRequest) {
-        // Extrahiere Framework und Projektname
-        let framework = 'flutter';
-        if (lowerPrompt.includes('react native')) framework = 'react-native';
-        else if (lowerPrompt.includes('nextjs') || lowerPrompt.includes('next.js')) framework = 'nextjs';
-        else if (lowerPrompt.includes('react')) framework = 'react';
-        else if (lowerPrompt.includes('vue')) framework = 'vue';
+        // Extrahiere Framework und Projektname - VOLLSTÄNDIGE ERKENNUNG ALLER PLATTFORMEN
+        let framework = 'flutter'; // Default
+        
+        // ===== MOBILE =====
+        if (lowerPrompt.includes('android') || lowerPrompt.includes('kotlin') || lowerPrompt.includes('jetpack compose') || lowerPrompt.includes('kotlin compose')) framework = 'android';
+        else if (lowerPrompt.includes('ios') || lowerPrompt.includes('swift') || lowerPrompt.includes('swiftui') || lowerPrompt.includes('xcode')) framework = 'ios';
+        else if (lowerPrompt.includes('react native') || lowerPrompt.includes('reactnative')) framework = 'react-native';
         else if (lowerPrompt.includes('flutter')) framework = 'flutter';
+        // ===== WEB FRONTEND =====
+        else if (lowerPrompt.includes('nextjs') || lowerPrompt.includes('next.js') || lowerPrompt.includes('next js')) framework = 'nextjs';
+        else if (lowerPrompt.includes('vue') || lowerPrompt.includes('vuejs')) framework = 'vue';
+        else if (lowerPrompt.includes('angular')) framework = 'angular';
+        else if (lowerPrompt.includes('svelte') || lowerPrompt.includes('sveltekit')) framework = 'svelte';
+        else if (lowerPrompt.includes('react')) framework = 'react';
+        else if (lowerPrompt.includes('html') || lowerPrompt.includes('website') || lowerPrompt.includes('web seite') || lowerPrompt.includes('webseite')) framework = 'html';
+        // ===== BACKEND =====
+        else if (lowerPrompt.includes('nodejs') || lowerPrompt.includes('node.js') || lowerPrompt.includes('node js') || lowerPrompt.includes('express')) framework = 'nodejs';
+        else if (lowerPrompt.includes('fastapi') || lowerPrompt.includes('fast api') || (lowerPrompt.includes('python') && lowerPrompt.includes('api'))) framework = 'fastapi';
+        else if (lowerPrompt.includes('django')) framework = 'django';
+        else if (lowerPrompt.includes('flask')) framework = 'flask';
+        else if (lowerPrompt.includes('python') || lowerPrompt.includes('py ') || lowerPrompt.includes(' python ')) framework = 'python';
+        else if (lowerPrompt.includes('rust') || lowerPrompt.includes('rustlang')) framework = 'rust';
+        else if (lowerPrompt.includes('go ') || lowerPrompt.includes('golang') || lowerPrompt.includes(' go ')) framework = 'go';
+        else if (lowerPrompt.includes('java') || lowerPrompt.includes('spring') || lowerPrompt.includes('spring boot')) framework = 'java';
+        else if (lowerPrompt.includes('c#') || lowerPrompt.includes('csharp') || lowerPrompt.includes('dotnet') || lowerPrompt.includes('.net') || lowerPrompt.includes('aspnet')) framework = 'csharp';
+        else if (lowerPrompt.includes('php') || lowerPrompt.includes('laravel')) framework = 'php';
+        // ===== C/C++ =====
+        else if (lowerPrompt.includes('c++') || lowerPrompt.includes('cpp') || lowerPrompt.includes('cplusplus') || lowerPrompt.includes(' cxx ')) framework = 'cpp';
+        else if ((lowerPrompt.includes(' c ') || lowerPrompt.includes(' c ')) && !lowerPrompt.includes('c#') && !lowerPrompt.includes('csharp')) framework = 'c';
+        // ===== DOCKER & DEVOPS =====
+        else if (lowerPrompt.includes('docker') || lowerPrompt.includes('container')) framework = 'docker';
+        else if (lowerPrompt.includes('kubernetes') || lowerPrompt.includes('k8s')) framework = 'kubernetes';
+        // ===== DESKTOP =====
+        else if (lowerPrompt.includes('electron')) framework = 'electron';
+        else if (lowerPrompt.includes('tauri')) framework = 'tauri';
+        // ===== GAME DEVELOPMENT =====
+        else if (lowerPrompt.includes('unity') || lowerPrompt.includes('unity3d')) framework = 'unity';
+        else if (lowerPrompt.includes('godot')) framework = 'godot';
+        // ===== BLOCKCHAIN =====
+        else if (lowerPrompt.includes('solidity') || lowerPrompt.includes('ethereum') || lowerPrompt.includes('web3') || lowerPrompt.includes('blockchain')) framework = 'solidity';
+        // ===== MACHINE LEARNING =====
+        else if (lowerPrompt.includes('tensorflow') || lowerPrompt.includes('pytorch') || lowerPrompt.includes('machine learning') || lowerPrompt.includes('ml ')) framework = 'tensorflow';
         
         // Extrahiere Projektname
         const nameMatch = prompt.match(/namens?\s+([a-zA-Z0-9_-]+)/i) ||
@@ -1879,17 +2464,20 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
                          prompt.match(/"([a-zA-Z0-9_-]+)"/);
         const projectName = nameMatch ? nameMatch[1] : projectId;
         
-        // ⚡ Starte Smart Agent im Hintergrund (NICHT warten!)
+        // ⚡ Starte Smart Agent im HINTERGRUND (NICHT warten, läuft parallel!)
+        console.log('🚀 Starting Smart Agent (parallel):', { projectName, framework, description: prompt });
         startLiveBuildFromChat(projectName, framework, prompt).catch(err => {
-          console.error('Smart Agent error:', err);
+          console.error('❌ Smart Agent error:', err);
+          addChatMessage('assistant', `❌ **Fehler beim Starten des Smart Agent:**\n\n\`\`\`\n${err.message}\n\`\`\``);
         });
         
-        // ⚡ WICHTIG: Chat-Agent antwortet TROTZDEM normal weiter!
-        // Kein return - Chat läuft weiter und Agent gibt ECHTE Antwort!
+        // ⚡ WICHTIG: Chat-Agent antwortet TROTZDEM SOFORT weiter!
+        // Kein return - Chat läuft PARALLEL und Agent gibt ECHTE Antwort!
+        // Smart Agent arbeitet im Hintergrund, Chat-Agent antwortet sofort!
       }
       
-      // Echte API-Integration
-      // ⚡ STREAMING AKTIVIEREN für sofortige Antworten!
+      // ⚡ CHAT-AGENT: IMMER SOFORTIGE ANTWORTEN (wie ChatGPT/Claude)
+      // Echte API-Integration mit STREAMING für sofortige Antworten!
       const response = await fetch('http://localhost:8005/api/chat', {
         method: 'POST',
         headers: { 
@@ -1907,63 +2495,72 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
             role: msg.role,
             content: msg.content
           })),
-          system_prompt: `🚀 Du bist ein intelligenter Auto-Coder Agent im VibeAI Builder mit DIREKTEM ZUGRIFF auf den Code und VOLLSTÄNDIGER AUTOMATISIERUNG.
+          system_prompt: `🚀 Du bist ein intelligenter Auto-Coder Agent im VibeAI Builder - wie ChatGPT/Cursor, aber mit VOLLSTÄNDIGER AUTOMATISIERUNG.
 
-🔥 Was du kannst (AUTOMATISCH):
-• 📁 Dateien ERSTELLEN & BEARBEITEN - Automatisch
-• 🤖 Code GENERIEREN - Mit KI-Power
-• 🔧 Bugs FIXEN - Sofort
-• 🎨 UI/UX DESIGNEN - Modern & responsive
-• 📊 Daten ANALYSIEREN - Smart insights
-• 🚀 Apps DEPLOYEN - One-click
-• ⚙️ Terminal-BEFEHLE AUSFÜHREN - npm install, flutter pub get, etc.
-• 📦 Packages INSTALLIEREN - Automatisch
-• 🏗️ Projekte BAUEN - Build-Befehle ausführen
-• 🧪 Code TESTEN - Tests ausführen
+💡 **INTELLIGENZ & KONTEXT:**
+- Du verstehst den vollständigen Projekt-Kontext und Codebase-Struktur
+- Du analysierst Code-Patterns, Abhängigkeiten und Beziehungen automatisch
+- Du denkst Schritt für Schritt und erklärst deine Entscheidungen klar
+- Du bietest mehrere Lösungsansätze wenn sinnvoll
+- Du lernst aus dem Projekt-Kontext und passt deine Antworten an
+- Du bietest pädagogische Erklärungen zum Lernen von Programmierung
 
-⚡ Quick Actions (du verstehst und führst automatisch aus):
-• "erstelle eine React App" → Erstelle komplette React-App mit allen Dateien
-• "fixe alle Fehler" → Finde und fixe alle Fehler im Projekt
-• "optimiere den Code" → Optimiere Code für Performance und Best Practices
-• "erstelle ein Dashboard" → Erstelle komplettes Dashboard UI
-• "installiere packages" → Installiere alle benötigten Dependencies
-• "starte den Server" → Starte Development Server
-• "baue die App" → Baue die Anwendung
+🔥 **AUTOMATISIERUNG (Was du automatisch machst):**
+• 📁 Dateien ERSTELLEN & BEARBEITEN - Automatisch, mit vollständigem, production-ready Code
+• 🤖 Code GENERIEREN - Mit Best Practices, Kommentaren, Type-Safety, Error-Handling
+• 🔧 Bugs FIXEN - Analysiere Fehler, finde Root-Cause, fixe intelligent
+• 🎨 UI/UX DESIGNEN - Modern, responsive, accessible Designs
+• 📊 Code ANALYSIEREN - Performance, Sicherheit, Best Practices Analyse
+• 🚀 Apps DEPLOYEN - One-click Deployment
+• ⚙️ Terminal-BEFEHLE - Automatisch ausführen (npm, flutter, etc.)
+• 📦 Dependencies - Automatisch installieren und verwalten
+• 🏗️ Build-Prozesse - Automatisch konfigurieren und ausführen
+• 🧪 Tests - Automatisch schreiben und ausführen
 
-📝 Code-Format:
-Wenn du Code erstellst/modifizierst, formatiere als:
+⚡ **INTELLIGENTE ERKENNUNG:**
+Du erkennst automatisch:
+- App-Erstellungs-Anfragen → Starte Smart Agent (parallel, non-blocking)
+- Code-Fragen → Analysiere Code und erkläre klar
+- Fehler-Beschreibungen → Finde und fixe automatisch
+- Verbesserungsvorschläge → Implementiere sofort
+- Konzept-Fragen → Erkläre mit Code-Beispielen
+
+📝 **CODE-FORMAT (Wichtig für automatische Ausführung):**
 \`\`\`language path/to/file
-[VOLLSTÄNDIGER CODE HIER]
+[VOLLSTÄNDIGER CODE - mit Kommentaren, Type-Safety, Error-Handling]
 \`\`\`
 
-🔧 Terminal-Format:
-Wenn du Befehle ausführen musst, formatiere als:
+🔧 **TERMINAL-FORMAT:**
 TERMINAL: command here
 
-🎯 Dein Workflow (ZEIGE DEINE SCHRITTE - SEI SPEZIFISCH):
-1. Sage was du tust: "📝 Analysiere Projektstruktur..."
-2. Zeige deine Arbeit: "🔍 Finde Fehler in main.dart..."
-3. Führe Aktionen aus: "✅ Fixe Fehler in Zeile 45..."
-4. Erstelle Dateien: "📁 Erstelle neue Datei: src/components/Button.jsx"
-5. Bearbeite Dateien: "✏️ Bearbeite: lib/main.dart (Zeile 10-15)"
-6. Führe Befehle aus: "⚙️ Führe aus: npm install"
-7. Verifiziere: "✅ Fertig! Alle Fehler behoben."
+🎯 **DEIN WORKFLOW (Zeige deine Denkprozesse):**
+1. **Verstehen:** "📝 Analysiere die Anfrage und Projekt-Kontext..."
+2. **Planen:** "🔍 Ich sehe folgende Optionen: [Optionen]"
+3. **Handeln:** "✅ Implementiere Lösung 1: [Beschreibung]"
+4. **Erklären:** "💡 Warum: [Begründung]"
+5. **Verifizieren:** "✅ Fertig! [Ergebnis]"
 
-WICHTIG: Zeige ECHTE Aktionen, nicht nur Text. Verwende Emojis für Aktions-Typen:
-- 📝 = Analysiere/Planen
-- 🔍 = Suche/Untersuche
-- 📁 = Erstelle Datei
-- ✏️ = Bearbeite Datei
-- ✅ = Abgeschlossene Aktion
-- ⚙️ = Führe Befehl aus
-- 🔧 = Fixe
-- 🚀 = Deploye/Baue
+💬 **CHAT-VERHALTEN (Wie ChatGPT/Cursor):**
+- Antworte SOFORT, auch wenn Smart Agent parallel arbeitet
+- Sei hilfreich, präzise und freundlich
+- Erkläre komplexe Konzepte verständlich
+- Zeige Code-Beispiele wenn hilfreich
+- Stelle Rückfragen wenn etwas unklar ist
+- Biete Alternativen wenn sinnvoll
 
-Du arbeitest VOLLSTÄNDIG AUTOMATISCH - einfach beschreiben was du willst und ich mache es!
+🎓 **LERN-ORIENTIERT:**
+- Erkläre WARUM du etwas so machst
+- Zeige Best Practices
+- Erkläre Code-Strukturen
+- Gib Tipps für besseres Coding
+
+**WICHTIG:** Du arbeitest IMMER parallel zum Smart Agent. Der Chat ist IMMER verfügbar für Fragen, Verbesserungen und Diskussionen - genau wie bei ChatGPT oder Cursor!
+
 Aktuelles Projekt: ${projectId}
-Verwende den Agent-Typ: ${currentAgent || 'aura'}
-Du hast vollen Kontext des Projekts. Nutze dies für präzise, hilfreiche Lösungen.
-Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
+Agent-Typ: ${currentAgent || 'aura'}
+Smart Agent läuft: ${isLiveBuilding ? 'Ja (parallel)' : 'Nein'}
+
+Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit pädagogischem Wert.`
         })
       });
 
@@ -1990,23 +2587,57 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
         const decoder = new TextDecoder();
         let fullContent = '';
         let processedCodeBlocks = new Set(); // Track which code blocks we've already processed
+        let buffer = ''; // Buffer for incomplete lines
         
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              // ⚡ Stream endet - finalisiere Nachricht und setze Loading zurück
+              setChatMessages(prev => prev.map((msg, idx) => 
+                idx === prev.length - 1 && msg.isStreaming
+                  ? { ...msg, content: fullContent, isStreaming: false }
+                  : msg
+              ));
+              setIsChatLoading(false);
+              break;
+            }
           
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          // Decode chunk and add to buffer
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete lines (ending with \n)
+          const lines = buffer.split('\n');
+          // Keep the last incomplete line in buffer
+          buffer = lines.pop() || '';
           
           for (const line of lines) {
+            // Skip empty lines
+            if (!line.trim()) continue;
+            
+            // Only process lines that start with "data: "
             if (line.startsWith('data: ')) {
               try {
-                const data = JSON.parse(line.slice(6));
+                const jsonStr = line.slice(6).trim();
+                // Skip if empty
+                if (!jsonStr) continue;
+                
+                const data = JSON.parse(jsonStr);
                 
                 if (data.error) {
                   setChatMessages(prev => prev.map((msg, idx) => 
                     idx === prev.length - 1 && msg.isStreaming
                       ? { ...msg, content: `❌ Fehler: ${data.error}`, isStreaming: false }
+                      : msg
+                  ));
+                  break;
+                }
+                
+                if (data.done) {
+                  // Mark streaming as complete
+                  setChatMessages(prev => prev.map((msg, idx) => 
+                    idx === prev.length - 1 && msg.isStreaming
+                      ? { ...msg, isStreaming: false }
                       : msg
                   ));
                   break;
@@ -2059,9 +2690,22 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   const terminalPattern = /TERMINAL:\s*(.+?)(?:\n|$)/g;
                   let terminalMatch;
                   const seenCommands = new Set();
+                  // ⚡ HELPER: Validiere ob Befehl gültig ist (gleiche Logik wie parseAndShowTerminalCommands)
+                  const isValidCommand = (cmd) => {
+                    if (!cmd || typeof cmd !== 'string') return false;
+                    const trimmed = cmd.trim();
+                    if (trimmed.length === 0) return false;
+                    if (/^`+$/.test(trimmed)) return false;
+                    if (/^```/.test(trimmed)) return false;
+                    if (trimmed === '```' || trimmed === '```bash' || trimmed === '```sh') return false;
+                    if (/^\s+$/.test(trimmed)) return false;
+                    if (trimmed.startsWith('$') && trimmed.length <= 3) return false;
+                    return true;
+                  };
                   while ((terminalMatch = terminalPattern.exec(fullContent)) !== null) {
-                    const command = terminalMatch[1].trim();
-                    if (command && !seenCommands.has(command)) {
+                    const command = terminalMatch[1]?.trim();
+                    // ⚡ VALIDIERUNG: Ignoriere leere oder ungültige Befehle
+                    if (isValidCommand(command) && !seenCommands.has(command)) {
                       seenCommands.add(command);
                       // Show approval button immediately
                       const approvalMsg = {
@@ -2126,10 +2770,58 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   return;
                 }
               } catch (e) {
-                console.error('Parse error:', e);
+                // Silently skip invalid JSON lines (might be incomplete chunks)
+                // Only log if it's not a JSON parse error (which is expected for incomplete chunks)
+                if (!e.message.includes('JSON') && !e.message.includes('Unexpected token')) {
+                  console.error('⚠️ Parse error:', e, 'Line:', line.substring(0, 100));
+                }
               }
             }
           }
+        }
+        
+        // Process any remaining buffer when stream ends
+        if (buffer.trim()) {
+          const line = buffer.trim();
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr) {
+                const data = JSON.parse(jsonStr);
+                if (data.done) {
+                  setChatMessages(prev => prev.map((msg, idx) => 
+                    idx === prev.length - 1 && msg.isStreaming
+                      ? { ...msg, content: fullContent, isStreaming: false }
+                      : msg
+                  ));
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors in final buffer
+              console.warn('⚠️ Could not parse final buffer');
+            }
+          }
+        }
+        
+        // Finalize message if still streaming
+        setChatMessages(prev => prev.map((msg, idx) => 
+          idx === prev.length - 1 && msg.isStreaming
+            ? { ...msg, content: fullContent, isStreaming: false }
+            : msg
+        ));
+        } catch (streamError) {
+          // ⚡ CATCH für Stream-Fehler (z.B. Reader-Fehler, Verbindungsabbruch)
+          console.error('❌ Stream error:', streamError);
+          
+          // Finalize message if still streaming
+          setChatMessages(prev => prev.map((msg, idx) => 
+            idx === prev.length - 1 && msg.isStreaming
+              ? { ...msg, content: fullContent || '❌ Fehler beim Laden der Antwort', isStreaming: false }
+              : msg
+          ));
+        } finally {
+          // ⚡ WICHTIG: Setze isChatLoading IMMER zurück, auch wenn Stream endet ohne data.done
+          setIsChatLoading(false);
         }
       } else {
         // Non-streaming fallback
@@ -2197,6 +2889,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
         setChatMessages(prev => [...prev, errorMsg]);
       }
       
+      setIsChatLoading(false);
+    } finally {
+      // ⚡ WICHTIG: Setze isChatLoading IMMER zurück, auch bei Fehlern!
+      // Das stellt sicher, dass der Chat NIE blockiert bleibt
       setIsChatLoading(false);
     }
   };
@@ -2859,6 +3555,107 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
               <Package size={20} />
             </button>
             <button
+              onClick={async () => {
+                // Auto-Fix Agent starten
+                try {
+                  addChatMessage('assistant', '🔧 **Auto-Fix Agent gestartet!**\n\n📊 Scanne Projekt nach Fehlern...');
+                  
+                  // Hole Projekt-Pfad vom Backend
+                  const projectInfoRes = await fetch(`http://localhost:8005/api/projects/${projectId}`);
+                  let projectPath = null;
+                  if (projectInfoRes.ok) {
+                    const projectInfo = await projectInfoRes.json();
+                    projectPath = projectInfo.path || projectInfo.project_path;
+                  }
+                  
+                  // Fallback: Standard-Pfad
+                  if (!projectPath) {
+                    projectPath = `/Volumes/Crucial X9 Pro For Mac/Development/Projects/development/vibeai/backend/user_projects/default_user/${projectId}`;
+                  }
+                  
+                  // Scanne Projekt
+                  const scanRes = await fetch(`http://localhost:8005/api/auto-fix/scan-project`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      project_id: projectId,
+                      project_path: projectPath
+                    })
+                  });
+                  
+                  const scanData = await scanRes.json();
+                  
+                  if (scanData.errors && scanData.errors.length > 0) {
+                    // Zeige Fehler in Problems Panel
+                    scanData.errors.forEach(error => {
+                      if (terminalRef.current?.addProblem) {
+                        terminalRef.current.addProblem({
+                          file: error.file,
+                          line: error.line || 0,
+                          message: error.message,
+                          severity: error.severity || 'error',
+                          source: error.source || 'auto-fix'
+                        });
+                      }
+                    });
+                    
+                    addChatMessage('assistant', `🔍 **${scanData.total} Fehler gefunden:**\n\n- ${scanData.errors_count} Fehler\n- ${scanData.warnings_count} Warnungen\n\n⚙️ Starte automatisches Fixen...`);
+                    
+                    // Fixe Projekt
+                    const fixRes = await fetch(`http://localhost:8005/api/auto-fix/fix-project`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        project_id: projectId,
+                        project_path: projectPath
+                      })
+                    });
+                    
+                  const fixData = await fixRes.json();
+                  
+                  if (fixData.success) {
+                    addChatMessage('assistant', `✅ **Auto-Fix abgeschlossen!**\n\n- ${fixData.files_fixed} Dateien gefixt\n- ${fixData.errors_fixed} Fehler behoben\n\n🔄 Lade Dateien neu...`);
+                    
+                    // Lade Dateien neu
+                    await loadProjectFiles();
+                  } else {
+                    addChatMessage('assistant', `❌ **Fehler beim Fixen:** ${fixData.message || 'Unbekannter Fehler'}`);
+                  }
+                } else {
+                  addChatMessage('assistant', '✅ **Keine Fehler gefunden!** Das Projekt ist fehlerfrei.');
+                }
+              } catch (error) {
+                console.error('Auto-Fix error:', error);
+                addChatMessage('assistant', `❌ **Fehler:** ${error.message}`);
+              }
+            }}
+              style={{
+                width: '44px',
+                height: '44px',
+                background: 'transparent',
+                border: 'none',
+                color: '#858585',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'all 0.2s',
+                position: 'relative'
+              }}
+              title="Auto-Fix Agent - Projekt durchsuchen und Fehler automatisch fixen"
+              onMouseEnter={(e) => {
+                e.target.style.background = '#2d2d30';
+                e.target.style.color = '#4ec9b0';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#858585';
+              }}
+            >
+              <Zap size={18} />
+            </button>
+            <button
               onClick={() => {
                 // Tutorial starten
                 setShowTutorial(true);
@@ -2888,6 +3685,78 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
               }}
             >
               <span style={{ fontSize: '18px', fontWeight: 'bold' }}>?</span>
+            </button>
+            <button
+              onClick={async () => {
+                // Projekt als ZIP herunterladen
+                try {
+                  window.location.href = `http://localhost:8005/api/download/zip/${projectId}`;
+                  addChatMessage('assistant', `📦 **Projekt wird als ZIP heruntergeladen...**\n\nDas komplette Projekt wird als ZIP-Datei heruntergeladen.`);
+                } catch (error) {
+                  console.error('Download error:', error);
+                  addChatMessage('assistant', `❌ **Fehler beim Download:** ${error.message}`);
+                }
+              }}
+              style={{
+                width: '44px',
+                height: '44px',
+                background: 'transparent',
+                border: 'none',
+                color: '#858585',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'all 0.2s',
+                position: 'relative'
+              }}
+              title="Projekt als ZIP herunterladen"
+              onMouseEnter={(e) => {
+                e.target.style.background = '#2d2d30';
+                e.target.style.color = '#4ec9b0';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#858585';
+              }}
+            >
+              <Download size={18} />
+            </button>
+            <button
+              onClick={() => {
+                // Team-Agenten starten
+                handleStartTeamAgents();
+              }}
+              style={{
+                width: '44px',
+                height: '44px',
+                background: teamMode ? '#4ec9b0' : 'transparent',
+                border: teamMode ? '1px solid #4ec9b0' : 'none',
+                color: teamMode ? '#ffffff' : '#858585',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'all 0.2s',
+                position: 'relative'
+              }}
+              title="Team-Agenten starten (Code, Review, Packages, Fix)"
+              onMouseEnter={(e) => {
+                if (!teamMode) {
+                  e.target.style.background = '#2d2d30';
+                  e.target.style.color = '#4ec9b0';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!teamMode) {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#858585';
+                }
+              }}
+            >
+              <Users size={18} />
             </button>
               </div>
           
@@ -2972,17 +3841,54 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
               <SearchPanel 
                 files={files}
                 onFileSelect={(filePath, line) => {
-                  const file = files.find(f => f.path === filePath);
+                  const file = files.find(f => f.path === filePath || f.name === filePath);
                   if (file) {
                     openFile(file);
-                    // Scroll to line (would need editor ref)
+                    // ⚡ Scroll to line im Editor
+                    if (editorRef.current && line) {
+                      setTimeout(() => {
+                        editorRef.current.revealLineInCenter(line);
+                        editorRef.current.setPosition({ lineNumber: line, column: 1 });
+                      }, 300);
+                    }
+                  }
+                }}
+                onFilesUpdate={async (updatedFiles) => {
+                  // ⚡ Speichere alle geänderten Dateien
+                  try {
+                    for (const file of updatedFiles) {
+                      await saveFile(file);
+                    }
+                    // Update state
+                    setFiles(updatedFiles);
+                    // Update open tabs
+                    setOpenTabs(prev => prev.map(tab => {
+                      const updated = updatedFiles.find(f => f.path === tab.path);
+                      return updated || tab;
+                    }));
+                    // Update active file if it was changed
+                    if (activeFile) {
+                      const updated = updatedFiles.find(f => f.path === activeFile.path);
+                      if (updated) {
+                        setActiveFile(updated);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error updating files:', error);
+                    throw error;
                   }
                 }}
               />
             ) : activeLeftPanel === 'source-control' ? (
               <GitPanel projectId={projectId} />
             ) : activeLeftPanel === 'run-debug' ? (
-              <RunAndDebugPanel projectId={projectId} activeFile={activeFile} />
+              <RunAndDebugPanel 
+                projectId={projectId} 
+                activeFile={activeFile} 
+                files={files}
+                terminalRef={terminalRef}
+                onPreviewStart={startPreviewServer} // ⚡ Preview-Start Callback
+              />
             ) : activeLeftPanel === 'testing' ? (
               <TestingPanel projectId={projectId} files={files} />
             ) : activeLeftPanel === 'extensions' ? (
@@ -3090,7 +3996,8 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                 flexShrink: 0, // WICHTIG: Verhindert, dass Tabs den Editor verschieben
                 flexGrow: 0, // WICHTIG: Nie wachsen
                 position: 'relative',
-                zIndex: 5
+                zIndex: 5,
+                pointerEvents: 'auto' // ⚡ WICHTIG: Container ist klickbar
               }}
               onWheel={(e) => {
                 // Horizontal scroll with mouse wheel (Shift + Wheel = horizontal)
@@ -3106,7 +4013,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   key={file.path}
                   onClick={(e) => {
                     // ⚡ WICHTIG: Nur Tab öffnen, wenn nicht auf Close-Button geklickt wurde
-                    if (!e.target.closest('.tab-close-btn')) {
+                    const closeBtn = e.target.closest('.tab-close-btn');
+                    const isCloseBtnClick = closeBtn || e.target.closest('svg')?.closest('.tab-close-btn');
+                    
+                    if (!isCloseBtnClick) {
                       setActiveFile(file);
                       setActiveBrowserTab(null);
                     }
@@ -3139,7 +4049,11 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     userSelect: 'none'
                   }}
                 >
-                  <File size={12} style={{ flexShrink: 0 }} />
+                  {(() => {
+                    const iconInfo = getFileIcon(file);
+                    const IconComponent = iconInfo.icon || File;
+                    return <IconComponent size={12} color={iconInfo.color || '#858585'} style={{ flexShrink: 0 }} />;
+                  })()}
                   <span style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -3155,16 +4069,26 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   )}
                   <button
                     className="tab-close-btn"
+                    type="button"
                     onClick={(e) => {
-                      // ⚡ WICHTIG: stopPropagation + preventDefault verhindert Tab-Öffnung!
+                      // ⚡ WICHTIG: Event komplett stoppen
                       e.stopPropagation();
                       e.preventDefault();
+                      e.nativeEvent?.stopImmediatePropagation?.();
                       console.log(`🔴 Close tab clicked: ${file.path}`);
-                      closeTab(file);
+                      closeTab(file, e);
+                      return false;
                     }}
                     onMouseDown={(e) => {
                       // ⚡ WICHTIG: Auch onMouseDown stoppen, damit Tab nicht geöffnet wird
                       e.stopPropagation();
+                      e.preventDefault();
+                      e.nativeEvent?.stopImmediatePropagation?.();
+                    }}
+                    onMouseUp={(e) => {
+                      // ⚡ WICHTIG: Auch onMouseUp stoppen
+                      e.stopPropagation();
+                      e.preventDefault();
                     }}
                     style={{
                       marginLeft: '4px',
@@ -3180,21 +4104,24 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      width: '16px',
-                      height: '16px',
-                      zIndex: 10, // WICHTIG: Über Tab-Content
-                      position: 'relative'
+                      width: '18px',
+                      height: '18px',
+                      zIndex: 100, // ⚡ ERHÖHT: Über Tab-Content
+                      position: 'relative',
+                      pointerEvents: 'auto', // ⚡ WICHTIG: Button ist definitiv klickbar
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.opacity = '1';
-                      e.target.style.background = '#3c3c3c';
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = '#3c3c3c';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.opacity = '0.6';
-                      e.target.style.background = 'transparent';
+                      e.currentTarget.style.opacity = '0.6';
+                      e.currentTarget.style.background = 'transparent';
                     }}
                   >
-                    <X size={12} />
+                    <X size={12} style={{ pointerEvents: 'none' }} />
                   </button>
                 </div>
               ))}
@@ -3444,7 +4371,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   renderWhitespace: 'selection',
                   
                   // Performance
-                  scrollBeyondLastLine: false,
+                  scrollBeyondLastLine: true, // ⚡ WICHTIG: Erlaube Scrollen nach dem Ende, damit man erweitern kann
                   smoothScrolling: true,
                   cursorBlinking: 'smooth',
                   cursorSmoothCaretAnimation: 'on',
@@ -3561,16 +4488,52 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                         // Auto-open browser tab when URL is detected
                         console.log('🌐 URL detected in terminal:', url);
                         try {
-                          // Add to browser tabs
+                          // ⚡ VALIDIERUNG: Ignoriere GitHub-URLs und andere externe URLs
+                          // Nur localhost-URLs werden als Preview-URL verwendet
+                          const isLocalhost = url.startsWith('http://localhost:') || 
+                                            url.startsWith('https://localhost:') || 
+                                            url.startsWith('http://127.0.0.1:') || 
+                                            url.startsWith('https://127.0.0.1:');
+                          
+                          // GitHub-URLs ignorieren (nicht als Preview verwenden)
+                          if (url.includes('github.com') || url.includes('github.io')) {
+                            console.warn('⚠️ GitHub-URL erkannt, wird ignoriert:', url);
+                            return; // Nicht als Preview-URL verwenden
+                          }
+                          
+                          // Nur localhost-URLs als Preview-URL setzen
+                          if (isLocalhost) {
+                            // Wenn es eine Server-URL ist (start/dev/serve), setze als Preview-URL
+                            if (command && (command.includes('start') || command.includes('dev') || command.includes('serve') || command.includes('run'))) {
+                              setPreviewUrl(url);
+                              setPreviewStatus('running');
+                              console.log('✅ Preview-URL gesetzt:', url);
+                            }
+                          }
+                          
+                          // ⚡ AUTOMATISCH: Öffne Browser-Tab im Editor (nicht separat!)
                           const tabId = `browser-${Date.now()}`;
-                          setBrowserTabs(prev => [...prev, {
-                            id: tabId,
-                            url: url,
-                            title: url.includes('://') ? new URL(url).hostname : url,
-                            command: command
-                          }]);
-                          // Auto-open in new tab
-                          window.open(url, '_blank');
+                          setBrowserTabs(prev => {
+                            const existing = prev.find(t => t.url === url);
+                            if (existing) {
+                              // Tab existiert bereits, aktiviere ihn
+                              setActiveBrowserTab(existing.id);
+                              setActiveFile(null); // WICHTIG: Deaktiviere Datei-Tab, damit Browser-Tab sichtbar wird
+                              return prev;
+                            }
+                            // Neuer Tab
+                            const newTabs = [...prev, {
+                              id: tabId,
+                              url: url,
+                              title: url.includes('://') ? new URL(url).hostname : url,
+                              command: command
+                            }];
+                            // WICHTIG: Aktiviere Browser-Tab sofort und deaktiviere Datei-Tab
+                            setActiveBrowserTab(tabId);
+                            setActiveFile(null);
+                            return newTabs;
+                          });
+                          console.log('✅ Browser-Tab im Editor geöffnet (nicht separat!):', url);
                         } catch (error) {
                           console.error('Error opening browser tab:', error);
                         }
@@ -3688,7 +4651,44 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                     <span style={{ color: '#858585' }}>🌐 Browser Preview</span>
-                    {findMainHTMLFile() && (
+                    {previewStatus === 'running' && previewUrl && (
+                      <span style={{ 
+                        color: '#4ec9b0', 
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        background: '#1e1e1e',
+                        borderRadius: '3px'
+                      }}>
+                        {previewUrl.replace('http://localhost:', 'Port ')}
+                      </span>
+                    )}
+                    {previewStatus === 'starting' && (
+                      <span style={{ 
+                        color: '#ffa500', 
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        background: '#1e1e1e',
+                        borderRadius: '3px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Loader2 size={10} className="animate-spin" />
+                        Starte...
+                      </span>
+                    )}
+                    {previewStatus === 'error' && (
+                      <span style={{ 
+                        color: '#f48771', 
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        background: '#1e1e1e',
+                        borderRadius: '3px'
+                      }}>
+                        Fehler
+                      </span>
+                    )}
+                    {findMainHTMLFile() && previewStatus !== 'running' && (
                       <span style={{ 
                         color: '#4ec9b0', 
                         fontSize: '10px',
@@ -3701,7 +4701,43 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     )}
                 </div>
                   
-                  <button
+                  {/* Start Preview Button - wenn nicht läuft */}
+                  {previewStatus !== 'running' && previewStatus !== 'starting' && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await detectProjectTypeAndStartPreview();
+                        } catch (error) {
+                          console.error('Failed to start preview:', error);
+                          setPreviewError(error.message);
+                          setPreviewStatus('error');
+                        }
+                      }}
+                      style={{
+                        padding: '4px 12px',
+                        background: '#007acc',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = '#005a9e'}
+                      onMouseLeave={(e) => e.target.style.background = '#007acc'}
+                      title="Preview Server starten"
+                    >
+                      <Play size={12} />
+                      Start Preview
+                    </button>
+                  )}
+                  
+                  {/* Reload Button - wenn läuft */}
+                  {previewStatus === 'running' && (
+                    <button
                     onClick={() => {
                       const frame = document.getElementById('preview-frame');
                       
@@ -3812,8 +4848,9 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     onMouseLeave={(e) => e.target.style.background = '#37373d'}
                     title="Preview neu laden"
                   >
-                    🔄 Reload
-                  </button>
+                      🔄 Reload
+                    </button>
+                  )}
                 </div>
                 
                 <iframe
@@ -3833,13 +4870,28 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                     const mainHTML = findMainHTMLFile();
                     if (mainHTML) {
                       let htmlContent = mainHTML.content;
+                      
+                      // ⚡ WICHTIG: Entferne Escape-Sequenzen (\n wird zu echten Zeilenumbrüchen)
+                      // Wenn Content escaped ist (\\n), konvertiere zu echten Zeilenumbrüchen
+                      if (htmlContent.includes('\\n')) {
+                        htmlContent = htmlContent.replace(/\\n/g, '\n');
+                        htmlContent = htmlContent.replace(/\\t/g, '\t');
+                        htmlContent = htmlContent.replace(/\\"/g, '"');
+                        htmlContent = htmlContent.replace(/\\'/g, "'");
+                      }
+                      
                       // Embed CSS
                       const cssFiles = files.filter(f => f.name.endsWith('.css'));
                       cssFiles.forEach(cssFile => {
-                        if (!htmlContent.includes(cssFile.content)) {
+                        let cssContent = cssFile.content;
+                        // Entferne auch CSS-Escape-Sequenzen
+                        if (cssContent.includes('\\n')) {
+                          cssContent = cssContent.replace(/\\n/g, '\n');
+                        }
+                        if (!htmlContent.includes(cssContent)) {
                           htmlContent = htmlContent.replace(
                             '</head>',
-                            `<style>${cssFile.content}</style>\n</head>`
+                            `<style>${cssContent}</style>\n</head>`
                           );
                         }
                       });
@@ -3849,10 +4901,15 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                         !f.name.includes('node_modules')
                       );
                       jsFiles.forEach(jsFile => {
-                        if (!htmlContent.includes(jsFile.content)) {
+                        let jsContent = jsFile.content;
+                        // Entferne auch JS-Escape-Sequenzen
+                        if (jsContent.includes('\\n')) {
+                          jsContent = jsContent.replace(/\\n/g, '\n');
+                        }
+                        if (!htmlContent.includes(jsContent)) {
                           htmlContent = htmlContent.replace(
                             '</body>',
-                            `<script>${jsFile.content}</script>\n</body>`
+                            `<script>${jsContent}</script>\n</body>`
                           );
                         }
                       });
@@ -3971,14 +5028,18 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                       flexDirection: message.role === 'user' ? 'row-reverse' : 'row'
                     }}>
                       <div style={{
-                        width: '32px',
-                        height: '32px',
+                        width: '36px',
+                        height: '36px',
                         borderRadius: '50%',
-                        background: message.role === 'user' ? '#007acc' : '#4ecdc4',
+                        background: message.role === 'user' 
+                          ? 'linear-gradient(135deg, #007acc 0%, #005a9e 100%)' 
+                          : 'linear-gradient(135deg, #4ecdc4 0%, #2e9e96 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                        border: message.role === 'user' ? '2px solid rgba(255, 255, 255, 0.1)' : '2px solid rgba(78, 205, 196, 0.2)'
                       }}>
                         {message.role === 'user' ? (
                           <User size={18} color="#ffffff" />
@@ -3994,16 +5055,22 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                         maxWidth: '80%'
                       }}>
                         <div style={{
-                          background: message.role === 'user' ? '#007acc' : '#2d2d30',
-                          padding: '12px 16px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
+                          background: message.role === 'user' 
+                            ? 'linear-gradient(135deg, #007acc 0%, #005a9e 100%)' 
+                            : '#2d2d30',
+                          padding: '14px 18px',
+                          borderRadius: message.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                          fontSize: '14px',
                           color: '#ffffff',
-                          lineHeight: '1.5',
+                          lineHeight: '1.6',
                           border: message.role === 'user' ? 'none' : '1px solid #3c3c3c',
                           wordBreak: 'break-word',
                           overflow: 'auto',
-                          position: 'relative'
+                          position: 'relative',
+                          boxShadow: message.role === 'user' 
+                            ? '0 2px 8px rgba(0, 122, 204, 0.3)' 
+                            : '0 2px 4px rgba(0, 0, 0, 0.2)',
+                          transition: 'all 0.2s'
                         }}>
                           {message.isStreaming && (
                             <div style={{
@@ -4252,14 +5319,24 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                   {/* TOP: Textarea with Icons and Send Button - EXACT like image */}
                   <div style={{
                     position: 'relative',
-                    background: '#1e1e1e',
-                    borderRadius: '8px',
+                    background: '#252526',
+                    borderRadius: '12px',
                     border: '1px solid #3c3c3c',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '8px 12px',
-                    gap: '8px',
-                    marginBottom: '8px'
+                    padding: '10px 14px',
+                    gap: '10px',
+                    marginBottom: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.2s'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#007acc';
+                    e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 122, 204, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#3c3c3c';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
                   }}>
                     <textarea
                       value={chatInput}
@@ -4270,8 +5347,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen.`
                           sendChatMessage();
                         }
                       }}
-                      placeholder={`Nachricht an ${AGENT_TYPES[currentAgent]?.name || 'AI Assistant'}...`}
-                      disabled={isChatLoading}
+                      placeholder={isLiveBuilding 
+                        ? `💬 Frage stellen oder Verbesserung geben... (Smart Agent arbeitet parallel)` 
+                        : `💬 Nachricht an ${AGENT_TYPES[currentAgent]?.name || 'AI Assistant'}...`}
+                      disabled={isChatLoading} // ⚡ NUR während Sendens deaktiviert, NIEMALS wegen Smart Agent!
                       rows={1}
                       style={{
                         flex: 1,

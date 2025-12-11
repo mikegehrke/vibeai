@@ -107,6 +107,19 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
     try:
         print(f"🚀 Smart Agent Request: project_id={request.project_id}, platform={request.platform}")
         
+        # Prüfe OpenAI API Key
+        import os
+        if not os.getenv("OPENAI_API_KEY"):
+            error_msg = "OPENAI_API_KEY nicht gesetzt! Smart Agent kann nicht arbeiten."
+            print(f"❌ {error_msg}")
+            await broadcast_to_all({
+                "event": "generation.error",
+                "error": error_msg,
+                "project_id": request.project_id,
+                "details": "Bitte setze OPENAI_API_KEY in der .env Datei"
+            })
+            return
+        
         print(f"✅ Creating SmartAgentGenerator...")
         generator = SmartAgentGenerator(api_base_url="http://localhost:8005")
         print(f"✅ SmartAgentGenerator created")
@@ -136,7 +149,7 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
                 "step": file_info.step,
                 "message": f"📝 Erstelle jetzt: `{file_info.path}`"
             })
-            await asyncio.sleep(0.3)  # Kurze Pause damit User es sieht
+            await asyncio.sleep(1.5)  # ⚡ LERN-PAUSE: Mehr Zeit zum Lesen und Verstehen
             
             # ⚡ SCHRITT 2: Zeige Imports/Abhängigkeiten ZUERST mit Erklärung
             imports = []
@@ -191,7 +204,7 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
                     "content": imports_text,
                     "message": explanation
                 })
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1.8)  # ⚡ LERN-PAUSE: Mehr Zeit zum Lesen und Verstehen
             
             # ⚡ SCHRITT 3: Zeige Datei-Struktur (Klassen, Funktionen, etc.) mit Erklärung
             structure_lines = []
@@ -231,7 +244,7 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
                     "content": structure_preview,
                     "message": explanation
                 })
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1.8)  # ⚡ LERN-PAUSE: Mehr Zeit zum Lesen und Verstehen
             
             # ⚡ SCHRITT 4: Code ZEILE FÜR ZEILE schreiben (LIVE!) mit Erklärungen
             current_content = ""
@@ -288,7 +301,7 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
                             "message": explanation
                         })
                         last_explanation_line = line_num
-                        await asyncio.sleep(0.3)  # Kurze Pause für Erklärung
+                        await asyncio.sleep(1.2)  # ⚡ LERN-PAUSE: Mehr Zeit für Erklärung und Verstehen
                 
                 # Sende Update für diese Zeile (für Editor)
                 await broadcast_to_all({
@@ -302,8 +315,22 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
                     "progress": (line_num / len(lines)) * 100
                 })
                 
-                # Realistische Delay: Schneller für kurze Zeilen, langsamer für lange
-                delay = 0.1 if len(line) < 50 else 0.15 if len(line) < 100 else 0.2
+                # ⚡ LERN-GESCHWINDIGKEIT: Langsam genug zum Lernen und Verstehen
+                # Kurze Zeilen: 500-600ms, Mittlere: 600-800ms, Lange: 800-1000ms
+                line_length = len(line.strip())
+                if line_length < 30:
+                    delay = 0.5  # 500ms für kurze Zeilen (LERN-TEMPO)
+                elif line_length < 60:
+                    delay = 0.6  # 600ms für mittlere Zeilen
+                elif line_length < 100:
+                    delay = 0.8  # 800ms für lange Zeilen
+                else:
+                    delay = 1.0  # 1000ms für sehr lange Zeilen
+                
+                # Zusätzliche Pause bei wichtigen Code-Stellen (Klassen, Funktionen) - LERN-PAUSE
+                if any(keyword in line.strip() for keyword in ['class ', 'function ', 'def ', 'void ', 'Widget ', 'return ', 'if ', 'for ', 'while ']):
+                    delay += 0.4  # Extra 400ms zum Nachdenken und Verstehen
+                
                 await asyncio.sleep(delay)
             
             # ⚡ SCHRITT 5: Datei komplett
@@ -355,12 +382,22 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
             })
         
         # Generate project with live updates
-        result = await generator.generate_project_live(
-            request=agent_request,
-            on_file_created=on_file_created_with_progress,
-            on_step=on_step,
-            on_error=on_error
-        )
+        print(f"🚀 Starting project generation...")
+        try:
+            result = await generator.generate_project_live(
+                request=agent_request,
+                on_file_created=on_file_created_with_progress,
+                on_step=on_step,
+                on_error=on_error
+            )
+            print(f"✅ Project generation completed: {result.get('total_files', 0)} files")
+        except Exception as gen_error:
+            print(f"❌ Error during project generation: {gen_error}")
+            import traceback
+            traceback.print_exc()
+            # Call on_error callback
+            await on_error(str(gen_error))
+            raise  # Re-raise to be caught by outer try/except
         
         # Update total files estimate
         total_files_estimate = result.get("total_files", file_count[0])

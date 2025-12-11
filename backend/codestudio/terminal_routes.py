@@ -321,13 +321,13 @@ class HomeScreen extends StatelessWidget {
             raise HTTPException(status_code=400, detail="Dangerous command not allowed")
         
         # Spezialbehandlung für Flutter-Befehle
-        if command_lower.startswith('flutter run'):
+        if command_lower.startswith('flutter run') or command_lower.startswith('flutter pub get') or command_lower.startswith('flutter pub add'):
             # Prüfe ob Flutter-Projekt Web/macOS-Support hat
             pubspec_path = os.path.join(project_path, "pubspec.yaml")
             if os.path.exists(pubspec_path):
                 # Prüfe ob web-Verzeichnis existiert
                 web_dir = os.path.join(project_path, "web")
-                if not os.path.exists(web_dir):
+                if not os.path.exists(web_dir) and command_lower.startswith('flutter run'):
                     # Aktiviere Web-Support automatisch
                     enable_web = subprocess.run(
                         ["flutter", "create", ".", "--platforms=web"],
@@ -342,6 +342,54 @@ class HomeScreen extends StatelessWidget {
                         output = enable_web.stderr + "\n" + "⚠️  Web-Support konnte nicht aktiviert werden, versuche trotzdem zu starten...\n"
                 else:
                     output = ""
+                
+                # ⚡ WICHTIG: Prüfe auf Dependency-Konflikte und fixe sie automatisch
+                # Versuche zuerst flutter pub get, um Fehler zu sehen
+                test_get = subprocess.run(
+                    ["flutter", "pub", "get"],
+                    cwd=project_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                # Prüfe auf intl-Versionskonflikte
+                if "intl" in test_get.stderr and "version solving failed" in test_get.stderr:
+                    print("🔧 Dependency-Konflikt erkannt: intl-Version")
+                    
+                    # Lese pubspec.yaml
+                    try:
+                        with open(pubspec_path, 'r', encoding='utf-8') as f:
+                            pubspec_content = f.read()
+                        
+                        # Prüfe ob intl: ^0.18.0 vorhanden ist
+                        if 'intl: ^0.18.0' in pubspec_content or 'intl: 0.18.0' in pubspec_content:
+                            # Fixe intl-Version auf ^0.20.2
+                            fixed_content = pubspec_content.replace('intl: ^0.18.0', 'intl: ^0.20.2')
+                            fixed_content = fixed_content.replace('intl: 0.18.0', 'intl: ^0.20.2')
+                            
+                            # Speichere gefixte pubspec.yaml
+                            with open(pubspec_path, 'w', encoding='utf-8') as f:
+                                f.write(fixed_content)
+                            
+                            print("✅ intl-Version auf ^0.20.2 aktualisiert")
+                            output += "\n✅ Dependency-Konflikt automatisch behoben: intl auf ^0.20.2 aktualisiert\n"
+                            
+                            # Versuche erneut flutter pub get
+                            retry_get = subprocess.run(
+                                ["flutter", "pub", "get"],
+                                cwd=project_path,
+                                capture_output=True,
+                                text=True,
+                                timeout=30
+                            )
+                            if retry_get.returncode == 0:
+                                output += "✅ Dependencies erfolgreich installiert\n"
+                            else:
+                                output += f"⚠️  Warnung: {retry_get.stderr}\n"
+                    except Exception as e:
+                        print(f"⚠️  Fehler beim Fixen der pubspec.yaml: {e}")
+                        output += f"\n⚠️  Konnte Dependency-Konflikt nicht automatisch beheben: {e}\n"
             else:
                 output = ""
         else:
@@ -354,7 +402,7 @@ class HomeScreen extends StatelessWidget {
             cwd=project_path,
             capture_output=True,
             text=True,
-            timeout=60  # Increased timeout for flutter commands
+            timeout=180  # ⚡ ERHÖHT: Flutter braucht oft mehr Zeit (3 Minuten für flutter run)
         )
         
         # Kombiniere Output
@@ -375,7 +423,7 @@ class HomeScreen extends StatelessWidget {
     except subprocess.TimeoutExpired:
         return {
             "success": False,
-            "output": "Command timed out after 60 seconds",
+            "output": "Command timed out after 180 seconds. Flutter compilation can take longer. Try running 'flutter run' again or check if the app is already running.",
             "returncode": -1
         }
     except Exception as e:

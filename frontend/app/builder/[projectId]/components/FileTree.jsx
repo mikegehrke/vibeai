@@ -82,6 +82,11 @@ export default function FileTree({ files, activeFile, onFileClick, getFileIcon }
         // Git status (M = modified, U = untracked)
         const gitStatus = item.gitStatus || (item.modified ? 'M' : item.untracked ? 'U' : null);
         
+        // 🎨 Hole Framework/Sprach-spezifisches Icon
+        const iconInfo = getFileIcon ? getFileIcon(item) : { icon: File, color: '#858585', name: 'File' };
+        const IconComponent = iconInfo.icon || File;
+        const iconColor = iconInfo.color || '#858585';
+        
         items.push(
           <div
             key={item.path}
@@ -96,8 +101,9 @@ export default function FileTree({ files, activeFile, onFileClick, getFileIcon }
               alignItems: 'center',
               gap: '4px'
             }}
+            title={iconInfo.name ? `${name} (${iconInfo.name})` : name}
           >
-            <File size={14} color="#858585" />
+            <IconComponent size={14} color={iconColor} />
             <span style={{ flex: 1 }}>{name}</span>
             {gitStatus && (
               gitStatus === 'M' ? (

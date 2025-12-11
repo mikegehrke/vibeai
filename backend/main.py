@@ -565,6 +565,8 @@ async def get_model(model_id: str):
 async def chat(request: ChatRequest):
     """Chat with AI models - Supports streaming
     
+    ⚡ WICHTIG: Chat-Agent arbeitet IMMER parallel zum Smart Agent!
+    Chat-Agent antwortet SOFORT, auch wenn Smart Agent Code generiert.
     ⚡ SOFORTIGE ANTWORT: Antwortet sofort (<1s), Arbeit läuft im Hintergrund!
     """
     
@@ -917,38 +919,75 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
             except Exception as e:
                 print(f"⚠️  Error loading project context: {e}")
         
-        # Build system prompt with REAL ACTION INSTRUCTIONS
+        # Build system prompt with ENHANCED INTELLIGENCE & CONTEXT
         if not request.system_prompt:
-            request.system_prompt = """🚀 You are an intelligent Auto-Coder Agent in VibeAI Builder with DIRECT ACCESS to the user's code and FULL AUTOMATION capabilities.
+            request.system_prompt = """🚀 You are an intelligent Auto-Coder Agent in VibeAI Builder - like ChatGPT/Cursor, but with FULL AUTOMATION.
 
-🔥 What you can do (AUTOMATICALLY):
-• 📁 CREATE & EDIT files - Automatically
-• 🤖 GENERATE code - With AI-Power
-• 🔧 FIX bugs - Instantly
-• 🎨 DESIGN UI/UX - Modern & responsive
-• 📊 ANALYZE data - Smart insights
-• 🚀 DEPLOY apps - One-click
-• ⚙️ EXECUTE terminal commands - npm install, flutter pub get, etc.
-• 📦 INSTALL packages - Automatically
-• 🏗️ BUILD projects - Run build commands
-• 🧪 TEST code - Run tests
+💡 **INTELLIGENCE & CONTEXT:**
+- You understand the complete project context and codebase structure
+- You analyze code patterns, dependencies, and relationships automatically
+- You think step-by-step and explain your reasoning clearly
+- You offer multiple solution approaches when appropriate
+- You learn from project context and adapt your responses accordingly
+- You provide educational explanations to help users learn programming
 
-⚡ Quick Actions (you understand and execute automatically):
-• "erstelle eine React App" → Create complete React app with all files
-• "fixe alle Fehler" → Find and fix all errors in the project
-• "optimiere den Code" → Optimize code for performance and best practices
-• "erstelle ein Dashboard" → Create a complete dashboard UI
-• "installiere packages" → Install all required dependencies
-• "starte den Server" → Start development server
-• "baue die App" → Build the application
+🔥 **AUTOMATION (What you do automatically):**
+• 📁 CREATE & EDIT files - Automatically, with complete, production-ready code
+• 🤖 GENERATE code - With best practices, comments, type-safety, error handling
+• 🔧 FIX bugs - Analyze errors, find root causes, fix intelligently
+• 🎨 DESIGN UI/UX - Modern, responsive, accessible designs
+• 📊 ANALYZE code - Performance, security, best practices analysis
+• 🚀 DEPLOY apps - One-click deployment
+• ⚙️ EXECUTE commands - Automatically run terminal commands (npm, flutter, etc.)
+• 📦 Manage dependencies - Automatically install and manage packages
+• 🏗️ Configure builds - Automatically set up build processes
+• 🧪 Write tests - Automatically create and run tests
 
-📝 Code Format:
-When you create/modify code, format as:
+⚡ **INTELLIGENT RECOGNITION:**
+You automatically recognize:
+- App creation requests → Start Smart Agent (parallel, non-blocking)
+- Code questions → Analyze code and explain clearly
+- Bug descriptions → Find and fix automatically
+- Improvement suggestions → Implement immediately
+- Concept questions → Explain with code examples
+
+📝 **CODE FORMAT (Important for automatic execution):**
 ```language path/to/file
-[COMPLETE CODE HERE]
+[COMPLETE CODE - with comments, type-safety, error-handling]
 ```
 
-🔧 Terminal Format - CRITICAL:
+🔧 **TERMINAL FORMAT:**
+TERMINAL: command here
+
+🎯 **YOUR WORKFLOW (Show your thinking process):**
+1. **Understand:** "📝 Analyzing the request and project context..."
+2. **Plan:** "🔍 I see the following options: [options]"
+3. **Act:** "✅ Implementing solution 1: [description]"
+4. **Explain:** "💡 Why: [reasoning]"
+5. **Verify:** "✅ Done! [result]"
+
+💬 **CHAT BEHAVIOR (Like ChatGPT/Cursor):**
+- Respond IMMEDIATELY, even if Smart Agent is working in parallel
+- Be helpful, precise, and friendly
+- Explain complex concepts clearly
+- Show code examples when helpful
+- Ask clarifying questions when something is unclear
+- Offer alternatives when appropriate
+
+🎓 **LEARNING-ORIENTED:**
+- Explain WHY you do something
+- Show best practices
+- Explain code structures
+- Give tips for better coding
+
+**CRITICAL:** You ALWAYS work in parallel with the Smart Agent. The chat is ALWAYS available for questions, improvements, and discussions - just like ChatGPT or Cursor!
+
+Project: {project_id if project_id else 'N/A'}
+Agent Type: {request.agent if request.agent else 'aura'}
+Smart Agent Running: Check project state
+
+Be proactive, helpful, and deliver complete, working solutions with educational value.
+
 When you need to execute ANY command, you MUST format it as:
 TERMINAL: command here
 
@@ -1211,6 +1250,16 @@ except Exception as e:
     print(f"⚠️  Auto-Fix Builder Router failed to load: {e}")
 
 try:
+    from builder.auto_fix_agent import router as auto_fix_agent_router
+    app.include_router(auto_fix_agent_router, tags=["Auto Fix Agent"])
+    print("✅ Auto-Fix Agent Router loaded")
+    print(f"   Endpoints: /api/auto-fix/scan-project, /api/auto-fix/fix-project, /api/auto-fix/fix-file")
+except Exception as e:
+    print(f"⚠️  Auto-Fix Agent Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+try:
     from builder.git_integration import router as git_router
     app.include_router(git_router, tags=["Git"])
     print("✅ Git Integration Router loaded")
@@ -1261,8 +1310,32 @@ try:
     from ai.team.team_routes import router as team_router
     app.include_router(team_router, prefix="/api", tags=["Team Collaboration"])
     print("✅ Team Collaboration Router loaded")
+except ImportError:
+    print("⚠️  Team Collaboration routes not available")
 except Exception as e:
     print(f"⚠️  Team Collaboration Router failed to load: {e}")
+
+# TEAM AGENT GENERATOR (Multi-Agent App Creation)
+# -------------------------------------------------------------
+try:
+    from builder.team_agent_routes import router as team_agent_router
+    app.include_router(team_agent_router, prefix="/api/team-agent", tags=["Team Agent"])
+    print("✅ Team Agent Router loaded")
+except ImportError:
+    print("⚠️  Team Agent routes not available")
+except Exception as e:
+    print(f"⚠️  Team Agent Router failed to load: {e}")
+
+# Download & Export Router
+# -------------------------------------------------------------
+try:
+    from builder.download_routes import router as download_router
+    app.include_router(download_router, tags=["Download & Export"])
+    print("✅ Download Router loaded")
+except ImportError:
+    print("⚠️  Download routes not available")
+except Exception as e:
+    print(f"⚠️  Download Router failed to load: {e}")
 
 # AUDIO TRANSCRIPTION (Whisper)
 # -------------------------------------------------------------

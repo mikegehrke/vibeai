@@ -67,3 +67,4 @@ class PreviewController:
         # Implementation for stopping preview
         await self.event_emitter.emit("preview_stopped", {})
 
+

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Search, File, Code, Replace } from 'lucide-react';
 
-export default function SearchPanel({ files, onFileSelect }) {
+export default function SearchPanel({ files, onFileSelect, onFilesUpdate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [searchInFiles, setSearchInFiles] = useState(true);
@@ -19,12 +19,18 @@ export default function SearchPanel({ files, onFileSelect }) {
     }
 
     const found = [];
-    const regex = useRegex 
-      ? new RegExp(searchQuery, caseSensitive ? 'g' : 'gi')
-      : new RegExp(
-          searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-          caseSensitive ? 'g' : 'gi'
-        );
+    
+    // ⚡ WICHTIG: Whole Word Support
+    let pattern = searchQuery;
+    if (wholeWord && !useRegex) {
+      // Escape special characters and add word boundaries
+      pattern = `\\b${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    } else if (!useRegex) {
+      // Escape special characters for literal search
+      pattern = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    const regex = new RegExp(pattern, caseSensitive ? 'g' : 'gi');
 
     files.forEach(file => {
       if (!file.content) return;
@@ -50,8 +56,18 @@ export default function SearchPanel({ files, onFileSelect }) {
     setResults(found);
   };
 
-  const handleReplace = () => {
+  const handleReplace = async () => {
     if (!replaceQuery || results.length === 0) return;
+    
+    // ⚡ WICHTIG: Whole Word Support auch beim Replace
+    let pattern = searchQuery;
+    if (wholeWord && !useRegex) {
+      pattern = `\\b${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    } else if (!useRegex) {
+      pattern = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    const regex = new RegExp(pattern, caseSensitive ? 'g' : 'gi');
     
     // Replace in files
     const updatedFiles = files.map(file => {
@@ -59,21 +75,26 @@ export default function SearchPanel({ files, onFileSelect }) {
       if (fileResults.length === 0) return file;
 
       let content = file.content;
-      const regex = useRegex 
-        ? new RegExp(searchQuery, caseSensitive ? 'g' : 'gi')
-        : new RegExp(
-            searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-            caseSensitive ? 'g' : 'gi'
-          );
-
       content = content.replace(regex, replaceQuery);
       
       return { ...file, content };
     });
 
-    // Update files and clear results
-    setResults([]);
-    alert(`✅ Replaced ${results.length} occurrences`);
+    // ⚡ WICHTIG: Speichere Dateien auf dem Server
+    if (onFilesUpdate) {
+      try {
+        await onFilesUpdate(updatedFiles);
+        setResults([]);
+        setSearchQuery(''); // Clear search after successful replace
+        alert(`✅ Replaced ${results.length} occurrence(s) in ${new Set(results.map(r => r.file)).size} file(s)`);
+      } catch (error) {
+        alert(`❌ Error saving files: ${error.message}`);
+      }
+    } else {
+      // Fallback: Nur lokale Updates
+      setResults([]);
+      alert(`✅ Replaced ${results.length} occurrences (local only - files not saved)`);
+    }
   };
 
   return (

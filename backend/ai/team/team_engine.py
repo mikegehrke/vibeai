@@ -53,6 +53,10 @@ class TeamEngine:
             "local": self.agents["local"]["model"],
             "architect": self.agents["architect"]["model"],
             "devops": self.agents["devops"]["model"],
+            "coder": self.agents["coder"]["model"],
+            "reviewer": self.agents["reviewer"]["model"],
+            "packager": self.agents["packager"]["model"],
+            "fixer": self.agents["fixer"]["model"],
         }
 
     async def collaborate(

@@ -108,3 +108,4 @@ class LiveFileWriter:
             "lines": content.count("\n") + 1
         }
 
+

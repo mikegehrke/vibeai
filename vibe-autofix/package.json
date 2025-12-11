@@ -11,9 +11,6 @@
     "Other",
     "Programming Languages"
   ],
-  "activationEvents": [
-    "onCommand:vibe.autofix"
-  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [

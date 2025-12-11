@@ -7,10 +7,6 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "activationEvents": [
-    "onCommand:vibe.autofix",
-    "onView:vibeSidebar"
-  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
