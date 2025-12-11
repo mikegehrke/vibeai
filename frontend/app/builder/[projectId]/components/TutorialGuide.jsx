@@ -159,24 +159,94 @@ const TUTORIALS = {
     steps: [
       {
         id: 1,
-        title: "Datei öffnen",
-        content: "Klicke auf eine Datei im File Tree, um sie im Editor zu öffnen.",
+        title: "Datei im File Tree öffnen",
+        content: "Der **File Tree** (links) zeigt alle Dateien deines Projekts.\n\n**So öffnest du eine Datei:**\n1. Klicke auf einen Ordner, um ihn zu expandieren\n2. Klicke auf eine Datei, um sie im Editor zu öffnen\n3. Die Datei öffnet sich in einem neuen Tab\n\n**Tipp**: Du kannst mehrere Dateien gleichzeitig öffnen! Jede Datei hat ihren eigenen Tab.",
         target: "#file-tree",
         action: "highlight"
       },
       {
         id: 2,
-        title: "Code schreiben",
-        content: "Der Editor unterstützt Autocomplete, Syntax-Highlighting und mehr!",
+        title: "Editor-Tabs verstehen",
+        content: "Oben im Editor siehst du **Tabs** für alle geöffneten Dateien.\n\n**Tab-Features:**\n• Klicke auf einen Tab, um zur Datei zu wechseln\n• Klicke auf das X, um eine Datei zu schließen\n• Ein Punkt (•) zeigt ungespeicherte Änderungen\n• Rechtsklick für weitere Optionen\n\n**Tipp**: Nutze `Ctrl/Cmd + W`, um den aktuellen Tab zu schließen!",
         target: "#editor",
         action: "highlight"
       },
       {
         id: 3,
-        title: "Live Preview",
-        content: "Änderungen werden automatisch in der Preview angezeigt!",
+        title: "Monaco Editor - VS Code Engine",
+        content: "Der **Monaco Editor** ist die gleiche Engine wie VS Code! 💻\n\n**Was du hier hast:**\n• **Syntax Highlighting** - Code wird farbig dargestellt\n• **IntelliSense** - Auto-Completion während du tippst\n• **Error Detection** - Fehler werden rot markiert\n• **Code Folding** - Code-Bereiche ein-/ausklappen\n• **Multi-Cursor** - Mehrere Cursor gleichzeitig (`Ctrl/Cmd + Click`)\n• **Go to Definition** - Springe zu Definitionen (`F12`)\n\n**Es ist wie VS Code, nur im Browser!**",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 4,
+        title: "Code schreiben und bearbeiten",
+        content: "Jetzt kannst du Code schreiben! ✏️\n\n**Editor-Features beim Schreiben:**\n• **Auto-Save** - Änderungen werden automatisch gespeichert\n• **Format on Type** - Code wird automatisch formatiert\n• **Bracket Matching** - Klammern werden farbig markiert\n• **Word Wrap** - Lange Zeilen umbrechen\n• **Line Numbers** - Zeilennummern links\n\n**Tipp**: Nutze `Ctrl/Cmd + /`, um Zeilen zu kommentieren!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 5,
+        title: "IntelliSense nutzen",
+        content: "**IntelliSense** hilft dir beim Programmieren! 🤖\n\n**So funktioniert's:**\n• Beginne zu tippen - Vorschläge erscheinen automatisch\n• Nutze `↑/↓`, um durch Vorschläge zu navigieren\n• Drücke `Tab` oder `Enter`, um einen Vorschlag zu übernehmen\n• Drücke `Esc`, um Vorschläge zu schließen\n\n**IntelliSense zeigt:**\n• Funktionen, Variablen, Klassen\n• Parameter-Informationen\n• Dokumentation\n• Type-Informationen\n\n**Tipp**: Nutze `Ctrl/Cmd + Space`, um Vorschläge manuell zu öffnen!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 6,
+        title: "Code-Navigation",
+        content: "Navigiere schnell durch deinen Code! 🧭\n\n**Navigation-Features:**\n• **Go to Definition**: `F12` oder Rechtsklick → \"Go to Definition\"\n• **Peek Definition**: `Alt + F12` - Definition in Popup anzeigen\n• **Go to Line**: `Ctrl/Cmd + G` - Springe zu Zeile X\n• **Find References**: `Shift + F12` - Alle Verwendungen finden\n• **Rename Symbol**: `F2` - Symbol umbenennen (Refactoring)\n\n**Tipp**: Nutze `Ctrl/Cmd + P`, um schnell Dateien zu öffnen!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 7,
+        title: "Multi-Cursor Editing",
+        content: "Bearbeite mehrere Stellen gleichzeitig! 🎯\n\n**Multi-Cursor Features:**\n• **Ctrl/Cmd + Click**: Füge Cursor hinzu\n• **Alt + Click**: Cursor in Spalte hinzufügen\n• **Ctrl/Cmd + Shift + L**: Alle Vorkommen des Wortes auswählen\n• **Alt + Shift + Drag**: Block-Auswahl\n\n**Beispiel:**\n1. Markiere ein Wort\n2. Drücke `Ctrl/Cmd + Shift + L`\n3. Alle Vorkommen sind ausgewählt\n4. Tippe - alle werden gleichzeitig geändert!\n\n**Sehr nützlich für Refactoring!**",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 8,
+        title: "Code formatieren",
+        content: "Code automatisch formatieren! 🎨\n\n**Formatierungs-Optionen:**\n• **Format Document**: `Shift + Alt + F` - Formatiert die ganze Datei\n• **Format Selection**: Markiere Code → `Ctrl/Cmd + K, F`\n• **Format on Save**: Automatisch beim Speichern\n• **Format on Type**: Automatisch beim Tippen\n• **Format on Paste**: Automatisch beim Einfügen\n\n**Tipp**: Rechtsklick → \"Format Document\" für schnellen Zugriff!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 9,
+        title: "Code suchen und ersetzen",
+        content: "Suche und ersetze in der aktuellen Datei! 🔍\n\n**In-Datei-Suche:**\n• **Öffnen**: `Ctrl/Cmd + F`\n• **Ersetzen**: `Ctrl/Cmd + H`\n• **Regex**: Aktiviere \"Regex\" für reguläre Ausdrücke\n• **Whole Word**: Nur ganze Wörter\n• **Case Sensitive**: Groß-/Kleinschreibung beachten\n\n**Navigation:**\n• `F3` / `Shift + F3`: Nächster/Vorheriger Treffer\n• `Enter`: Alle ersetzen\n• `Alt + Enter`: Einzelne Treffer ersetzen\n\n**Tipp**: Nutze `Ctrl/Cmd + Shift + F` für projektweite Suche!",
+        target: "#editor",
+        action: "highlight"
+      },
+      {
+        id: 10,
+        title: "Live Preview - Änderungen sehen",
+        content: "Sieh deine Änderungen sofort! 📺\n\n**So funktioniert's:**\n1. Bearbeite Code im Editor\n2. Änderungen werden automatisch gespeichert\n3. Die Preview aktualisiert sich automatisch (Hot Reload)\n4. Du siehst Änderungen sofort!\n\n**Preview starten:**\n• Klicke auf \"Launch App\" im Run & Debug Panel\n• Oder nutze das Terminal: `npm run dev`, `flutter run`, etc.\n\n**Tipp**: Die Preview öffnet sich direkt im Editor als Browser-Tab!",
         target: "#preview-panel",
         action: "highlight"
+      },
+      {
+        id: 11,
+        title: "Code mit AI verbessern",
+        content: "Nutze den AI-Agenten für Code-Verbesserungen! 🤖\n\n**Was du machen kannst:**\n• **Fragen**: \"Erkläre mir diesen Code\"\n• **Verbessern**: \"Optimiere diesen Code\"\n• **Fehler finden**: \"Finde Fehler in diesem Code\"\n• **Refactoring**: \"Refactore diese Funktion\"\n• **Kommentare**: \"Füge Kommentare hinzu\"\n\n**So geht's:**\n1. Markiere Code im Editor\n2. Öffne Chat (`Ctrl/Cmd + L`)\n3. Sage z.B.: \"Verbessere diesen Code\"\n4. Der Agent macht die Änderungen!\n\n**Der Agent kann Code direkt in Dateien schreiben!**",
+        target: "#chat-panel",
+        action: "highlight"
+      },
+      {
+        id: 12,
+        title: "Keyboard Shortcuts nutzen",
+        content: "Lerne die wichtigsten Shortcuts! ⌨️\n\n**Datei-Operationen:**\n• `Ctrl/Cmd + S`: Speichern\n• `Ctrl/Cmd + N`: Neue Datei\n• `Ctrl/Cmd + O`: Datei öffnen\n• `Ctrl/Cmd + W`: Tab schließen\n\n**Editor:**\n• `Ctrl/Cmd + /`: Kommentar\n• `Alt + ↑/↓`: Zeile verschieben\n• `Ctrl/Cmd + D`: Nächstes Vorkommen auswählen\n• `Ctrl/Cmd + Shift + K`: Zeile löschen\n\n**Navigation:**\n• `Ctrl/Cmd + P`: Quick Open (Dateien)\n• `Ctrl/Cmd + Shift + P`: Command Palette\n• `F12`: Go to Definition\n\n**Tipp**: Nutze `Ctrl/Cmd + K, Ctrl/Cmd + S`, um alle Shortcuts zu sehen!",
+        target: null,
+        action: null
+      },
+      {
+        id: 13,
+        title: "Fertig! 🎉",
+        content: "Perfekt! Du kennst jetzt alle Code-Editor-Features! 🎊\n\n**Was du gelernt hast:**\n✅ Dateien öffnen und verwalten\n✅ Code schreiben mit IntelliSense\n✅ Code-Navigation\n✅ Multi-Cursor Editing\n✅ Code formatieren\n✅ Suchen und Ersetzen\n✅ Live Preview\n✅ Code mit AI verbessern\n✅ Keyboard Shortcuts\n\n**Nächste Schritte:**\n• Probiere die Features aus!\n• Nutze andere Tutorials für Git, Terminal, etc.\n• Experimentiere mit verschiedenen Frameworks\n• Nutze den AI-Agenten für Code-Hilfe\n\n**Viel Erfolg beim Programmieren! 💻🚀**",
+        target: null,
+        action: null
       }
     ]
   },
