@@ -492,19 +492,135 @@ Features:
 
 ---
 
-## 🎓 Lernen & Tutorials
+## 🎓 Lernen & Tutorials - Interaktive Hilfe
 
-### Tutorial Guide
-- **Schritt-für-Schritt Anleitungen**: Geführte Touren
-- **Tooltips**: Kontextbezogene Hilfe
-- **Interaktive Tutorials**: Lerne während du arbeitest
+### 📚 Tutorial-System (Hilfe-Button "?")
+Der App Builder hat ein **vollständiges interaktives Tutorial-System**, das dir hilft, dich zurechtzufinden und alle Features zu lernen.
 
-### Verfügbare Tutorials:
-1. **Deine erste App erstellen**: Grundlagen
-2. **Drag & Drop Editor nutzen**: Visueller Editor
-3. **Git verwenden**: Version Control
-4. **Tests schreiben**: Testing
-5. **App deployen**: Deployment
+#### **Wie starte ich ein Tutorial?**
+1. **Hilfe-Button**: Klicke auf das **"?"** Icon in der oberen Toolbar (rechts neben dem AI-Button)
+2. **Tutorial-Liste**: Eine Liste aller verfügbaren Tutorials öffnet sich
+3. **Tutorial wählen**: Klicke auf ein Tutorial, um es zu starten
+4. **Schritt-für-Schritt**: Folge den Anweisungen und klicke auf "Weiter"
+
+#### **Tutorial-Features:**
+- **Interaktive Highlights**: Wichtige Bereiche werden hervorgehoben
+- **Schritt-für-Schritt Anleitung**: Geführte Touren durch alle Features
+- **Progress Bar**: Sieh deinen Fortschritt im Tutorial
+- **Auto-Scroll**: Automatisches Scrollen zu relevanten Bereichen
+- **Fertig-Markierung**: Abgeschlossene Tutorials werden markiert
+- **Wiederverwendbar**: Starte Tutorials jederzeit erneut
+
+### 📖 Verfügbare Tutorials:
+
+#### 1. **🎯 Deine erste App erstellen**
+- Willkommen im App Builder
+- Chat öffnen und nutzen
+- App anfordern
+- Live-Erstellung beobachten
+- Preview ansehen
+
+#### 2. **🧭 Navigation im App Builder**
+- Linke Sidebar (Explorer, Suche, Git, etc.)
+- Rechte Sidebar (Review, Chat)
+- Unteres Panel (Terminal, Output)
+- Command Palette
+
+#### 3. **🤖 AI-Agenten verstehen**
+- Die 4 Agenten (Aura, Cora, Devra, Lumi)
+- Agent wechseln
+- Team Mode aktivieren
+- Model-Auswahl
+
+#### 4. **🚀 Smart Agent nutzen**
+- Smart Agent starten
+- Live-Generierung beobachten
+- Erklärungen lesen
+- Während Generierung chatten
+
+#### 5. **👥 Team Agent nutzen**
+- Team Agent starten
+- Parallele Arbeit verstehen
+- Team-Modi (Parallel, Sequential, Consensus)
+
+#### 6. **📁 Dateien verwalten**
+- File Tree nutzen
+- Dateien öffnen
+- Dateien erstellen
+- Dateien umbenennen
+- Auto-Save
+
+#### 7. **🔍 Suchen & Ersetzen**
+- Search Panel öffnen
+- Projektweite Suche
+- Erweiterte Optionen (Regex, Whole Word, Case Sensitive)
+- Ersetzen
+- Datei öffnen aus Suchergebnissen
+
+#### 8. **🔧 Git verwenden**
+- Git Panel öffnen
+- Git Status anzeigen
+- Staging
+- Commit
+- Push/Pull
+- Branch Management
+
+#### 9. **💻 Terminal nutzen**
+- Terminal öffnen
+- Befehle ausführen
+- Agent-Befehle bestätigen
+- Multi-Terminal
+- Command History
+
+#### 10. **▶️ Run & Debug**
+- Run & Debug Panel
+- Launch App
+- Run Tests
+- Build
+- Konfigurationen
+
+#### 11. **📺 Preview System**
+- Preview starten
+- Browser-Tabs im Editor
+- Hot Reload
+- URL Navigation
+- Reload
+
+#### 12. **⌨️ Keyboard Shortcuts**
+- Command Palette
+- Datei-Operationen
+- Suche
+- Editor-Shortcuts
+- Panel-Shortcuts
+
+#### 13. **📦 Extensions**
+- Extensions Panel
+- Installierte Extensions
+- Marketplace
+- Extension Details
+- Deinstallation
+
+#### 14. **🎨 Drag & Drop Editor nutzen**
+- Visual Editor öffnen
+- Komponenten hinzufügen
+- Eigenschaften anpassen
+
+#### 15. **💻 Code bearbeiten**
+- Datei öffnen
+- Code schreiben
+- Live Preview
+
+### 💡 Tipps für Tutorials:
+- **Starte mit "Deine erste App erstellen"**: Perfekt für Anfänger
+- **Folge der Reihenfolge**: Tutorials bauen aufeinander auf
+- **Wiederhole Tutorials**: Starte sie erneut, wenn du etwas vergessen hast
+- **Nutze die Highlights**: Die hervorgehobenen Bereiche zeigen dir, wo du klicken musst
+- **Lies die Erklärungen**: Jeder Schritt erklärt, warum und wie
+
+### 🎯 Tutorial-Status:
+- **Abgeschlossene Tutorials** werden mit einem ✓ markiert
+- **Fortschritt wird gespeichert**: Dein Fortschritt bleibt erhalten
+- **Jederzeit wiederholbar**: Starte Tutorials erneut, wann immer du willst
 
 ---
 
