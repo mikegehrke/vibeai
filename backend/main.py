@@ -893,12 +893,11 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
     import asyncio
     
     # ⚡ SOFORTIGE BESTÄTIGUNG (<50ms) - wie ChatGPT/Claude!
-    # Sende sofort eine Bestätigung, damit User sieht dass Agent antwortet
-    # ⚡ WICHTIG: Erste echte Antwort sofort senden, nicht nur "typing_start"!
+    # Sende IMMER sofort eine echte Antwort, nicht nur "typing_start"!
     user_message_lower = request.prompt.lower()
     
     # ⚡ INTELLIGENTE SOFORT-ANTWORT: Erkenne Befehle sofort und antworte sofort!
-    if any(phrase in user_message_lower for phrase in ["starte die app", "kannst du die app starten", "app starten", "starte app"]):
+    if any(phrase in user_message_lower for phrase in ["starte die app", "kannst du die app starten", "app starten", "starte app", "run die app", "app run"]):
         # Flutter oder React/Next.js?
         if project_id:
             try:
@@ -918,8 +917,10 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
         else:
             yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
     else:
-        # Normale sofortige Bestätigung
-        yield f"data: {json.dumps({'content': '', 'type': 'typing_start'})}\n\n"
+        # ⚡ IMMER echte Antwort sofort senden, nicht nur "typing_start"!
+        # Sende erste Worte sofort, damit User sieht dass Agent antwortet
+        yield f"data: {json.dumps({'content': '💬 '})}\n\n"
+        await asyncio.sleep(0.01)  # Kleine Verzögerung für UI-Effekt
     
     # ⚡ OPTIMIERUNG: Lade Projekt-Kontext PARALLEL (nicht blockierend)
     # Starte AI-Request SOFORT, lade Kontext im Hintergrund
