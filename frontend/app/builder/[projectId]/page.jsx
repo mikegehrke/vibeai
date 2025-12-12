@@ -2870,9 +2870,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                 
                 if (data.content) {
                   fullContent += data.content;
-                  // ⚡ PERFORMANCE: Update streaming message THROTTLED (nur alle 100ms)
+                  // ⚡ SOFORTIGES UPDATE: Erste 50 Zeichen sofort, dann throttled
+                  const isFirstUpdate = fullContent.length <= 50;
                   const now = Date.now();
-                  if (now - lastChatUpdateRef.current > 100) {
+                  if (isFirstUpdate || now - lastChatUpdateRef.current > 100) {
                     lastChatUpdateRef.current = now;
                     startTransition(() => {
                       setChatMessages(prev => prev.map((msg, idx) => 
