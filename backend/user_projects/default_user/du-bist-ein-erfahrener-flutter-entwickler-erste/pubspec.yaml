@@ -12,7 +12,7 @@ dependencies:
   provider: ^6.0.5
   flutter_localizations:
     sdk: flutter
-  intl: ^0.18.0
+  intl: ^0.20.2
 
   # Add any other dependencies you need for your app here
 

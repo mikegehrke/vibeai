@@ -1475,6 +1475,10 @@ Bitte versuche es erneut.`);
           if (command && !command.includes('TERMINAL:') && !command.includes('Führe')) {
             // Clean up command
             command = command.replace(/^\$?\s*/, '').trim();
+            // ⚡ WICHTIG: Entferne Kommentare nach - oder # (z.B. "flutter test - Überprüfen" → "flutter test")
+            command = command.split(/\s+-\s+/)[0].split(/\s+#/)[0].trim();
+            // Entferne Backticks am Anfang/Ende
+            command = command.replace(/^`+|`+$/g, '').trim();
             // ⚡ VALIDIERUNG: Prüfe ob Befehl gültig ist
             if (isValidCommand(command) && !commands.includes(command)) {
               commands.push(command);
@@ -2776,7 +2780,11 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                     return true;
                   };
                   while ((terminalMatch = terminalPattern.exec(fullContent)) !== null) {
-                    const command = terminalMatch[1]?.trim();
+                    let command = terminalMatch[1]?.trim();
+                    // ⚡ WICHTIG: Entferne Kommentare nach - oder # (z.B. "flutter test - Überprüfen" → "flutter test")
+                    command = command.split(/\s+-\s+/)[0].split(/\s+#/)[0].trim();
+                    // Entferne Backticks am Anfang/Ende
+                    command = command.replace(/^`+|`+$/g, '').trim();
                     // ⚡ VALIDIERUNG: Ignoriere leere oder ungültige Befehle
                     if (isValidCommand(command) && !seenCommands.has(command)) {
                       seenCommands.add(command);
