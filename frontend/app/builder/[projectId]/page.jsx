@@ -2662,16 +2662,9 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
 
       // Handle streaming response
       if (response.headers.get('content-type')?.includes('text/event-stream')) {
-        // ⚡ SOFORTIGE ANTWORT: Erstelle Streaming-Nachricht SOFORT (<50ms)
-        // Das zeigt dem User sofort, dass der Agent antwortet (wie ChatGPT/Claude)
-        const streamingMsg = {
-          role: 'assistant',
-          content: '💬 ',
-          timestamp: new Date().toISOString(),
-          model: currentModel,
-          isStreaming: true
-        };
-        setChatMessages(prev => [...prev, streamingMsg]);
+        // ⚡ Streaming-Nachricht wurde bereits SOFORT erstellt (siehe oben, Zeile 2473)
+        // Setze Loading zurück, da Stream jetzt läuft
+        setIsChatLoading(false);
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
