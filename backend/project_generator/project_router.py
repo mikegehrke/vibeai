@@ -16,6 +16,118 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def get_project_path_from_id(project_id: str) -> Path:
+    """Get project path from project_id"""
+    # Try to get from project_manager first
+    try:
+        from codestudio.project_manager import project_manager
+        project_path = project_manager.get_project_path("default_user", project_id)
+        if os.path.exists(project_path):
+            return Path(project_path)
+    except:
+        pass
+    
+    # Fallback: check user_projects directory
+    user_projects_path = Path("user_projects/default_user") / project_id
+    if user_projects_path.exists():
+        return user_projects_path
+    
+    # Another fallback: check backend/user_projects
+    backend_user_projects = Path("backend/user_projects/default_user") / project_id
+    if backend_user_projects.exists():
+        return backend_user_projects
+    
+    # Last fallback: projects directory
+    return Path("projects") / project_id
+
+
+@router.get("/{project_id}/files")
+async def get_project_files(project_id: str):
+    """
+    Get all files from a project with their content.
+    This endpoint loads files from the project directory on disk.
+    """
+    try:
+        project_path = get_project_path_from_id(project_id)
+        
+        if not project_path.exists():
+            return []
+        
+        files = []
+        exclude_dirs = {".git", "node_modules", "__pycache__", ".next", "build", "dist", ".vscode", ".idea", "venv", ".metadata"}
+        exclude_extensions = {".pyc", ".log", ".DS_Store"}
+        
+        for root, dirs, filenames in os.walk(project_path):
+            # Remove excluded directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            
+            for filename in filenames:
+                # Skip hidden files and excluded extensions
+                if filename.startswith(".") or any(filename.endswith(ext) for ext in exclude_extensions):
+                    continue
+                
+                file_path = Path(root) / filename
+                rel_path = file_path.relative_to(project_path)
+                
+                try:
+                    # Read file content
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    
+                    # Determine language from extension
+                    ext = file_path.suffix.lower()
+                    language_map = {
+                        ".dart": "dart",
+                        ".js": "javascript",
+                        ".jsx": "javascript",
+                        ".ts": "typescript",
+                        ".tsx": "typescript",
+                        ".py": "python",
+                        ".java": "java",
+                        ".kt": "kotlin",
+                        ".swift": "swift",
+                        ".go": "go",
+                        ".rs": "rust",
+                        ".html": "html",
+                        ".css": "css",
+                        ".json": "json",
+                        ".yaml": "yaml",
+                        ".yml": "yaml",
+                        ".md": "markdown",
+                        ".xml": "xml",
+                        ".sh": "shell",
+                        ".sql": "sql",
+                    }
+                    language = language_map.get(ext, "text")
+                    
+                    files.append({
+                        "name": filename,
+                        "path": str(rel_path).replace("\\", "/"),  # Normalize path separators
+                        "content": content,
+                        "language": language,
+                        "size": len(content),
+                        "lastModified": os.path.getmtime(file_path)
+                    })
+                except UnicodeDecodeError:
+                    # Skip binary files
+                    continue
+                except Exception as e:
+                    logger.warning(f"Error reading file {rel_path}: {e}")
+                    continue
+        
+        # Sort files by path
+        files.sort(key=lambda x: x["path"])
+        
+        return files
+        
+    except Exception as e:
+        logger.error(f"Error loading project files: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error loading project files: {str(e)}"
+        )
+
+
 class ProjectRequest(BaseModel):
     framework: str = Field(
         ...,

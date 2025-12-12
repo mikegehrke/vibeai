@@ -207,6 +207,21 @@ export default function BuilderPage({ params, searchParams }) {
     loadChatSessions();
     setupRealtimeUpdates();
     
+    // ⚡ Auto-Reload: Reload files every 30 seconds to catch updates
+    const autoReloadInterval = setInterval(() => {
+      console.log('🔄 Auto-reloading project files...');
+      loadProjectFiles().catch(err => console.error('Auto-reload error:', err));
+    }, 30000); // Every 30 seconds
+    
+    // ⚡ Visibility API: Reload when tab becomes visible again
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ Tab visible again, reloading files...');
+        loadProjectFiles().catch(err => console.error('Visibility reload error:', err));
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     // Command Palette (Cmd+K / Ctrl+K)
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -230,128 +245,133 @@ export default function BuilderPage({ params, searchParams }) {
     
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('click', handleClickOutside);
+    
     return () => {
+      clearInterval(autoReloadInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', handleClickOutside);
     };
   }, [projectId, showCommandPalette, showAutoDropdown]);
 
-  // ⚡ WICHTIG: Funktion zum Neuladen der Projektdateien
-  const loadProjectFiles = async () => {
+  // ⚡ WICHTIG: Funktion zum Neuladen der Projektdateien (IMMER vom Backend!)
+  const loadProjectFiles = async (retryCount = 0) => {
     try {
-      // Lade Dateien von API
+      console.log(`📂 Loading project files for: ${projectId} (attempt ${retryCount + 1})`);
+      
+      // ⚡ IMMER vom Backend laden - nicht aus localStorage!
       const response = await fetch(`http://localhost:8005/api/projects/${projectId}/files`);
+      
       if (response.ok) {
         const projectFiles = await response.json();
-        setFiles(projectFiles);
-        if (projectFiles.length > 0 && !activeFile) {
-          setActiveFile(projectFiles[0]);
-          setOpenTabs([projectFiles[0]]);
+        console.log(`✅ Loaded ${projectFiles.length} files from backend`);
+        
+        if (Array.isArray(projectFiles) && projectFiles.length > 0) {
+          // Format files for editor
+          const formattedFiles = projectFiles.map(file => ({
+            name: file.name || file.path.split('/').pop() || file.path,
+            path: file.path,
+            content: file.content || '',
+            language: file.language || 'text',
+            size: file.size || (file.content || '').length,
+            lastModified: file.lastModified ? new Date(file.lastModified * 1000) : new Date(),
+            gitStatus: null,
+            modified: false,
+            untracked: false
+          }));
+          
+          setFiles(formattedFiles);
+          
+          // Update localStorage as backup (but always load from backend first!)
+          localStorage.setItem(`project_${projectId}_files`, JSON.stringify(formattedFiles));
+          
+          if (formattedFiles.length > 0 && !activeFile) {
+            setActiveFile(formattedFiles[0]);
+            setOpenTabs([formattedFiles[0]]);
+          }
+          
+          updateProjectStats();
+          return true;
+        } else {
+          console.warn('⚠️ No files found in project');
+          // Retry once after 2 seconds if no files found
+          if (retryCount < 1) {
+            console.log('🔄 Retrying in 2 seconds...');
+            setTimeout(() => loadProjectFiles(retryCount + 1), 2000);
+          }
+          return false;
         }
-        updateProjectStats();
-        return true;
+      } else {
+        console.error(`❌ Failed to load files: ${response.status} ${response.statusText}`);
+        // Retry once after 2 seconds on error
+        if (retryCount < 1) {
+          console.log('🔄 Retrying in 2 seconds...');
+          setTimeout(() => loadProjectFiles(retryCount + 1), 2000);
+        }
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Error loading project files:', error);
+      console.error('❌ Error loading project files:', error);
+      // Retry once after 2 seconds on exception
+      if (retryCount < 1) {
+        console.log('🔄 Retrying in 2 seconds...');
+        setTimeout(() => loadProjectFiles(retryCount + 1), 2000);
+      }
       return false;
     }
   };
 
   const initializeProject = async () => {
     try {
-      // Try to load from localStorage first (from build-complete-app)
-      const savedFiles = localStorage.getItem(`project_${projectId}_files`);
-      if (savedFiles) {
-        try {
-          const parsedFiles = JSON.parse(savedFiles);
-          if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
-            // Convert to file format with Git status
-            const formattedFiles = parsedFiles.map((file, index) => ({
-              name: file.path.split('/').pop() || file.path,
-              path: file.path,
-              content: file.content || '',
-              language: file.language || 'text',
-              size: (file.content || '').length,
-              lastModified: new Date(),
-              // Add Git status (M for modified, U for untracked)
-              gitStatus: index < 2 ? 'M' : index < 5 ? 'U' : null,
-              modified: index < 2,
-              untracked: index >= 2 && index < 5
-            }));
-            setFiles(formattedFiles);
-            if (formattedFiles.length > 0) {
-              setActiveFile(formattedFiles[0]);
-              setOpenTabs([formattedFiles[0]]);
-            }
-            updateProjectStats();
-            
-            // Auto-start preview after project initialization
-            if (formattedFiles.length > 0) {
-              // Determine project type for preview
-              const hasHTML = formattedFiles.some(f => f.path.endsWith('.html') || f.name.endsWith('.html'));
-              const hasJSX = formattedFiles.some(f => f.path.endsWith('.jsx') || f.path.endsWith('.tsx'));
-              const hasDart = formattedFiles.some(f => f.path.endsWith('.dart'));
-              
-              let previewType = 'html';
-              if (hasDart) previewType = 'flutter';
-              else if (hasJSX) previewType = 'react';
-              
-              // Wait a bit for files to be ready, then start preview
-              setTimeout(async () => {
-                try {
-                  console.log('🚀 Auto-starting preview...', previewType);
-                  await startPreviewServer(previewType);
-                } catch (e) {
-                  console.error('Preview auto-start failed:', e);
-                }
-              }, 2000);
-            }
-            
-            // Set review data for Review Panel
-            setReviewData({
-              title: "Optimierung des AI-gesteuerten entwicklerprojekts",
-              userRequest: "es muss genau so aus sehen wie diese screen chat alle icons und funktionen und editor und komplett so und mit den 4 agenten die im chat sind",
-              codeChanges: [
-                {
-                  file: "page.jsx",
-                  added: 7,
-                  removed: 1,
-                  diff: [
-                    { type: 'context', oldLine: 280, newLine: 280, content: "      const response = await fetch('http://127.0.0.1:8001/api/chat', {" },
-                    { type: 'removed', oldLine: 280, newLine: null, content: "      const response = await fetch('http://127.0.0.1:8001/api/chat', {" },
-                    { type: 'added', oldLine: null, newLine: 281, content: "      const response = await fetch('http://localhost:8005/api/chat', {" }
-                  ]
-                }
-              ]
-            });
-            return;
-          }
-        } catch (e) {
-          console.log('Failed to parse saved files:', e);
-        }
-      }
+      console.log(`🚀 Initializing project: ${projectId}`);
       
-      // Load project files from API
-      const response = await fetch(`http://localhost:8005/api/projects/${projectId}/files`);
-      if (response.ok) {
-        const projectFiles = await response.json();
-        setFiles(projectFiles);
-        if (projectFiles.length > 0) {
-          setActiveFile(projectFiles[0]);
-          setOpenTabs([projectFiles[0]]);
-        }
+      // ⚡ WICHTIG: IMMER zuerst vom Backend laden - Dateien sind persistent gespeichert!
+      const filesLoaded = await loadProjectFiles();
+      
+      if (filesLoaded && files.length > 0) {
+        console.log(`✅ Project initialized with ${files.length} files`);
+        
+        // Auto-start preview if files exist
+        const hasHTML = files.some(f => f.path.endsWith('.html') || f.name.endsWith('.html'));
+        const hasJSX = files.some(f => f.path.endsWith('.jsx') || f.path.endsWith('.tsx'));
+        const hasDart = files.some(f => f.path.endsWith('.dart'));
+        
+        let previewType = 'html';
+        if (hasDart) previewType = 'flutter';
+        else if (hasJSX) previewType = 'react';
+        
+        // Wait a bit for files to be ready, then start preview
+        setTimeout(async () => {
+          try {
+            console.log('🚀 Auto-starting preview...', previewType);
+            await startPreviewServer(previewType);
+          } catch (e) {
+            console.error('Preview auto-start failed:', e);
+          }
+        }, 2000);
+        
+        // Set review data for Review Panel
+        setReviewData({
+          title: projectId,
+          userRequest: "Projekt geladen",
+          codeChanges: []
+        });
       } else {
-        // Create mock files for demo
-        loadMockFiles();
+        console.warn('⚠️ No files loaded, using fallback');
+        // Only use mock files if backend has no files
+        // This allows user to start fresh
+        if (files.length === 0) {
+          loadMockFiles();
+        }
       }
       
       // Load project statistics
       updateProjectStats();
       
     } catch (error) {
-      console.error('Project init failed:', error);
-      loadMockFiles();
+      console.error('❌ Project init failed:', error);
+      // Don't load mock files on error - let user see the error
+      // They can reload or the retry mechanism will handle it
     }
   };
 
