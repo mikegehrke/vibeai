@@ -73,11 +73,12 @@ async def start_preview(request: Request) -> Dict[str, Any]:
         raise HTTPException(400, "Missing project_id")
 
     # Projekt laden
-    project = project_manager.load_project(user_email, project_id)
-    if not project:
+    try:
+        project = project_manager.get_project(user_email, project_id)
+    except (FileNotFoundError, KeyError):
         raise HTTPException(404, f"Project not found: {project_id} (user: {user_email})")
 
-    project_path = project_manager.get_project_path(user_email, project_id)
+    project_path = project_manager._get_project_path(user_email, project_id)
     
     # ⚡ WICHTIG: Speichere Dateien IMMER, auch wenn Verzeichnis existiert
     # (Smart Agent speichert Dateien direkt, aber Preview sollte sie auch haben)
