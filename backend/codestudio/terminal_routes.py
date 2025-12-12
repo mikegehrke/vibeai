@@ -321,6 +321,7 @@ class HomeScreen extends StatelessWidget {
             raise HTTPException(status_code=400, detail="Dangerous command not allowed")
         
         # Spezialbehandlung für Flutter-Befehle
+        output = ""  # ⚡ WICHTIG: Initialisiere output immer
         if command_lower.startswith('flutter run') or command_lower.startswith('flutter pub get') or command_lower.startswith('flutter pub add'):
             # Prüfe ob Flutter-Projekt Web/macOS-Support hat
             pubspec_path = os.path.join(project_path, "pubspec.yaml")
