@@ -1371,21 +1371,36 @@ Bitte versuche es erneut.`);
       setPreviewError(null);
       setPreviewLoadingProgress({ message: 'Starte Preview-Server...', elapsed: 0, maxTime: 120 });
       
-      // Sende auch die Dateien, damit sie auf dem Server gespeichert werden
-      const response = await fetch('http://localhost:8005/api/preview/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          project_id: projectId,
-          type: type,
-          files: files.map(f => ({
-            path: f.path || f.name,
-            content: f.content || ''
-          }))
-        })
-      });
+      // ⚡ WICHTIG: Timeout für Preview-Start (30 Sekunden - Flutter braucht länger)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 Sekunden Timeout
+      
+      let response;
+      try {
+        // Sende auch die Dateien, damit sie auf dem Server gespeichert werden
+        response = await fetch('http://localhost:8005/api/preview/start', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            project_id: projectId,
+            type: type,
+            files: files.map(f => ({
+              path: f.path || f.name,
+              content: f.content || ''
+            }))
+          })
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.');
+        }
+        throw fetchError;
+      }
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}`;
