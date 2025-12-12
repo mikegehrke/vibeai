@@ -5285,7 +5285,32 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                       return htmlContent;
                     }
                     // Default fallback
-                    const statusMsg = previewStatus === 'starting' ? '<p style="color: #007acc;">⏳ Preview wird gestartet...</p>' : '';
+                    const elapsed = previewLoadingProgress.elapsed || 0;
+                    const maxTime = previewLoadingProgress.maxTime || 120;
+                    const remaining = Math.max(0, maxTime - elapsed);
+                    const progressPercent = Math.min(100, (elapsed / maxTime) * 100);
+                    const statusMsg = previewStatus === 'starting' ? `
+                      <div style="text-align: center; padding: 40px; color: #007acc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                        <h2 style="color: #007acc; margin-bottom: 10px; font-size: 18px;">Preview wird gestartet...</h2>
+                        <p style="color: #cccccc; margin-bottom: 20px; font-size: 14px;">${previewLoadingProgress.message || 'Warte auf Server...'}</p>
+                        <div style="background: #2d2d30; border-radius: 8px; padding: 20px; margin: 20px auto; max-width: 400px;">
+                          <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: #858585;">
+                            <span>Verstrichen: ${elapsed}s</span>
+                            <span>Geschätzt: ~${maxTime}s</span>
+                          </div>
+                          <div style="background: #1e1e1e; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #007acc, #00d4ff); height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
+                          </div>
+                          <p style="font-size: 11px; color: #858585; margin-top: 10px;">
+                            ${remaining > 0 ? `Noch ca. ${remaining} Sekunden...` : 'Bitte warten, Server startet...'}
+                          </p>
+                          <p style="font-size: 10px; color: #666; margin-top: 20px;">
+                            💡 Flutter-Apps brauchen oft 60-120 Sekunden zum ersten Kompilieren
+                          </p>
+                        </div>
+                      </div>
+                    ` : '';
                     let errorMsg = '';
                     if (previewStatus === 'error') {
                       const error = previewError || 'Unbekannter Fehler';
