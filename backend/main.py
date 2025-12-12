@@ -934,7 +934,10 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
         if project_id:
             try:
                 from codestudio.project_manager import project_manager
-                project = project_manager.load_project("default_user", project_id)
+                try:
+                    project = project_manager.get_project("default_user", project_id)
+                except (FileNotFoundError, KeyError):
+                    project = None
                 if project:
                     project_path = project_manager.get_project_path("default_user", project_id)
                     import os
