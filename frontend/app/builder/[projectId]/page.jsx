@@ -278,8 +278,9 @@ export default function BuilderPage({ params, searchParams }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', handleClickOutside);
+      initializingRef.current = false; // Reset flag on cleanup
     };
-  }, [projectId, showCommandPalette, showAutoDropdown]);
+  }, [projectId]); // ⚡ WICHTIG: Nur projectId als Abhängigkeit - wird neu initialisiert wenn Projekt wechselt
 
   // ⚡ WICHTIG: Funktion zum Neuladen der Projektdateien (IMMER vom Backend!)
   const loadProjectFiles = async (retryCount = 0) => {
