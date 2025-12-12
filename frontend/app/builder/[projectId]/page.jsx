@@ -1337,24 +1337,61 @@ Bitte versuche es erneut.`);
   };
 
   // Wait for server to be ready
-  const waitForServerReady = async (url, maxAttempts = 30) => {
+  const waitForServerReady = async (url, maxAttempts = 60) => {
+    // ⚡ WICHTIG: Entferne DevTools-Parameter aus URL (z.B. ?uri=...)
+    // Flutter DevTools läuft auf Port 9103, aber App läuft auf anderem Port
+    let cleanUrl = url;
+    if (url.includes('?uri=')) {
+      // Extrahiere die eigentliche App-URL aus dem uri-Parameter
+      try {
+        const urlObj = new URL(url);
+        const uriParam = urlObj.searchParams.get('uri');
+        if (uriParam) {
+          // uri ist oft eine relative URL, konvertiere zu vollständiger URL
+          if (uriParam.startsWith('http://') || uriParam.startsWith('https://')) {
+            cleanUrl = uriParam;
+          } else {
+            // Relative URL - verwende den Host der ursprünglichen URL
+            cleanUrl = `${urlObj.protocol}//${urlObj.hostname}:${uriParam.split(':')[1] || urlObj.port}`;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not parse DevTools URL, using original:', e);
+      }
+    }
+    
+    console.log('🔍 Checking server readiness:', cleanUrl);
+    
     for (let i = 0; i < maxAttempts; i++) {
       try {
-        const response = await fetch(url, { 
+        // Versuche HEAD-Request (ohne CORS-Probleme)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const response = await fetch(cleanUrl, { 
           method: 'HEAD',
-          mode: 'no-cors' // CORS umgehen für Health-Check
+          mode: 'no-cors',
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
+        
         // Wenn keine Exception, ist Server bereit
+        console.log('✅ Server is ready:', cleanUrl);
         setPreviewStatus('running');
+        setPreviewUrl(cleanUrl); // Aktualisiere URL auf saubere Version
         return true;
       } catch (error) {
-        // Server noch nicht bereit, warte 500ms
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Server noch nicht bereit, warte 1 Sekunde
+        if (i % 10 === 0) {
+          console.log(`⏳ Waiting for server... (${i + 1}/${maxAttempts})`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     // Timeout - aber versuche trotzdem zu laden
     console.warn('⚠️ Server readiness timeout, but trying to load anyway');
     setPreviewStatus('running');
+    setPreviewUrl(cleanUrl); // Verwende saubere URL auch bei Timeout
     return false;
   };
 
@@ -4761,6 +4798,61 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                 background: '#1e1e1e',
                 position: 'relative'
               }}>
+                {/* Preview Tabs (wie im Bild) */}
+                <div style={{
+                  display: 'flex',
+                  background: '#2d2d30',
+                  borderBottom: '1px solid #3c3c3c',
+                  fontSize: '11px'
+                }}>
+                  <div
+                    style={{
+                      padding: '6px 12px',
+                      background: previewStatus !== 'error' ? '#1e1e1e' : '#2d2d30',
+                      borderBottom: previewStatus !== 'error' ? '2px solid #007acc' : 'none',
+                      color: previewStatus !== 'error' ? '#cccccc' : '#858585',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>🌐</span>
+                    <span>Browser Preview</span>
+                  </div>
+                  {previewStatus === 'error' && (
+                    <div
+                      style={{
+                        padding: '6px 12px',
+                        background: '#1e1e1e',
+                        borderBottom: '2px solid #f48771',
+                        color: '#f48771',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>❌</span>
+                      <span>Fehler</span>
+                    </div>
+                  )}
+                  {findMainHTMLFile() && (
+                    <div
+                      style={{
+                        padding: '6px 12px',
+                        background: '#2d2d30',
+                        color: '#858585',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>📄</span>
+                      <span>{findMainHTMLFile().name}</span>
+                    </div>
+                  )}
+                </div>
+                
                 {/* Preview Header with Controls */}
                 <div style={{
                   padding: '8px 12px',
@@ -4773,7 +4865,6 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                   fontSize: '11px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                    <span style={{ color: '#858585' }}>🌐 Browser Preview</span>
                     {previewStatus === 'running' && previewUrl && (
                       <span style={{ 
                         color: '#4ec9b0', 
@@ -4800,7 +4891,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                         Starte...
                       </span>
                     )}
-                    {previewStatus === 'error' && (
+                    {previewStatus === 'error' && previewError && (
                       <span style={{ 
                         color: '#f48771', 
                         fontSize: '10px',
@@ -4808,18 +4899,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                         background: '#1e1e1e',
                         borderRadius: '3px'
                       }}>
-                        Fehler
-                      </span>
-                    )}
-                    {findMainHTMLFile() && previewStatus !== 'running' && (
-                      <span style={{ 
-                        color: '#4ec9b0', 
-                        fontSize: '10px',
-                        padding: '2px 6px',
-                        background: '#1e1e1e',
-                        borderRadius: '3px'
-                      }}>
-                        {findMainHTMLFile().name}
+                        {previewError.length > 50 ? previewError.substring(0, 50) + '...' : previewError}
                       </span>
                     )}
                 </div>
@@ -4986,7 +5066,22 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                   }}
                   sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
                   title="Live Preview"
-                  src={previewUrl && previewStatus === 'running' ? previewUrl : undefined}
+                  src={(() => {
+                    if (!previewUrl || previewStatus !== 'running') return undefined;
+                    // ⚡ WICHTIG: Entferne DevTools-Parameter aus URL
+                    if (previewUrl.includes('?uri=')) {
+                      try {
+                        const urlObj = new URL(previewUrl);
+                        const uriParam = urlObj.searchParams.get('uri');
+                        if (uriParam && (uriParam.startsWith('http://') || uriParam.startsWith('https://'))) {
+                          return uriParam; // Verwende die eigentliche App-URL
+                        }
+                      } catch (e) {
+                        console.warn('Could not parse DevTools URL:', e);
+                      }
+                    }
+                    return previewUrl;
+                  })()}
                   srcDoc={(() => {
                     if (previewUrl && previewStatus === 'running') return undefined;
                     // Fallback: Zeige HTML-Inhalt direkt wenn verfügbar
@@ -5040,7 +5135,31 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                     }
                     // Default fallback
                     const statusMsg = previewStatus === 'starting' ? '<p style="color: #007acc;">⏳ Preview wird gestartet...</p>' : '';
-                    const errorMsg = previewStatus === 'error' ? `<p style="color: #f48771;">❌ Fehler: ${previewError || 'Unbekannter Fehler'}</p>` : '';
+                    let errorMsg = '';
+                    if (previewStatus === 'error') {
+                      const error = previewError || 'Unbekannter Fehler';
+                      // Spezielle Behandlung für "connection refused"
+                      if (error.includes('abgelehnt') || error.includes('refused') || error.includes('ECONNREFUSED')) {
+                        errorMsg = `
+                          <div style="text-align: center; padding: 40px; color: #f48771;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">🔌</div>
+                            <h2 style="color: #f48771; margin-bottom: 10px;">Verbindung abgelehnt</h2>
+                            <p style="color: #cccccc; margin-bottom: 20px;">Der Preview-Server ist nicht erreichbar.</p>
+                            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">Mögliche Ursachen:</p>
+                            <ul style="color: #888; font-size: 12px; text-align: left; display: inline-block;">
+                              <li>Server startet noch (bitte warten...)</li>
+                              <li>Server ist abgestürzt (bitte neu starten)</li>
+                              <li>Port ist bereits belegt</li>
+                            </ul>
+                            <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                              🔄 Erneut versuchen
+                            </button>
+                          </div>
+                        `;
+                      } else {
+                        errorMsg = `<p style="color: #f48771;">❌ Fehler: ${error}</p>`;
+                      }
+                    }
                     return `
                     <!DOCTYPE html>
                     <html>
