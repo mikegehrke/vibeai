@@ -84,7 +84,7 @@ async def start_preview(request: Request) -> Dict[str, Any]:
     files = body.get("files", [])
     if files:
         print(f"💾 Speichere {len(files)} Dateien für Preview...")
-        project_manager.save_files_to_project(user.email, project_id, files)
+        project_manager.save_files_to_project(user_email, project_id, files)
         print(f"✅ Dateien gespeichert in: {project_path}")
     
     # Prüfe ob Projekt-Verzeichnis existiert und Dateien hat
