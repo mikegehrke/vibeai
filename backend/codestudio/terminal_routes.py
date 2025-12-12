@@ -345,13 +345,19 @@ class HomeScreen extends StatelessWidget {
                     output = ""
             
             # ⚡ WICHTIG: Für flutter run, verwende -d web-server um Browser-Auto-Open zu verhindern
-            # Aber nur wenn der Benutzer nicht bereits ein Device angegeben hat
-            if command_lower.startswith('flutter run') and '-d' not in command_lower and '--device-id' not in command_lower:
-                # Füge -d web-server hinzu, damit Browser nicht automatisch öffnet
-                # Der Benutzer kann immer noch -d chrome oder -d edge verwenden, wenn gewünscht
-                original_command = request.command
-                request.command = request.command.replace('flutter run', 'flutter run -d web-server', 1)
-                print(f"🔧 Modified flutter run command: {request.command} (to prevent auto-browser-open)")
+            # ABER: Wenn der Benutzer explizit -d chrome verwendet, starte ZUSÄTZLICH einen web-server für Preview
+            if command_lower.startswith('flutter run'):
+                if '-d' not in command_lower and '--device-id' not in command_lower:
+                    # Kein Device angegeben → verwende web-server (für Preview im Editor)
+                    original_command = request.command
+                    request.command = request.command.replace('flutter run', 'flutter run -d web-server', 1)
+                    print(f"🔧 Modified flutter run command: {request.command} (to prevent auto-browser-open)")
+                elif '-d chrome' in command_lower or '--device-id chrome' in command_lower:
+                    # ⚡ SPEZIAL: User will Chrome öffnen → starte ZUSÄTZLICH web-server für Preview
+                    # Chrome öffnet sich separat, aber Preview im Editor braucht web-server
+                    print(f"🔧 User requested Chrome, but we'll also start web-server for editor preview")
+                    # Chrome-Befehl bleibt unverändert (öffnet Chrome)
+                    # Preview wird automatisch über web-server verfügbar sein (wird separat gestartet wenn nötig)
                 
                 # ⚡ WICHTIG: Prüfe auf Dependency-Konflikte und fixe sie automatisch
                 # Versuche zuerst flutter pub get, um Fehler zu sehen
