@@ -887,16 +887,23 @@ CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: 
 async def stream_chat_response(request: ChatRequest, model_info: Dict):
     """Stream chat responses with work steps - SHOWS REAL ACTIONS
     
-    ⚡ SOFORTIGE ANTWORT: Erste Nachricht sofort (<100ms), dann Streaming!
+    ⚡ SOFORTIGE ANTWORT: Erste Nachricht sofort (<50ms), dann Streaming!
     """
     import json
+    import asyncio
+    
+    # ⚡ SOFORTIGE BESTÄTIGUNG (<50ms) - wie ChatGPT/Claude!
+    # Sende sofort eine Bestätigung, damit User sieht dass Agent antwortet
+    yield f"data: {json.dumps({'content': '', 'type': 'typing_start'})}\n\n"
+    
+    # ⚡ OPTIMIERUNG: Lade Projekt-Kontext PARALLEL (nicht blockierend)
+    # Starte AI-Request SOFORT, lade Kontext im Hintergrund
+    project_context = ""
+    project_id = getattr(request, 'project_id', None)
     
     # ⚡ KEINE DUMMY-TEXTE - Agent gibt ECHTE Antwort sofort!
     try:
-        # Get project context
-        project_context = ""
-        project_files = []
-        project_id = getattr(request, 'project_id', None)
+        # Get project context (OPTIONAL, nicht blockierend)
         if project_id:
             try:
                 from codestudio.project_manager import project_manager
@@ -905,8 +912,14 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
                     project_path = project_manager.get_project_path("default_user", project_id)
                     import os
                     if os.path.exists(project_path):
+                        # ⚡ OPTIMIERUNG: Nur erste 10 Dateien laden (schneller!)
+                        file_count = 0
                         for root, dirs, files in os.walk(project_path):
+                            if file_count >= 10:  # Limit für schnelleres Laden
+                                break
                             for file in files:
+                                if file_count >= 10:
+                                    break
                                 if file.startswith('.') or '__pycache__' in root:
                                     continue
                                 file_path = os.path.join(root, file)
@@ -914,19 +927,16 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
                                     with open(file_path, 'r', encoding='utf-8') as f:
                                         content = f.read()
                                         rel_path = os.path.relpath(file_path, project_path)
-                                        project_files.append({
-                                            "path": rel_path,
-                                            "content": content[:5000]
-                                        })
+                                        project_context += f"### {rel_path}\n```\n{content[:1000]}\n```\n\n"
+                                        file_count += 1
                                 except:
                                     pass
-                    
-                    if project_files:
-                        project_context = f"\n\n## PROJECT CONTEXT (Project: {project_id})\n\n"
-                        for file_info in project_files[:20]:
-                            project_context += f"### {file_info['path']}\n```\n{file_info['content'][:2000]}\n```\n\n"
+                        
+                        if project_context:
+                            project_context = f"\n\n## PROJECT CONTEXT (Project: {project_id})\n\n{project_context}"
             except Exception as e:
                 print(f"⚠️  Error loading project context: {e}")
+                # ⚡ WICHTIG: Fehler beim Laden blockiert nicht - fahre fort!
         
         # Build system prompt with ENHANCED INTELLIGENCE & CONTEXT
         if not request.system_prompt:

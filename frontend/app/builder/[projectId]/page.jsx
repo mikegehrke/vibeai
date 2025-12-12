@@ -2650,10 +2650,11 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
 
       // Handle streaming response
       if (response.headers.get('content-type')?.includes('text/event-stream')) {
-        // Create streaming message
+        // ⚡ SOFORTIGE ANTWORT: Erstelle Streaming-Nachricht SOFORT (<50ms)
+        // Das zeigt dem User sofort, dass der Agent antwortet (wie ChatGPT/Claude)
         const streamingMsg = {
           role: 'assistant',
-          content: '',
+          content: '💬 ',
           timestamp: new Date().toISOString(),
           model: currentModel,
           isStreaming: true
