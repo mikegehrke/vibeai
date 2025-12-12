@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, use } from 'react';
+import { useState, useEffect, useRef, useCallback, use, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
@@ -1380,8 +1380,25 @@ Bitte versuche es erneut.`);
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          const errorText = await response.text().catch(() => '');
+          if (errorText) errorMessage = errorText;
+        }
+        
+        // ⚡ BESSERE FEHLERMELDUNGEN
+        if (response.status === 404) {
+          errorMessage = `Preview-Endpoint nicht gefunden. Prüfe ob Backend läuft und Preview-Routes registriert sind.`;
+        } else if (response.status === 401 || response.status === 403) {
+          errorMessage = `Authentifizierungsfehler. Bitte erneut anmelden.`;
+        } else if (response.status === 400) {
+          errorMessage = `Ungültige Anfrage: ${errorMessage}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
