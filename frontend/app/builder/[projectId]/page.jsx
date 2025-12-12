@@ -2924,17 +2924,43 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
         responseReceived = true;
         
         // ⚡ BESSERE FEHLERBEHANDLUNG
+        let errorMessage = 'Fehler beim Senden der Nachricht';
         if (fetchError.name === 'AbortError') {
-          throw new Error('Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.');
-        } else if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
-          throw new Error('Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.');
+          errorMessage = '⚠️ Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.';
+        } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+          errorMessage = '⚠️ Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.';
+        } else if (fetchError.message) {
+          errorMessage = `❌ ${fetchError.message}`;
         }
-        throw fetchError;
+        
+        // ⚡ WICHTIG: Zeige Fehler in Chat-Nachricht statt Exception zu werfen
+        setChatMessages(prev => prev.map((msg, idx) => 
+          idx === prev.length - 1 && msg.isStreaming
+            ? { ...msg, content: errorMessage, isStreaming: false }
+            : msg
+        ));
+        setIsChatLoading(false);
+        return; // ⚡ WICHTIG: Return statt throw, damit Chat weiterhin funktioniert
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.error || errorMessage;
+        } catch (e) {
+          const errorText = await response.text().catch(() => '');
+          if (errorText) errorMessage = errorText;
+        }
+        
+        // ⚡ WICHTIG: Zeige Fehler in Chat-Nachricht statt Exception zu werfen
+        setChatMessages(prev => prev.map((msg, idx) => 
+          idx === prev.length - 1 && msg.isStreaming
+            ? { ...msg, content: `❌ Fehler: ${errorMessage}`, isStreaming: false }
+            : msg
+        ));
+        setIsChatLoading(false);
+        return; // ⚡ WICHTIG: Return statt throw, damit Chat weiterhin funktioniert
       }
 
       // Handle streaming response
@@ -2956,7 +2982,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
               // ⚡ Stream endet - finalisiere Nachricht und setze Loading zurück
               setChatMessages(prev => prev.map((msg, idx) => 
                 idx === prev.length - 1 && msg.isStreaming
-                  ? { ...msg, content: fullContent, isStreaming: false }
+                  ? { ...msg, content: fullContent || '✅ Fertig!', isStreaming: false }
                   : msg
               ));
               setIsChatLoading(false);
@@ -3178,10 +3204,20 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
           // ⚡ CATCH für Stream-Fehler (z.B. Reader-Fehler, Verbindungsabbruch)
           console.error('❌ Stream error:', streamError);
           
+          // ⚡ BESSERE FEHLERMELDUNGEN
+          let errorMessage = '❌ Fehler beim Laden der Antwort';
+          if (streamError.name === 'AbortError' || streamError.message?.includes('aborted')) {
+            errorMessage = '⚠️ Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.';
+          } else if (streamError.message?.includes('Failed to fetch') || streamError.message?.includes('NetworkError')) {
+            errorMessage = '⚠️ Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.';
+          } else if (streamError.message) {
+            errorMessage = `❌ Fehler: ${streamError.message}`;
+          }
+          
           // Finalize message if still streaming
           setChatMessages(prev => prev.map((msg, idx) => 
             idx === prev.length - 1 && msg.isStreaming
-              ? { ...msg, content: fullContent || '❌ Fehler beim Laden der Antwort', isStreaming: false }
+              ? { ...msg, content: fullContent || errorMessage, isStreaming: false }
               : msg
           ));
         } finally {
