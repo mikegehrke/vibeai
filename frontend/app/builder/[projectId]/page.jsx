@@ -1286,8 +1286,35 @@ Bitte versuche es erneut.`);
       const data = await response.json();
       
       if (data.success && data.url) {
+        // ⚡ WICHTIG: Parse URL sofort - entferne DevTools-Parameter
+        // Flutter DevTools läuft auf Port 9103, aber App läuft auf anderem Port (z.B. 62225)
+        let url = data.url.trim();
+        
+        // Wenn URL DevTools-Format hat (?uri=...), extrahiere die echte App-URL
+        if (url.includes('?uri=')) {
+          try {
+            const urlObj = new URL(url);
+            const uriParam = urlObj.searchParams.get('uri');
+            if (uriParam) {
+              // uri ist die echte App-URL
+              if (uriParam.startsWith('http://') || uriParam.startsWith('https://')) {
+                url = uriParam;
+                console.log('✅ Extracted app URL from DevTools:', url);
+              } else {
+                // Relative URL - extrahiere Port
+                const portMatch = uriParam.match(/:(\d+)/);
+                if (portMatch) {
+                  url = `http://127.0.0.1:${portMatch[1]}`;
+                  console.log('✅ Extracted app URL from relative URI:', url);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('⚠️ Could not parse DevTools URL, using original:', e);
+          }
+        }
+        
         // ⚡ VALIDIERUNG: Stelle sicher, dass URL auf localhost zeigt (nicht GitHub!)
-        const url = data.url.trim();
         if (url.startsWith('http://localhost:') || url.startsWith('https://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://127.0.0.1:')) {
           setPreviewUrl(url);
           setPreviewType(data.type);
@@ -5068,19 +5095,32 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                   title="Live Preview"
                   src={(() => {
                     if (!previewUrl || previewStatus !== 'running') return undefined;
-                    // ⚡ WICHTIG: Entferne DevTools-Parameter aus URL
-                    if (previewUrl.includes('?uri=')) {
+                    // ⚡ WICHTIG: previewUrl sollte bereits die saubere App-URL sein (wird in startPreviewServer geparst)
+                    // Aber zur Sicherheit: Entferne nochmal DevTools-Parameter falls vorhanden
+                    let url = previewUrl;
+                    if (url.includes('?uri=')) {
                       try {
-                        const urlObj = new URL(previewUrl);
+                        const urlObj = new URL(url);
                         const uriParam = urlObj.searchParams.get('uri');
-                        if (uriParam && (uriParam.startsWith('http://') || uriParam.startsWith('https://'))) {
-                          return uriParam; // Verwende die eigentliche App-URL
+                        if (uriParam) {
+                          if (uriParam.startsWith('http://') || uriParam.startsWith('https://')) {
+                            url = uriParam;
+                            console.log('✅ iframe: Extracted app URL from DevTools:', url);
+                          } else {
+                            // Relative URL - extrahiere Port (z.B. :62225/wrR1b5Twz-E=)
+                            const portMatch = uriParam.match(/:(\d+)/);
+                            if (portMatch) {
+                              url = `http://127.0.0.1:${portMatch[1]}`;
+                              console.log('✅ iframe: Extracted app URL from relative URI:', url);
+                            }
+                          }
                         }
                       } catch (e) {
-                        console.warn('Could not parse DevTools URL:', e);
+                        console.warn('⚠️ iframe: Could not parse DevTools URL:', e);
                       }
                     }
-                    return previewUrl;
+                    console.log('🖼️ iframe loading URL:', url);
+                    return url;
                   })()}
                   srcDoc={(() => {
                     if (previewUrl && previewStatus === 'running') return undefined;
