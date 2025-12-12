@@ -2467,6 +2467,18 @@ Bitte versuche es erneut.`);
     setChatMessages(prev => [...prev, userMsg]);
     const prompt = chatInput;
     setChatInput('');
+    
+    // ⚡ SOFORTIGE ANTWORT: Erstelle Streaming-Nachricht SOFORT (<10ms)
+    // Das zeigt dem User sofort, dass der Agent antwortet (wie ChatGPT/Claude)
+    const streamingMsg = {
+      role: 'assistant',
+      content: '💬 ',
+      timestamp: new Date().toISOString(),
+      model: currentModel,
+      isStreaming: true
+    };
+    setChatMessages(prev => [...prev, streamingMsg]);
+    
     setIsChatLoading(true);
 
     try {

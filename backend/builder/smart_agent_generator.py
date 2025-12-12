@@ -804,8 +804,12 @@ Return ONLY the JSON array, nothing else."""
 DESCRIPTION: {request.description}
 FEATURES: {', '.join(request.features)}
 
-IMPORTANT: Use SDK version ">=3.0.0 <4.0.0" (NOT 3.22.0) for compatibility!
-Include ALL necessary dependencies for a production app.
+IMPORTANT RULES:
+- Use SDK version ">=3.0.0 <4.0.0" (NOT 3.22.0) for compatibility!
+- DO NOT include fonts section unless font files actually exist!
+- DO NOT reference font files (like fonts/Roboto-Regular.ttf) if they don't exist!
+- Use Flutter's default fonts (Material Design) - no custom fonts needed!
+- Include ALL necessary dependencies for a production app.
 Return ONLY the pubspec.yaml content, no explanations."""
 
         client = get_openai_client()
