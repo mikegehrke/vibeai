@@ -207,15 +207,37 @@ export default function BuilderPage({ params, searchParams }) {
   };
 
   // Enhanced Initialization
+  // ⚡ FLAG: Verhindere mehrfache gleichzeitige Initialisierungen
+  const initializingRef = useRef(false);
+  
   useEffect(() => {
-    initializeProject();
-    loadChatSessions();
-    setupRealtimeUpdates();
+    // ⚡ WICHTIG: Nur initialisieren wenn noch nicht initialisiert
+    if (initializingRef.current) {
+      console.log('⚠️ Initialization already in progress, skipping...');
+      return;
+    }
+    
+    initializingRef.current = true;
+    
+    const init = async () => {
+      try {
+        await initializeProject();
+        loadChatSessions();
+        setupRealtimeUpdates();
+      } finally {
+        initializingRef.current = false;
+      }
+    };
+    
+    init();
     
     // ⚡ Auto-Reload: Reload files every 30 seconds to catch updates
     const autoReloadInterval = setInterval(() => {
       console.log('🔄 Auto-reloading project files...');
-      loadProjectFiles().catch(err => console.error('Auto-reload error:', err));
+      // ⚡ WICHTIG: Nur reloaden wenn nicht gerade initialisiert wird
+      if (!initializingRef.current) {
+        loadProjectFiles().catch(err => console.error('Auto-reload error:', err));
+      }
     }, 30000); // Every 30 seconds
     
     // ⚡ Visibility API: Reload when tab becomes visible again
