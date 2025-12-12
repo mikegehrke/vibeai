@@ -122,6 +122,7 @@ export default function BuilderPage({ params, searchParams }) {
   const [previewType, setPreviewType] = useState(null); // 'web', 'flutter', 'html'
   const [previewStatus, setPreviewStatus] = useState('stopped'); // 'stopped', 'starting', 'running', 'error'
   const [previewError, setPreviewError] = useState(null);
+  const [previewLoadingProgress, setPreviewLoadingProgress] = useState({ message: '', elapsed: 0, maxTime: 120 }); // Für Flutter: max 120 Sekunden
   const [previewDevice, setPreviewDevice] = useState('iphone15'); // 'iphone15', 'pixel8', 'ipad', 'desktop'
   const [browserTabs, setBrowserTabs] = useState([]); // Array of {id, url, title}
   
@@ -1424,7 +1425,10 @@ Bitte versuche es erneut.`);
   };
 
   // Wait for server to be ready
-  const waitForServerReady = async (url, maxAttempts = 60) => {
+  const waitForServerReady = async (url, maxAttempts = 120) => {
+    // ⚡ Flutter braucht oft 60-120 Sekunden zum Kompilieren!
+    const startTime = Date.now();
+    setPreviewLoadingProgress({ message: 'Warte auf Server...', elapsed: 0, maxTime: maxAttempts });
     // ⚡ WICHTIG: Entferne DevTools-Parameter aus URL (z.B. ?uri=...)
     // Flutter DevTools läuft auf Port 9103, aber App läuft auf anderem Port
     let cleanUrl = url;
@@ -1469,8 +1473,18 @@ Bitte versuche es erneut.`);
         return true;
       } catch (error) {
         // Server noch nicht bereit, warte 1 Sekunde
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const remaining = maxAttempts - elapsed;
+        
+        // Update progress every second
+        setPreviewLoadingProgress({ 
+          message: remaining > 0 ? `Server startet... (noch ~${remaining}s)` : 'Server startet...', 
+          elapsed, 
+          maxTime: maxAttempts 
+        });
+        
         if (i % 10 === 0) {
-          console.log(`⏳ Waiting for server... (${i + 1}/${maxAttempts})`);
+          console.log(`⏳ Waiting for server... (${i + 1}/${maxAttempts}, ${elapsed}s elapsed)`);
         }
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
@@ -5012,7 +5026,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                         gap: '4px'
                       }}>
                         <Loader2 size={10} className="animate-spin" />
-                        Starte...
+                        {previewLoadingProgress.message || 'Starte...'} ({previewLoadingProgress.elapsed}s / ~{previewLoadingProgress.maxTime}s)
                       </span>
                     )}
                     {previewStatus === 'error' && previewError && (
