@@ -21,7 +21,7 @@ import {
 import { 
   SiFlutter, SiDart, SiPython, SiReact, SiNextdotjs, SiVuedotjs, SiAngular,
   SiJavascript, SiTypescript, SiNodedotjs, SiHtml5, SiCss3, SiDocker,
-  SiKubernetes, SiRust, SiGo, SiJava, SiDotnet, SiSwift, SiKotlin,
+  SiKubernetes, SiRust, SiGo, SiOpenjdk, SiDotnet, SiSwift, SiKotlin,
   SiPhp, SiC, SiCplusplus, SiJson, SiYaml, SiMarkdown, SiNpm,
   SiMongodb, SiPostgresql, SiMysql, SiRedis, SiGit, SiGithub
 } from 'react-icons/si';
@@ -2236,7 +2236,7 @@ Liste alle gefundenen Issues mit Datei, Zeile und Beschreibung auf.`;
       return { icon: SiGo, color: '#00ADD8', name: 'Go' };
     }
     if (projectFiles.includes('build.gradle') || projectFiles.includes('pom.xml') || projectPaths.includes('.java')) {
-      return { icon: SiJava, color: '#ED8B00', name: 'Java' };
+      return { icon: SiOpenjdk, color: '#ED8B00', name: 'Java' };
     }
     if (projectFiles.includes('.csproj') || projectPaths.includes('.cs')) {
       return { icon: SiDotnet, color: '#239120', name: 'C#' };
