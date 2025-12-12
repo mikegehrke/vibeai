@@ -594,6 +594,38 @@ Bitte versuche es erneut.`);
     try {
       console.log('🚀 startLiveBuildFromChat called:', { projectName, framework, description: description.substring(0, 50), teamMode });
       
+      // ⚡ PRÜFUNG: Ist bereits eine Generation am Laufen?
+      if (isLiveBuilding) {
+        addChatMessage('assistant', `⚠️ **Smart Agent arbeitet bereits!**\n\nBitte warte, bis die aktuelle Generation abgeschlossen ist.`);
+        return;
+      }
+      
+      // ⚡ PRÜFUNG: Existiert das Projekt bereits mit Dateien?
+      if (files.length > 5) {
+        addChatMessage('assistant', `✅ **Projekt bereits vorhanden!**\n\n📁 **${files.length} Dateien** gefunden.\n\n💡 **Tipp:** Das Projekt ist bereits generiert. Du kannst es jetzt bearbeiten oder eine neue App erstellen.`);
+        
+        // Prüfe Backend-Status
+        try {
+          const statusResponse = await fetch(`http://localhost:8005/api/smart-agent/status/${projectId}`);
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.status === 'complete') {
+              addChatMessage('assistant', `✅ **Projekt ist fertig!** Keine neue Generation nötig.\n\n📊 **Status:** ${status.file_count} Dateien vorhanden`);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Status check failed:', e);
+        }
+        
+        // Frage Benutzer, ob er wirklich neu generieren will
+        const shouldContinue = confirm(`⚠️ Projekt existiert bereits mit ${files.length} Dateien.\n\nMöchtest du wirklich neu generieren? (Alle Dateien werden überschrieben!)`);
+        if (!shouldContinue) {
+          addChatMessage('assistant', `✅ **Abgebrochen.** Das bestehende Projekt bleibt erhalten.`);
+          return;
+        }
+      }
+      
       // ⚡ TOGGLE-SYSTEM: Wenn Team Mode aktiv ist, verwende Team Agent statt Smart Agent
       if (teamMode) {
         console.log('👥 Team Mode aktiv - verwende Team Agent');
@@ -631,7 +663,22 @@ Bitte versuche es erneut.`);
       
       // Response kommt via WebSocket - ECHTE Updates, keine Dummy-Texte!
       const result = await response.json();
-      console.log('✅ Smart Agent started:', result);
+      console.log('✅ Smart Agent response:', result);
+      
+      // ⚡ PRÜFUNG: Verschiedene Status-Codes behandeln
+      if (result.status === 'already_complete') {
+        setIsLiveBuilding(false);
+        addChatMessage('assistant', `✅ **Projekt bereits fertig!**\n\n📁 **${result.file_count || files.length} Dateien** gefunden.\n\n💡 **Tipp:** Das Projekt ist bereits generiert. Du kannst es jetzt bearbeiten!`);
+        // Lade Dateien neu
+        await loadProjectFiles();
+        return;
+      }
+      
+      if (result.status === 'already_running') {
+        setIsLiveBuilding(true);
+        addChatMessage('assistant', `⚠️ **Smart Agent arbeitet bereits!**\n\nBitte warte, bis die aktuelle Generation abgeschlossen ist.`);
+        return;
+      }
       
       // Zeige Bestätigung
       if (result.success) {
@@ -639,6 +686,7 @@ Bitte versuche es erneut.`);
       }
     } catch (error) {
       console.error('❌ Live build from chat error:', error);
+      setIsLiveBuilding(false);
       setIsLiveBuilding(false);
       // Echte Fehlermeldung mit Details
       addChatMessage('assistant', `❌ **Fehler beim Starten des Smart Agent:**\n\n\`\`\`\n${error.message}\n\`\`\`\n\n💡 **Tipps:**\n- Prüfe ob Backend läuft (Port 8005)\n- Prüfe ob OPENAI_API_KEY gesetzt ist\n- Prüfe die Browser-Konsole für Details`);

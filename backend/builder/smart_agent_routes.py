@@ -21,6 +21,9 @@ router = APIRouter(tags=["Smart Agent"])
 # WebSocket Connections
 active_connections: List[WebSocket] = []
 
+# Track running generations to prevent duplicates
+running_generations: dict[str, bool] = {}
+
 
 async def broadcast_to_all(message: dict):
     """Sendet Message an alle verbundenen WebSocket Clients"""
@@ -34,6 +37,37 @@ async def broadcast_to_all(message: dict):
     # Remove dead connections
     for conn in dead_connections:
         active_connections.remove(conn)
+
+
+def check_project_exists(project_id: str) -> tuple[bool, int]:
+    """
+    Prüft ob Projekt bereits existiert und wie viele Dateien es hat.
+    Returns: (exists, file_count)
+    """
+    import os
+    from codestudio.terminal_routes import get_project_path
+    
+    try:
+        project_path = get_project_path(project_id)
+        if not os.path.exists(project_path):
+            return (False, 0)
+        
+        # Zähle Dateien im Projekt
+        file_count = 0
+        exclude_dirs = {".git", "node_modules", "__pycache__", ".next", "build", "dist", ".vscode", ".idea", "venv", ".metadata", ".dart_tool"}
+        exclude_extensions = {".pyc", ".log", ".DS_Store"}
+        
+        for root, dirs, filenames in os.walk(project_path):
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            for filename in filenames:
+                if filename.startswith(".") or any(filename.endswith(ext) for ext in exclude_extensions):
+                    continue
+                file_count += 1
+        
+        return (True, file_count)
+    except Exception as e:
+        print(f"⚠️  Error checking project existence: {e}")
+        return (False, 0)
 
 
 @router.websocket("/ws")
@@ -70,6 +104,51 @@ class SmartAgentGenerateRequest(BaseModel):
     features: List[str] = []
 
 
+@router.post("/stop/{project_id}", response_model=dict)
+async def stop_generation(project_id: str):
+    """
+    🛑 Stoppe laufende Generation für ein Projekt
+    """
+    if not running_generations.get(project_id, False):
+        return {
+            "success": False,
+            "message": "⚠️ Keine laufende Generation für dieses Projekt gefunden.",
+            "project_id": project_id
+        }
+    
+    # Markiere als gestoppt
+    running_generations[project_id] = False
+    
+    await broadcast_to_all({
+        "event": "generation.stopped",
+        "project_id": project_id,
+        "message": "🛑 Generation gestoppt."
+    })
+    
+    return {
+        "success": True,
+        "message": "✅ Generation gestoppt.",
+        "project_id": project_id
+    }
+
+
+@router.get("/status/{project_id}", response_model=dict)
+async def get_generation_status(project_id: str):
+    """
+    📊 Prüfe Status der Generation für ein Projekt
+    """
+    is_running = running_generations.get(project_id, False)
+    project_exists, file_count = check_project_exists(project_id)
+    
+    return {
+        "project_id": project_id,
+        "is_running": is_running,
+        "project_exists": project_exists,
+        "file_count": file_count,
+        "status": "complete" if project_exists and file_count > 5 else ("running" if is_running else "not_started")
+    }
+
+
 @router.post("/generate", response_model=dict)
 async def generate_with_smart_agent(request: SmartAgentGenerateRequest):
     """
@@ -77,6 +156,40 @@ async def generate_with_smart_agent(request: SmartAgentGenerateRequest):
     
     SOFORTIGE ANTWORT - Arbeit läuft im Hintergrund!
     """
+    
+    # ⚡ PRÜFUNG 1: Ist bereits eine Generation für dieses Projekt am Laufen?
+    if running_generations.get(request.project_id, False):
+        await broadcast_to_all({
+            "event": "generation.already_running",
+            "project_id": request.project_id,
+            "message": "⚠️ Smart Agent arbeitet bereits an diesem Projekt. Bitte warten..."
+        })
+        return {
+            "success": False,
+            "message": "⚠️ Smart Agent arbeitet bereits an diesem Projekt. Bitte warten...",
+            "project_id": request.project_id,
+            "status": "already_running"
+        }
+    
+    # ⚡ PRÜFUNG 2: Existiert das Projekt bereits mit Dateien?
+    project_exists, file_count = check_project_exists(request.project_id)
+    if project_exists and file_count > 5:  # Mindestens 5 Dateien = Projekt ist fertig
+        await broadcast_to_all({
+            "event": "generation.already_complete",
+            "project_id": request.project_id,
+            "file_count": file_count,
+            "message": f"✅ Projekt bereits fertig! {file_count} Dateien gefunden. Keine neue Generation nötig."
+        })
+        return {
+            "success": True,
+            "message": f"✅ Projekt bereits fertig! {file_count} Dateien gefunden. Keine neue Generation nötig.",
+            "project_id": request.project_id,
+            "status": "already_complete",
+            "file_count": file_count
+        }
+    
+    # ⚡ Markiere Generation als laufend
+    running_generations[request.project_id] = True
     
     # SOFORTIGE ANTWORT (unter 1 Sekunde!)
     await broadcast_to_all({
@@ -407,8 +520,12 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
             "event": "generation.finished",
             "project_id": request.project_id,
             "total_files": result["total_files"],
-            "success": True
+            "success": True,
+            "message": f"✅ Projekt erfolgreich generiert mit {result['total_files']} Dateien!"
         })
+        
+        # ⚡ WICHTIG: Markiere Generation als beendet
+        running_generations[request.project_id] = False
         
         return {
             "success": True,
@@ -423,6 +540,9 @@ async def _run_generation_async(request: SmartAgentGenerateRequest):
         error_trace = traceback.format_exc()
         print(f"❌ Smart Agent Error: {str(e)}")
         print(f"❌ Traceback:\n{error_trace}")
+        
+        # ⚡ WICHTIG: Markiere Generation als beendet (auch bei Fehler!)
+        running_generations[request.project_id] = False
         
         # Broadcast: Error
         await broadcast_to_all({
