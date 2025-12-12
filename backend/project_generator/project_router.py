@@ -41,6 +41,156 @@ def get_project_path_from_id(project_id: str) -> Path:
     return Path("projects") / project_id
 
 
+@router.get("/list")
+async def list_projects():
+    """
+    List all available projects with metadata.
+    Returns projects with name, platform, file count, and last modified date.
+    """
+    try:
+        projects = []
+        
+        # Check all possible project directories
+        project_dirs = [
+            Path("user_projects/default_user"),
+            Path("backend/user_projects/default_user"),
+            Path("projects")
+        ]
+        
+        for base_dir in project_dirs:
+            if not base_dir.exists():
+                continue
+            
+            for project_dir in base_dir.iterdir():
+                if not project_dir.is_dir():
+                    continue
+                
+                # Skip system directories
+                if project_dir.name.startswith('.') or project_dir.name in ['__pycache__', 'node_modules']:
+                    continue
+                
+                project_id = project_dir.name
+                
+                # Count files
+                file_count = 0
+                exclude_dirs = {".git", "node_modules", "__pycache__", ".next", "build", "dist", ".vscode", ".idea", "venv", ".metadata", ".dart_tool"}
+                exclude_extensions = {".pyc", ".log", ".DS_Store"}
+                
+                last_modified = 0
+                platform = None
+                
+                for root, dirs, filenames in os.walk(project_dir):
+                    dirs[:] = [d for d in dirs if d not in exclude_dirs]
+                    for filename in filenames:
+                        if filename.startswith(".") or any(filename.endswith(ext) for ext in exclude_extensions):
+                            continue
+                        
+                        file_path = Path(root) / filename
+                        file_count += 1
+                        
+                        # Get last modified time
+                        try:
+                            mtime = os.path.getmtime(file_path)
+                            if mtime > last_modified:
+                                last_modified = mtime
+                        except:
+                            pass
+                        
+                        # Detect platform from file extensions
+                        if not platform:
+                            ext = file_path.suffix.lower()
+                            if ext == '.dart':
+                                platform = 'flutter'
+                            elif ext in ['.js', '.jsx', '.ts', '.tsx']:
+                                if 'next.config' in filename or 'next' in str(file_path):
+                                    platform = 'nextjs'
+                                else:
+                                    platform = 'react'
+                            elif ext == '.py':
+                                platform = 'python'
+                            elif ext == '.swift':
+                                platform = 'ios-swift'
+                            elif ext == '.kt':
+                                platform = 'android-kotlin'
+                            elif ext == '.vue':
+                                platform = 'vue'
+                
+                # Try to get project name from README or package.json
+                project_name = project_id
+                try:
+                    readme_path = project_dir / "README.md"
+                    if readme_path.exists():
+                        with open(readme_path, "r", encoding="utf-8") as f:
+                            first_line = f.readline().strip()
+                            if first_line.startswith("#"):
+                                project_name = first_line[1:].strip()
+                    
+                    # Also check package.json
+                    package_json = project_dir / "package.json"
+                    if package_json.exists():
+                        import json
+                        with open(package_json, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if "name" in data:
+                                project_name = data["name"]
+                except:
+                    pass
+                
+                projects.append({
+                    "id": project_id,
+                    "name": project_name,
+                    "platform": platform or "unknown",
+                    "file_count": file_count,
+                    "last_modified": int(last_modified) if last_modified > 0 else None,
+                    "path": str(project_dir)
+                })
+        
+        # Sort by last modified (newest first)
+        projects.sort(key=lambda x: x.get("last_modified") or 0, reverse=True)
+        
+        return {"projects": projects, "total": len(projects)}
+        
+    except Exception as e:
+        logger.error(f"Error listing projects: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error listing projects: {str(e)}"
+        )
+
+
+@router.delete("/{project_id}/delete")
+async def delete_project(project_id: str):
+    """
+    Delete a project and all its files.
+    """
+    try:
+        project_path = get_project_path_from_id(project_id)
+        
+        if not project_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Project {project_id} not found"
+            )
+        
+        # Delete project directory
+        import shutil
+        shutil.rmtree(project_path)
+        
+        return {
+            "success": True,
+            "message": f"Project {project_id} deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting project: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error deleting project: {str(e)}"
+        )
+
+
 @router.get("/{project_id}/files")
 async def get_project_files(project_id: str):
     """

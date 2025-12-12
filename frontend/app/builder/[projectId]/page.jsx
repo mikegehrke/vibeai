@@ -35,6 +35,7 @@ import SearchPanel from './components/SearchPanel';
 import RunAndDebugPanel from './components/RunAndDebugPanel';
 import TestingPanel from './components/TestingPanel';
 import ExtensionsPanel from './components/ExtensionsPanel';
+import ProjectsPanel from './components/ProjectsPanel';
 import TutorialGuide from './components/TutorialGuide';
 import './styles/editor.css';
 
@@ -78,7 +79,7 @@ export default function BuilderPage({ params, searchParams }) {
   const [leftSidebarContentWidth, setLeftSidebarContentWidth] = useState(232); // 280 - 48 (icons)
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [activeRightPanel, setActiveRightPanel] = useState('review'); // review or chat
-  const [activeLeftPanel, setActiveLeftPanel] = useState('explorer'); // explorer, search, source-control, run-debug, testing, extensions
+  const [activeLeftPanel, setActiveLeftPanel] = useState('explorer'); // explorer, search, source-control, run-debug, testing, extensions, projects
   const [activeBottomPanel, setActiveBottomPanel] = useState('terminal');
   const [showBottomPanel, setShowBottomPanel] = useState(true);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(200);
@@ -3826,6 +3827,37 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
             >
               <Users size={18} />
             </button>
+            <button
+              onClick={() => setActiveLeftPanel('projects')}
+              style={{
+                width: '44px',
+                height: '44px',
+                background: activeLeftPanel === 'projects' ? '#2d2d30' : 'transparent',
+                border: 'none',
+                color: activeLeftPanel === 'projects' ? '#ffffff' : '#858585',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'all 0.2s'
+              }}
+              title="Bereits erstellte Projekte"
+              onMouseEnter={(e) => {
+                if (activeLeftPanel !== 'projects') {
+                  e.target.style.background = '#2d2d30';
+                  e.target.style.color = '#cccccc';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeLeftPanel !== 'projects') {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#858585';
+                }
+              }}
+            >
+              <FolderOpen size={18} />
+            </button>
               </div>
           
           {/* Resizer between Icons and Content */}
@@ -3879,6 +3911,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
               {activeLeftPanel === 'run-debug' && 'RUN AND DEBUG'}
               {activeLeftPanel === 'testing' && 'TESTING'}
               {activeLeftPanel === 'extensions' && 'EXTENSIONS'}
+              {activeLeftPanel === 'projects' && 'PROJEKTE'}
             </div>
             
             {/* Content */}
@@ -3961,6 +3994,10 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
               <TestingPanel projectId={projectId} files={files} />
             ) : activeLeftPanel === 'extensions' ? (
               <ExtensionsPanel />
+            ) : activeLeftPanel === 'projects' ? (
+              <ProjectsPanel onProjectSelect={(projectId) => {
+                router.push(`/builder/${projectId}`);
+              }} />
             ) : (
               <PackageManager projectId={projectId} />
             )}

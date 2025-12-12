@@ -1951,6 +1951,21 @@ Return ONLY the code with detailed comments, formatted as:
                     # Create directories if needed
                     os.makedirs(os.path.dirname(full_path), exist_ok=True)
                     
+                    # ⚡ WICHTIG: Prüfe ob Datei bereits existiert und Inhalt hat
+                    if os.path.exists(full_path):
+                        try:
+                            with open(full_path, "r", encoding="utf-8") as f:
+                                existing_content = f.read()
+                            # Wenn Datei bereits Inhalt hat (>100 Zeichen), überspringe sie
+                            if len(existing_content) > 100:
+                                print(f"⚠️  Datei bereits vorhanden (überspringe): {file_path}")
+                                if on_step and (idx % 5 == 0):
+                                    await on_step(f"⏭️  Überspringe bereits vorhandene Datei: {file_path}", 0)
+                                continue
+                        except:
+                            # Fehler beim Lesen - überschreibe trotzdem
+                            pass
+                    
                     # Write file directly
                     with open(full_path, "w", encoding="utf-8") as f:
                         f.write(content)
