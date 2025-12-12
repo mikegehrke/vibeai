@@ -136,13 +136,31 @@ const Terminal = forwardRef(function Terminal({ projectId, onUrlDetected, onProb
                   }
                   
                   // ⚡ SPEZIAL: Erkenne Flutter-spezifische URL-Patterns
-                  // Flutter zeigt oft: "Flutter run key commands: ..." oder "An Observatory debugger and profiler on ... is available at: http://localhost:XXXXX"
-                  const flutterUrlMatch = line.match(/(?:available at|running at|listening on|serving at).*?(https?:\/\/[^\s]+|localhost:\d+|127\.0\.0\.1:\d+)/i);
+                  // Flutter zeigt oft verschiedene Patterns:
+                  // - "An Observatory debugger and profiler on ... is available at: http://localhost:XXXXX"
+                  // - "The Flutter DevTools debugger and profiler on ... is available at: http://localhost:XXXXX"
+                  // - "Flutter run key commands: ..." gefolgt von URL
+                  // - "Launching lib/main.dart on Chrome in debug mode..."
+                  // - "Flutter run key commands: r Hot reload. R Hot restart. ..."
+                  const flutterUrlMatch = line.match(/(?:available at|running at|listening on|serving at|is available at|DevTools.*available at).*?(https?:\/\/[^\s\)]+|localhost:\d+|127\.0\.0\.1:\d+)/i);
                   if (flutterUrlMatch && onUrlDetected) {
                     const flutterUrl = flutterUrlMatch[1];
                     const fullUrl = flutterUrl.startsWith('http') ? flutterUrl : `http://${flutterUrl}`;
                     console.log('🚀 Flutter URL detected from pattern:', fullUrl);
                     onUrlDetected(fullUrl, trimmedCommand);
+                  }
+                  
+                  // ⚡ SPEZIAL: Erkenne Flutter Web-Server URLs (wenn flutter run -d web-server verwendet wird)
+                  // Flutter Web zeigt oft: "Flutter run key commands:" gefolgt von der URL in der nächsten Zeile
+                  // Oder: "Serving at http://localhost:XXXXX"
+                  if (trimmedCommand.includes('flutter') && trimmedCommand.includes('run') && (line.includes('Serving at') || line.includes('serving at'))) {
+                    const servingMatch = line.match(/(?:Serving at|serving at)\s*(https?:\/\/[^\s]+|localhost:\d+|127\.0\.0\.1:\d+)/i);
+                    if (servingMatch && onUrlDetected) {
+                      const servingUrl = servingMatch[1];
+                      const fullUrl = servingUrl.startsWith('http') ? servingUrl : `http://${servingUrl}`;
+                      console.log('🚀 Flutter Web Server URL detected:', fullUrl);
+                      onUrlDetected(fullUrl, trimmedCommand);
+                    }
                   }
                   
                   // Detect errors and add to problems
