@@ -738,6 +738,9 @@ Be proactive, helpful, and provide complete, working solutions.
 Always explain what you're doing and why.
 CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: format for automatic execution.
 
+⚡ CRITICAL: If user asks "projekt ist abgeschlossen" or "prüfe ob was fehlt" → Analyze project files and report status, DON'T restart Smart Agent!
+⚡ CRITICAL: Check if project already has files before starting Smart Agent - if files exist, just analyze and report, don't regenerate!
+
 ⚡ CRITICAL: You MUST respond to ALL user questions IMMEDIATELY, even if Smart Agent is working in parallel!
 ⚡ CRITICAL: If user asks "sind alle dateien fertig?" or "ist es abgeschlossen?" → Answer IMMEDIATELY with current status!
 ⚡ CRITICAL: NEVER ignore user questions - ALWAYS respond, even during code generation!
