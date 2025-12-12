@@ -62,8 +62,9 @@ const AGENT_TYPES = {
 };
 
 export default function BuilderPage({ params, searchParams }) {
-  // ⚡ Next.js 16: params ist jetzt ein Promise - muss mit React.use() entpackt werden
+  // ⚡ Next.js 16: params und searchParams sind jetzt Promises - müssen mit React.use() entpackt werden
   const resolvedParams = use(params);
+  const resolvedSearchParams = use(searchParams);
   const { projectId } = resolvedParams;
   const router = useRouter();
   
