@@ -1153,8 +1153,33 @@ Bitte versuche es erneut.`);
       case 'preview_started':
         addChatMessage('assistant', `✅ **Preview gestartet!**\n\nURL: ${data.url || 'N/A'}`);
         if (data.url) {
+          // ⚡ WICHTIG: Parse URL sofort - entferne DevTools-Parameter
+          let url = data.url.trim();
+          
+          // Wenn URL DevTools-Format hat (?uri=...), extrahiere die echte App-URL
+          if (url.includes('?uri=')) {
+            try {
+              const urlObj = new URL(url);
+              const uriParam = urlObj.searchParams.get('uri');
+              if (uriParam) {
+                if (uriParam.startsWith('http://') || uriParam.startsWith('https://')) {
+                  url = uriParam;
+                  console.log('✅ WebSocket: Extracted app URL from DevTools:', url);
+                } else {
+                  // Relative URL - extrahiere Port
+                  const portMatch = uriParam.match(/:(\d+)/);
+                  if (portMatch) {
+                    url = `http://127.0.0.1:${portMatch[1]}`;
+                    console.log('✅ WebSocket: Extracted app URL from relative URI:', url);
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('⚠️ WebSocket: Could not parse DevTools URL, using original:', e);
+            }
+          }
+          
           // ⚡ VALIDIERUNG: Stelle sicher, dass URL auf localhost zeigt (nicht GitHub!)
-          const url = data.url.trim();
           if (url.startsWith('http://localhost:') || url.startsWith('https://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://127.0.0.1:')) {
             setPreviewUrl(url);
             setPreviewStatus('running');
