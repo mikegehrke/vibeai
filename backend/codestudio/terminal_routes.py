@@ -402,7 +402,7 @@ class HomeScreen extends StatelessWidget {
             cwd=project_path,
             capture_output=True,
             text=True,
-            timeout=180  # ⚡ ERHÖHT: Flutter braucht oft mehr Zeit (3 Minuten für flutter run)
+            timeout=600 if 'flutter run' in request.command else 180  # ⚡ Flutter run braucht oft 5-10 Minuten!
         )
         
         # Kombiniere Output
@@ -421,9 +421,10 @@ class HomeScreen extends StatelessWidget {
         }
         
     except subprocess.TimeoutExpired:
+        timeout_seconds = 600 if 'flutter run' in request.command else 180
         return {
             "success": False,
-            "output": "Command timed out after 180 seconds. Flutter compilation can take longer. Try running 'flutter run' again or check if the app is already running.",
+            "output": f"Command timed out after {timeout_seconds} seconds. Flutter compilation can take 5-10 minutes for the first build. Try running 'flutter run' again or check if the app is already running.",
             "returncode": -1
         }
     except Exception as e:

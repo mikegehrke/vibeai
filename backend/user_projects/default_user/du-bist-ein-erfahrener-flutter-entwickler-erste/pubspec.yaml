@@ -13,6 +13,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+  cupertino_icons: ^1.0.8  # Für CupertinoIcons (iOS-Style Icons)
 
   # Add any other dependencies you need for your app here
 

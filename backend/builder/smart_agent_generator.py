@@ -809,6 +809,7 @@ IMPORTANT RULES:
 - DO NOT include fonts section unless font files actually exist!
 - DO NOT reference font files (like fonts/Roboto-Regular.ttf) if they don't exist!
 - Use Flutter's default fonts (Material Design) - no custom fonts needed!
+- ALWAYS include cupertino_icons: ^1.0.8 in dependencies (required for CupertinoIcons)!
 - Include ALL necessary dependencies for a production app.
 Return ONLY the pubspec.yaml content, no explanations."""
 
