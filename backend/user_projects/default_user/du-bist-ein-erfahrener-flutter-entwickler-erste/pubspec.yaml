@@ -1,0 +1,38 @@
+name: du_bist_ein_erfahrener_flutter_entwickler_erste
+description: Ein produktionsreifes Flutter-Projekt für eine To-Do-App mit State-Management, Dark- & Light-Theme und mehr.
+version: 1.0.0+1
+publish_to: 'none' # This is a private project. Remove this line if you want to publish to pub.dev.
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.5
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.0
+
+  # Add any other dependencies you need for your app here
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto-Regular.ttf
+        - asset: fonts/Roboto-Bold.ttf
+          weight: 700
+
+# Add any other configurations you need for your app here
