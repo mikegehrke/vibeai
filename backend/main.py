@@ -1342,7 +1342,7 @@ except Exception as e:
 
 try:
     from preview.preview_routes import router as preview_router
-    app.include_router(preview_router, prefix="/api", tags=["Preview"])
+    app.include_router(preview_router, tags=["Preview"])
     print("✅ Preview Router loaded")
 except Exception as e:
     print(f"⚠️  Preview Router failed to load: {e}")

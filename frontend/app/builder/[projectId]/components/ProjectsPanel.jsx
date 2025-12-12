@@ -42,9 +42,9 @@ export default function ProjectsPanel({ onProjectSelect }) {
       setError(null);
       
       // ⚡ WICHTIG: Timeout und bessere Fehlerbehandlung
-      // ⚡ ERHÖHT: 20 Sekunden Timeout (Backend braucht manchmal länger beim Start)
+      // ⚡ ERHÖHT: 30 Sekunden Timeout (Backend braucht manchmal länger beim Start)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 Sekunden Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 Sekunden Timeout
       
       try {
         const response = await fetch('http://localhost:8005/api/projects/list', {

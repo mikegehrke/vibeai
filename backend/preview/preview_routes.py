@@ -30,7 +30,7 @@ from preview.preview_manager import preview_manager
 from preview.preview_ws import preview_ws
 from preview.preview_renderer import PreviewRenderer
 
-router = APIRouter(prefix="/preview", tags=["Preview System"])
+router = APIRouter(prefix="/api/preview", tags=["Preview System"])
 
 
 # -------------------------------------------------------------

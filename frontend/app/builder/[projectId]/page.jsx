@@ -288,9 +288,9 @@ export default function BuilderPage({ params, searchParams }) {
       console.log(`📂 Loading project files for: ${projectId} (attempt ${retryCount + 1})`);
       
       // ⚡ IMMER vom Backend laden - nicht aus localStorage!
-      // ⚡ ERHÖHT: 20 Sekunden Timeout (Backend braucht manchmal länger beim Start)
+      // ⚡ ERHÖHT: 30 Sekunden Timeout (Backend braucht manchmal länger beim Start)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 Sekunden Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 Sekunden Timeout
       
       let response;
       try {
@@ -1394,9 +1394,9 @@ Bitte versuche es erneut.`);
       setPreviewError(null);
       setPreviewLoadingProgress({ message: 'Starte Preview-Server...', elapsed: 0, maxTime: 120 });
       
-      // ⚡ WICHTIG: Timeout für Preview-Start (30 Sekunden - Flutter braucht länger)
+      // ⚡ WICHTIG: Timeout für Preview-Start (60 Sekunden - Flutter braucht länger beim ersten Start)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 Sekunden Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 Sekunden Timeout
       
       let response;
       try {
