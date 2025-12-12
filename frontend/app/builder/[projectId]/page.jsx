@@ -1322,6 +1322,7 @@ Bitte versuche es erneut.`);
     try {
       setPreviewStatus('starting');
       setPreviewError(null);
+      setPreviewLoadingProgress({ message: 'Starte Preview-Server...', elapsed: 0, maxTime: 120 });
       
       // Sende auch die Dateien, damit sie auf dem Server gespeichert werden
       const response = await fetch('http://localhost:8005/api/preview/start', {
@@ -1381,9 +1382,11 @@ Bitte versuche es erneut.`);
           setPreviewType(data.type);
           
           // Warte bis Server wirklich bereit ist (Backend wartet bereits, aber doppelt hält besser)
+          setPreviewLoadingProgress({ message: 'Warte auf Server...', elapsed: 0, maxTime: 120 });
           await waitForServerReady(url);
           
           setPreviewStatus('running');
+          setPreviewLoadingProgress({ message: 'Server bereit!', elapsed: 0, maxTime: 120 });
           
           // ⚡ AUTOMATISCH: Öffne Browser-Tab im Editor (gleichzeitig mit Preview-Panel)
           const tabId = `browser-${Date.now()}`;
