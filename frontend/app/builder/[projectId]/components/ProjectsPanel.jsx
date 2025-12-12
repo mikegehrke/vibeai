@@ -41,16 +41,46 @@ export default function ProjectsPanel({ onProjectSelect }) {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:8005/api/projects/list');
-      if (!response.ok) {
-        throw new Error('Failed to load projects');
+      // ⚡ WICHTIG: Timeout und bessere Fehlerbehandlung
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 Sekunden Timeout
+      
+      try {
+        const response = await fetch('http://localhost:8005/api/projects/list', {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setProjects(data.projects || data || []);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.');
+        }
+        throw fetchError;
+      }
+    } catch (err) {
+      console.error('❌ Error loading projects:', err);
+      let errorMessage = err.message || 'Failed to load projects';
+      
+      // ⚡ BESSERE FEHLERMELDUNGEN
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        errorMessage = 'Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+        errorMessage = 'Verbindungs-Timeout: Backend antwortet nicht.';
       }
       
-      const data = await response.json();
-      setProjects(data.projects || []);
-    } catch (err) {
-      console.error('Error loading projects:', err);
-      setError(err.message);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

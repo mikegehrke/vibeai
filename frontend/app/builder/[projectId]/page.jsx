@@ -265,7 +265,26 @@ export default function BuilderPage({ params, searchParams }) {
       console.log(`📂 Loading project files for: ${projectId} (attempt ${retryCount + 1})`);
       
       // ⚡ IMMER vom Backend laden - nicht aus localStorage!
-      const response = await fetch(`http://localhost:8005/api/projects/${projectId}/files`);
+      // ⚡ Timeout für bessere Fehlerbehandlung
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 Sekunden Timeout
+      
+      let response;
+      try {
+        response = await fetch(`http://localhost:8005/api/projects/${projectId}/files`, {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.');
+        }
+        throw fetchError;
+      }
       
       if (response.ok) {
         const projectFiles = await response.json();
