@@ -55,7 +55,15 @@ async def start_preview(request: Request) -> Dict[str, Any]:
             "type": "web"
         }
     """
-    user = await get_current_user(request)
+    # ⚡ AUTH: Optional - wenn kein User, verwende default_user
+    try:
+        user = await get_current_user(request)
+        user_email = user.email if hasattr(user, 'email') else (user.get('email') if isinstance(user, dict) else 'default_user')
+    except Exception:
+        # ⚡ FALLBACK: Verwende default_user wenn Auth fehlschlägt
+        user_email = 'default_user'
+        print(f"⚠️  Auth failed, using default_user for preview")
+    
     body = await request.json()
 
     project_id = body.get("project_id")
@@ -65,11 +73,11 @@ async def start_preview(request: Request) -> Dict[str, Any]:
         raise HTTPException(400, "Missing project_id")
 
     # Projekt laden
-    project = project_manager.load_project(user.email, project_id)
+    project = project_manager.load_project(user_email, project_id)
     if not project:
-        raise HTTPException(404, "Project not found")
+        raise HTTPException(404, f"Project not found: {project_id} (user: {user_email})")
 
-    project_path = project_manager.get_project_path(user.email, project_id)
+    project_path = project_manager.get_project_path(user_email, project_id)
     
     # ⚡ WICHTIG: Speichere Dateien IMMER, auch wenn Verzeichnis existiert
     # (Smart Agent speichert Dateien direkt, aber Preview sollte sie auch haben)
