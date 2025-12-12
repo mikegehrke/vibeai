@@ -163,6 +163,22 @@ const Terminal = forwardRef(function Terminal({ projectId, onUrlDetected, onProb
                     }
                   }
                   
+                  // ⚡ SPEZIAL: Erkenne Flutter Chrome-URLs (wenn flutter run -d chrome verwendet wird)
+                  // Chrome öffnet sich separat, aber Flutter zeigt trotzdem eine URL im Output
+                  // Pattern: "Launching lib/main.dart on Chrome in debug mode..." gefolgt von URL
+                  // Oder: "An Observatory debugger and profiler on Chrome is available at: http://localhost:XXXXX"
+                  if (trimmedCommand.includes('flutter') && trimmedCommand.includes('run') && (line.includes('Chrome') || line.includes('chrome'))) {
+                    // Suche nach URL in derselben Zeile (Chrome zeigt URL oft direkt)
+                    const chromeUrlMatch = line.match(/(?:available at|running at|listening on|serving at|is available at|DevTools.*available at|on Chrome).*?(https?:\/\/[^\s\)]+|localhost:\d+|127\.0\.0\.1:\d+)/i);
+                    if (chromeUrlMatch && onUrlDetected) {
+                      const chromeUrl = chromeUrlMatch[1];
+                      const fullUrl = chromeUrl.startsWith('http') ? chromeUrl : `http://${chromeUrl}`;
+                      console.log('🚀 Flutter Chrome URL detected:', fullUrl);
+                      // ⚡ WICHTIG: Auch bei Chrome die URL für Preview verwenden (Chrome öffnet sich separat, Preview im Editor funktioniert trotzdem)
+                      onUrlDetected(fullUrl, trimmedCommand);
+                    }
+                  }
+                  
                   // Detect errors and add to problems
                   if (line.match(/error|Error|ERROR|failed|Failed|FAILED/i)) {
                     const problem = {
