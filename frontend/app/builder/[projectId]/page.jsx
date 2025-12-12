@@ -15,7 +15,7 @@ import {
   User, Loader2, Send, Bot, ArrowUp, AtSign, Globe, Image, Infinity, ExternalLink, Copy, Check, Mic, Users, Download, Github,
   FileCode, FileJson, FileType, FileImage, FileVideo, FileMusic, FileArchive,
   Database, Server, Cpu, Smartphone, Monitor, Layers, Box, FlaskConical,
-  Brackets, Braces, Type, Hash, Coffee, Zap as ZapIcon, Shield, Lock
+  Brackets, Braces, Type, Hash, Coffee, Zap as ZapIcon, Shield, Lock, RefreshCw
 } from 'lucide-react';
 // 🎨 ECHTE FRAMEWORK-ICONS: react-icons für echte Logos
 import { 
@@ -319,6 +319,41 @@ export default function BuilderPage({ params, searchParams }) {
         setTimeout(() => loadProjectFiles(retryCount + 1), 2000);
       }
       return false;
+    }
+  };
+
+  // ⚡ NEUE FUNKTION: Komplettes Projekt-Reload (für Reload-Button)
+  const reloadProject = async () => {
+    try {
+      console.log('🔄 Reloading project completely...');
+      
+      // Reset all state
+      setFiles([]);
+      setActiveFile(null);
+      setOpenTabs([]);
+      setPreviewUrl(null);
+      setPreviewStatus('stopped');
+      setPreviewError(null);
+      setPreviewType(null);
+      setBrowserTabs([]);
+      setActiveBrowserTab(null);
+      
+      // Clear localStorage backup
+      localStorage.removeItem(`project_${projectId}_files`);
+      
+      // Wait a bit for state to reset
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Reload project files
+      await loadProjectFiles();
+      
+      // Re-initialize project
+      await initializeProject();
+      
+      console.log('✅ Project reloaded successfully');
+    } catch (error) {
+      console.error('❌ Project reload failed:', error);
+      setPreviewError(`Fehler beim Neuladen: ${error.message}`);
     }
   };
 
@@ -4005,6 +4040,7 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
               borderBottom: '1px solid #3c3c3c',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               padding: '0 12px',
               fontSize: '11px',
               fontWeight: '600',
@@ -4012,13 +4048,49 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              {activeLeftPanel === 'explorer' && 'EXPLORER'}
-              {activeLeftPanel === 'search' && 'SEARCH'}
-              {activeLeftPanel === 'source-control' && 'SOURCE CONTROL'}
-              {activeLeftPanel === 'run-debug' && 'RUN AND DEBUG'}
-              {activeLeftPanel === 'testing' && 'TESTING'}
-              {activeLeftPanel === 'extensions' && 'EXTENSIONS'}
-              {activeLeftPanel === 'projects' && 'PROJEKTE'}
+              <span>
+                {activeLeftPanel === 'explorer' && 'EXPLORER'}
+                {activeLeftPanel === 'search' && 'SEARCH'}
+                {activeLeftPanel === 'source-control' && 'SOURCE CONTROL'}
+                {activeLeftPanel === 'run-debug' && 'RUN AND DEBUG'}
+                {activeLeftPanel === 'testing' && 'TESTING'}
+                {activeLeftPanel === 'extensions' && 'EXTENSIONS'}
+                {activeLeftPanel === 'projects' && 'PROJEKTE'}
+              </span>
+              
+              {/* Reload Button - nur im Explorer */}
+              {activeLeftPanel === 'explorer' && (
+                <button
+                  onClick={reloadProject}
+                  title="Projekt neu laden (alle Dateien vom Server)"
+                  style={{
+                    padding: '4px 8px',
+                    background: 'transparent',
+                    border: '1px solid #3c3c3c',
+                    borderRadius: '3px',
+                    color: '#cccccc',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s',
+                    textTransform: 'none',
+                    fontWeight: 'normal'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#37373d';
+                    e.target.style.borderColor = '#007acc';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'transparent';
+                    e.target.style.borderColor = '#3c3c3c';
+                  }}
+                >
+                  <RefreshCw size={12} />
+                  Reload
+                </button>
+              )}
             </div>
             
             {/* Content */}
