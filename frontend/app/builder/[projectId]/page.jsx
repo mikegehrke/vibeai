@@ -288,9 +288,9 @@ export default function BuilderPage({ params, searchParams }) {
       console.log(`📂 Loading project files for: ${projectId} (attempt ${retryCount + 1})`);
       
       // ⚡ IMMER vom Backend laden - nicht aus localStorage!
-      // ⚡ ERHÖHT: 15 Sekunden Timeout (Backend braucht manchmal länger beim Start)
+      // ⚡ ERHÖHT: 20 Sekunden Timeout (Backend braucht manchmal länger beim Start)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 Sekunden Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 Sekunden Timeout
       
       let response;
       try {
