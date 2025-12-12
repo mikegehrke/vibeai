@@ -288,9 +288,9 @@ export default function BuilderPage({ params, searchParams }) {
       console.log(`📂 Loading project files for: ${projectId} (attempt ${retryCount + 1})`);
       
       // ⚡ IMMER vom Backend laden - nicht aus localStorage!
-      // ⚡ Timeout für bessere Fehlerbehandlung
+      // ⚡ ERHÖHT: 15 Sekunden Timeout (Backend braucht manchmal länger beim Start)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 Sekunden Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 Sekunden Timeout
       
       let response;
       try {
@@ -1564,17 +1564,21 @@ Bitte versuche es erneut.`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2000);
         
+        // ⚡ WICHTIG: Versuche GET statt HEAD (bessere Kompatibilität)
+        // mode: 'no-cors' bedeutet, dass wir die Response nicht lesen können, aber das ist OK für Verfügbarkeitsprüfung
         const response = await fetch(cleanUrl, { 
-          method: 'HEAD',
-          mode: 'no-cors',
-          signal: controller.signal
+          method: 'GET',
+          mode: 'no-cors', // Keine CORS-Probleme, aber wir können Response nicht lesen
+          signal: controller.signal,
+          cache: 'no-cache'
         });
         clearTimeout(timeoutId);
         
-        // Wenn keine Exception, ist Server bereit
+        // ⚡ WICHTIG: Bei no-cors können wir response.ok nicht prüfen, aber wenn keine Exception, ist Server erreichbar
         console.log('✅ Server is ready:', cleanUrl);
         setPreviewStatus('running');
         setPreviewUrl(cleanUrl); // Aktualisiere URL auf saubere Version
+        setPreviewLoadingProgress({ message: 'Server bereit!', elapsed: 0, maxTime: 0 });
         return true;
       } catch (error) {
         // Server noch nicht bereit, warte 1 Sekunde
