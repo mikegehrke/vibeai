@@ -2815,14 +2815,28 @@ Bitte versuche es erneut.`);
       
       // ⚡ CHAT-AGENT: IMMER SOFORTIGE ANTWORTEN (wie ChatGPT/Claude)
       // Echte API-Integration mit STREAMING für sofortige Antworten!
-      const response = await fetch('http://localhost:8005/api/chat', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream' // Streaming!
-        },
-        // ⚡ KEIN Timeout - Streaming läuft kontinuierlich, Agent antwortet sofort!
-        body: JSON.stringify({
+      // ⚡ WICHTIG: Timeout für initiale Verbindung (15 Sekunden)
+      // Streaming selbst hat kein Timeout, aber die initiale Verbindung braucht einen
+      const controller = new AbortController();
+      const connectionTimeout = setTimeout(() => {
+        // Nur aborten wenn noch keine Response erhalten
+        if (!responseReceived) {
+          controller.abort();
+        }
+      }, 15000); // 15 Sekunden für initiale Verbindung
+      
+      let responseReceived = false;
+      let response;
+      
+      try {
+        response = await fetch('http://localhost:8005/api/chat', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream' // Streaming!
+          },
+          body: JSON.stringify({
           stream: true, // ⚡ STREAMING IMMER AKTIV!
           model: currentModel || 'gpt-4o',
           prompt: prompt,
