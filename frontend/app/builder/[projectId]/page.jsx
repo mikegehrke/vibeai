@@ -2913,9 +2913,24 @@ Smart Agent läuft: ${isLiveBuilding ? 'Ja (parallel)' : 'Nein'}
 
 Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit pädagogischem Wert.`
         })
-      });
-
-      console.log('📥 Response status:', response.status);
+        });
+        
+        responseReceived = true;
+        clearTimeout(connectionTimeout);
+        
+        console.log('📥 Response status:', response.status);
+      } catch (fetchError) {
+        clearTimeout(connectionTimeout);
+        responseReceived = true;
+        
+        // ⚡ BESSERE FEHLERBEHANDLUNG
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Verbindungs-Timeout: Backend antwortet nicht. Prüfe ob Backend auf Port 8005 läuft.');
+        } else if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+          throw new Error('Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.');
+        }
+        throw fetchError;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
