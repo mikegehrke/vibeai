@@ -1527,10 +1527,20 @@ run/main_scene="res://Main.tscn"
         """Generiere Tests"""
         files = []
         
+        # Get project name for correct package import
+        project_name = request.project_name.lower().replace(' ', '_').replace('-', '_')
+        # Remove special characters and keep only alphanumeric and underscores
+        project_name = ''.join(c for c in project_name if c.isalnum() or c == '_')
+        
         # Generate a few basic tests
         test_content = await self._generate_file_content(
             "test/widget_test.dart",
-            "Basic Flutter widget test with example test cases.",
+            f"""Basic Flutter widget test with example test cases.
+IMPORTANT: 
+- Use package name '{project_name}' for imports (NOT 'flutter_app' or generic names)
+- Import should be: import 'package:{project_name}/main.dart';
+- Test MyApp widget from main.dart
+- Keep tests simple and functional""",
             request
         )
         files.append({

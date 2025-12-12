@@ -28,12 +28,4 @@ flutter:
     - assets/images/
     - assets/icons/
 
-  # Fonts entfernt - verwende Standard-Fonts von Flutter
-  # fonts:
-  #   - family: Roboto
-  #     fonts:
-  #       - asset: fonts/Roboto-Regular.ttf
-  #       - asset: fonts/Roboto-Bold.ttf
-  #         weight: 700
-
 # Add any other configurations you need for your app here
