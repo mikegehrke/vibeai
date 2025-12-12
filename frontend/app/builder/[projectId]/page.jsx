@@ -439,15 +439,25 @@ export default function BuilderPage({ params, searchParams }) {
         if (hasDart) previewType = 'flutter';
         else if (hasJSX) previewType = 'react';
         
-        // Wait a bit for files to be ready, then start preview
+        // ⚡ VERBESSERT: Warte länger bevor Preview gestartet wird
+        // Das gibt dem Backend Zeit, alle Dateien zu verarbeiten
         setTimeout(async () => {
           try {
             console.log('🚀 Auto-starting preview...', previewType);
             await startPreviewServer(previewType);
           } catch (e) {
             console.error('Preview auto-start failed:', e);
+            // ⚡ RETRY: Versuche es nach 5 Sekunden erneut
+            setTimeout(async () => {
+              try {
+                console.log('🔄 Retrying preview start...');
+                await startPreviewServer(previewType);
+              } catch (retryError) {
+                console.error('Preview retry failed:', retryError);
+              }
+            }, 5000);
           }
-        }, 2000);
+        }, 3000); // ⚡ ERHÖHT: 2s → 3s (mehr Zeit für Backend)
         
         // Set review data for Review Panel
         setReviewData({
