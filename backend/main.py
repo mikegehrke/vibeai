@@ -736,7 +736,13 @@ You work FULLY AUTOMATICALLY - when you say you'll do something, ACTUALLY DO IT 
 You have full context of the project. Use this to provide accurate, helpful suggestions.
 Be proactive, helpful, and provide complete, working solutions.
 Always explain what you're doing and why.
-CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: format for automatic execution."""
+CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: format for automatic execution.
+
+⚡ CRITICAL: You MUST respond to ALL user questions IMMEDIATELY, even if Smart Agent is working in parallel!
+⚡ CRITICAL: If user asks "sind alle dateien fertig?" or "ist es abgeschlossen?" → Answer IMMEDIATELY with current status!
+⚡ CRITICAL: NEVER ignore user questions - ALWAYS respond, even during code generation!
+⚡ CRITICAL: You can work in PARALLEL with Smart Agent - both can work at the same time!
+⚡ CRITICAL: The chat is ALWAYS available - respond to EVERY question, even if Smart Agent is running!"""
         
         # Add project context to system prompt
         if project_context:
@@ -946,6 +952,10 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
 ⚡ **INTELLIGENT RECOGNITION:**
 You automatically recognize:
 - App creation requests → Start Smart Agent (parallel, non-blocking)
+- ⚡ CRITICAL: You MUST respond to ALL user questions IMMEDIATELY, even if Smart Agent is working
+- ⚡ CRITICAL: If user asks "sind alle dateien fertig?" or "ist es abgeschlossen?" → Answer IMMEDIATELY with current status
+- ⚡ CRITICAL: You can see Smart Agent status - check if generation is running or finished
+- ⚡ CRITICAL: NEVER ignore user questions - ALWAYS respond, even during code generation
 - Code questions → Analyze code and explain clearly
 - Bug descriptions → Find and fix automatically
 - Improvement suggestions → Implement immediately

@@ -681,10 +681,8 @@ Bitte versuche es erneut.`);
         return;
       }
       
-      // Zeige Bestätigung
-      if (result.success) {
-        addChatMessage('assistant', `✅ **Smart Agent gestartet!**\n\n📊 Generiere jetzt Dateien Schritt für Schritt...\n📁 Du siehst jede Datei live im Editor!`);
-      }
+      // ⚡ KEINE doppelte Nachricht - wird bereits von WebSocket gehandhabt
+      // Die Nachricht kommt automatisch via WebSocket (generation.started)
     } catch (error) {
       console.error('❌ Live build from chat error:', error);
       setIsLiveBuilding(false);
@@ -702,7 +700,13 @@ Bitte versuche es erneut.`);
       case 'build.started':
         setIsLiveBuilding(true);
         setBuildProgress({ current: 0, total: 0, currentFile: null });
-        // KEINE DUMMY-NACHRICHT - Agent arbeitet ECHT, Updates kommen via WebSocket!
+        // ⚡ NUR EINMAL beim Start - nicht bei jedem Event!
+        // Prüfe ob bereits eine Start-Nachricht gesendet wurde
+        const lastMessage = chatMessages[chatMessages.length - 1];
+        const alreadyNotified = lastMessage?.content?.includes('🚀 **Smart Agent gestartet!**');
+        if (!alreadyNotified) {
+          addChatMessage('assistant', `🚀 **Smart Agent gestartet!**\n\n📦 **Framework:** ${data.platform || 'unknown'}\n📝 **Projekt:** ${data.project_name || projectId}\n\n⏱️ **Ich erstelle jetzt Schritt für Schritt alle Dateien...**\n📁 Du siehst live, wie ich jede Datei erstelle und den Code schreibe!\n\n💬 **Fragen?** Frag mich einfach - ich antworte sofort, auch während ich arbeite!`);
+        }
         break;
       
       case 'generation.step':
