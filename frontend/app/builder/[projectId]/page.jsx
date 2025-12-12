@@ -575,6 +575,21 @@ Ich bin dein intelligenter Auto-Coder Agent. Hier sind meine Fähigkeiten:
   };
 
   const setupRealtimeUpdates = () => {
+    // ⚡ WICHTIG: Prüfe ob WebSocket bereits verbunden ist
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('⚠️ WebSocket already connected, skipping...');
+      return;
+    }
+    
+    // ⚡ WICHTIG: Schließe alte Verbindung falls vorhanden
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch (e) {
+        console.warn('Error closing old WebSocket:', e);
+      }
+    }
+    
     // Check if we should start live build
     const urlParams = new URLSearchParams(window.location.search);
     const shouldLiveBuild = urlParams.get('live_build') === 'true';
@@ -583,44 +598,71 @@ Ich bin dein intelligenter Auto-Coder Agent. Hier sind meine Fähigkeiten:
       startLiveBuild();
     }
     
-    // Setup WebSocket for live updates (Smart Agent)
-    const ws = new WebSocket('ws://localhost:8005/api/smart-agent/ws');
-    wsRef.current = ws;
-    
-    ws.onopen = () => {
-      console.log('✅ WebSocket verbunden für Live-Updates');
-    };
-    
-    ws.onmessage = (event) => {
+    // ⚡ VERBESSERT: Warte kurz bevor WebSocket-Verbindung aufgebaut wird
+    // Das gibt dem Backend Zeit zum Starten
+    setTimeout(() => {
       try {
-        const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
-      } catch (e) {
-        console.error('WebSocket message parse error:', e);
+        // Setup WebSocket for live updates (Smart Agent)
+        const ws = new WebSocket('ws://localhost:8005/api/smart-agent/ws');
+        wsRef.current = ws;
+        
+        // ⚡ TIMEOUT: Wenn nach 5 Sekunden keine Verbindung, versuche es erneut
+        const connectionTimeout = setTimeout(() => {
+          if (ws.readyState !== WebSocket.OPEN) {
+            console.warn('⚠️ WebSocket connection timeout, will retry...');
+            ws.close();
+            // Retry nach 5 Sekunden
+            setTimeout(() => setupRealtimeUpdates(), 5000);
+          }
+        }, 5000);
+        
+        ws.onopen = () => {
+          clearTimeout(connectionTimeout);
+          console.log('✅ WebSocket verbunden für Live-Updates');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (e) {
+            console.error('WebSocket message parse error:', e);
+          }
+        };
+        
+        ws.onerror = (error) => {
+          clearTimeout(connectionTimeout);
+          // ⚡ BESSERE FEHLERBEHANDLUNG: WebSocket error Event hat keine message
+          console.error('WebSocket error:', error);
+          // Versuche mehr Details zu bekommen
+          if (error.target && error.target.readyState !== WebSocket.OPEN) {
+            console.error('WebSocket connection failed. State:', error.target.readyState);
+            console.error('WebSocket URL:', error.target.url);
+          }
+          // ⚡ WICHTIG: Zeige Fehler NUR einmal, nicht bei jedem Retry
+          // Zeige Fehler im Chat nur wenn es wirklich ein Problem ist
+        };
+        
+        ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
+          console.log('WebSocket geschlossen', event.code, event.reason);
+          // ⚡ VERBESSERT: Reconnect nur wenn nicht absichtlich geschlossen (Code 1000)
+          if (event.code !== 1000) {
+            // Reconnect after 5 seconds (länger für Backend-Start)
+            setTimeout(() => {
+              if (wsRef.current?.readyState === WebSocket.CLOSED || !wsRef.current) {
+                console.log('🔄 Reconnecting WebSocket...');
+                setupRealtimeUpdates();
+              }
+            }, 5000);
+          }
+        };
+      } catch (error) {
+        console.error('❌ Failed to create WebSocket:', error);
+        // Retry nach 5 Sekunden
+        setTimeout(() => setupRealtimeUpdates(), 5000);
       }
-    };
-    
-    ws.onerror = (error) => {
-      // ⚡ BESSERE FEHLERBEHANDLUNG: WebSocket error Event hat keine message
-      console.error('WebSocket error:', error);
-      // Versuche mehr Details zu bekommen
-      if (error.target && error.target.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket connection failed. State:', error.target.readyState);
-        console.error('WebSocket URL:', error.target.url);
-      }
-      // Zeige Fehler im Chat
-      addChatMessage('assistant', '⚠️ **WebSocket-Verbindungsfehler**\n\nDie Live-Updates funktionieren möglicherweise nicht. Bitte Seite neu laden.');
-    };
-    
-    ws.onclose = () => {
-      console.log('WebSocket geschlossen');
-      // Reconnect after 3 seconds
-      setTimeout(() => {
-        if (wsRef.current?.readyState === WebSocket.CLOSED) {
-          setupRealtimeUpdates();
-        }
-      }, 3000);
-    };
+    }, 1000); // ⚡ Warte 1 Sekunde bevor WebSocket-Verbindung aufgebaut wird
     
     // Setup polling for file changes
     const interval = setInterval(() => {
