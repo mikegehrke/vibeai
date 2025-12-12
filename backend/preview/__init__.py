@@ -3,7 +3,8 @@ Preview Module für UI Rendering und Live Preview.
 """
 
 import os
-from flask import Flask, render_template, jsonify
+# ⚡ Flask nicht mehr benötigt - FastAPI wird verwendet
+# from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
 
