@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
@@ -62,7 +62,9 @@ const AGENT_TYPES = {
 };
 
 export default function BuilderPage({ params, searchParams }) {
-  const { projectId } = params;
+  // ⚡ Next.js 16: params ist jetzt ein Promise - muss mit React.use() entpackt werden
+  const resolvedParams = use(params);
+  const { projectId } = resolvedParams;
   const router = useRouter();
   
   // Live Build State
