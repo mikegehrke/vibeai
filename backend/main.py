@@ -697,9 +697,9 @@ async def _process_chat_in_background(request: ChatRequest, model_info: Dict):
 • "fixe alle Fehler" → Find and fix all errors in the project
 • "optimiere den Code" → Optimize code for performance and best practices
 • "erstelle ein Dashboard" → Create a complete dashboard UI
-• "installiere packages" → Install all required dependencies
-• "starte den Server" → Start development server
-• "baue die App" → Build the application
+• "installiere packages" → TERMINAL: npm install (or flutter pub get)
+• "starte den Server" / "starte die app" / "kannst du die app starten" → TERMINAL: npm start (React) or TERMINAL: flutter run -d web-server (Flutter)
+• "baue die App" → TERMINAL: npm run build (React) or TERMINAL: flutter build web (Flutter)
 
 📝 Code Format:
 When you create/modify code, format as:
@@ -894,7 +894,32 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
     
     # ⚡ SOFORTIGE BESTÄTIGUNG (<50ms) - wie ChatGPT/Claude!
     # Sende sofort eine Bestätigung, damit User sieht dass Agent antwortet
-    yield f"data: {json.dumps({'content': '', 'type': 'typing_start'})}\n\n"
+    # ⚡ WICHTIG: Erste echte Antwort sofort senden, nicht nur "typing_start"!
+    user_message_lower = request.prompt.lower()
+    
+    # ⚡ INTELLIGENTE SOFORT-ANTWORT: Erkenne Befehle sofort und antworte sofort!
+    if any(phrase in user_message_lower for phrase in ["starte die app", "kannst du die app starten", "app starten", "starte app"]):
+        # Flutter oder React/Next.js?
+        if project_id:
+            try:
+                from codestudio.project_manager import project_manager
+                project_path = project_manager.get_project_path("default_user", project_id)
+                import os
+                if os.path.exists(os.path.join(project_path, "pubspec.yaml")):
+                    # Flutter
+                    yield f"data: {json.dumps({'content': '🚀 Starte die Flutter-App...\n\nTERMINAL: flutter run -d web-server\n\n'})}\n\n"
+                elif os.path.exists(os.path.join(project_path, "package.json")):
+                    # React/Next.js
+                    yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\nTERMINAL: npm start\n\n'})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+            except:
+                yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+        else:
+            yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+    else:
+        # Normale sofortige Bestätigung
+        yield f"data: {json.dumps({'content': '', 'type': 'typing_start'})}\n\n"
     
     # ⚡ OPTIMIERUNG: Lade Projekt-Kontext PARALLEL (nicht blockierend)
     # Starte AI-Request SOFORT, lade Kontext im Hintergrund
@@ -962,13 +987,16 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
 • 🏗️ Configure builds - Automatically set up build processes
 • 🧪 Write tests - Automatically create and run tests
 
-⚡ **INTELLIGENT RECOGNITION:**
-You automatically recognize:
+⚡ **INTELLIGENT RECOGNITION (YOU MUST RECOGNIZE AND EXECUTE):**
+You automatically recognize and EXECUTE:
+- "starte die app" / "kannst du die app starten" / "app starten" → TERMINAL: flutter run -d web-server (for Flutter) or TERMINAL: npm start (for React/Next.js)
+- "starte den server" / "server starten" → TERMINAL: npm run dev (for web) or TERMINAL: flutter run -d web-server (for Flutter)
 - App creation requests → Start Smart Agent (parallel, non-blocking)
-- ⚡ CRITICAL: You MUST respond to ALL user questions IMMEDIATELY, even if Smart Agent is working
+- ⚡ CRITICAL: You MUST respond to ALL user questions IMMEDIATELY (<1 second), even if Smart Agent is working
 - ⚡ CRITICAL: If user asks "sind alle dateien fertig?" or "ist es abgeschlossen?" → Answer IMMEDIATELY with current status
 - ⚡ CRITICAL: You can see Smart Agent status - check if generation is running or finished
 - ⚡ CRITICAL: NEVER ignore user questions - ALWAYS respond, even during code generation
+- ⚡ CRITICAL: When user says "starte die app" → IMMEDIATELY respond "🚀 Starte die App..." and then show TERMINAL: command
 - Code questions → Analyze code and explain clearly
 - Bug descriptions → Find and fix automatically
 - Improvement suggestions → Implement immediately
