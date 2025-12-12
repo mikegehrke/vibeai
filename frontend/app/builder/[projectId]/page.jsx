@@ -4977,11 +4977,14 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
                           
                           // Nur localhost-URLs als Preview-URL setzen
                           if (isLocalhost) {
-                            // Wenn es eine Server-URL ist (start/dev/serve), setze als Preview-URL
-                            if (command && (command.includes('start') || command.includes('dev') || command.includes('serve') || command.includes('run'))) {
+                            // ⚡ WICHTIG: Erkenne auch flutter run URLs!
+                            // Wenn es eine Server-URL ist (start/dev/serve/run), setze als Preview-URL
+                            if (command && (command.includes('start') || command.includes('dev') || command.includes('serve') || command.includes('run') || command.includes('flutter'))) {
                               setPreviewUrl(url);
+                              setPreviewType('flutter'); // Setze Typ wenn flutter run
                               setPreviewStatus('running');
-                              console.log('✅ Preview-URL gesetzt:', url);
+                              setPreviewLoadingProgress({ message: '', elapsed: 0, maxTime: 0 }); // Reset progress
+                              console.log('✅ Preview-URL gesetzt:', url, 'Command:', command);
                             }
                           }
                           

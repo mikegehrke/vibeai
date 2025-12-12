@@ -338,6 +338,15 @@ class HomeScreen extends StatelessWidget {
                     )
                     if enable_web.returncode == 0:
                         output = enable_web.stdout + "\n" + "✅ Flutter Web-Support aktiviert\n"
+            
+            # ⚡ WICHTIG: Für flutter run, verwende -d web-server um Browser-Auto-Open zu verhindern
+            # Aber nur wenn der Benutzer nicht bereits ein Device angegeben hat
+            if command_lower.startswith('flutter run') and '-d' not in command_lower and '--device-id' not in command_lower:
+                # Füge -d web-server hinzu, damit Browser nicht automatisch öffnet
+                # Der Benutzer kann immer noch -d chrome oder -d edge verwenden, wenn gewünscht
+                original_command = request.command
+                request.command = request.command.replace('flutter run', 'flutter run -d web-server', 1)
+                print(f"🔧 Modified flutter run command: {request.command} (to prevent auto-browser-open)")
                     else:
                         output = enable_web.stderr + "\n" + "⚠️  Web-Support konnte nicht aktiviert werden, versuche trotzdem zu starten...\n"
                 else:

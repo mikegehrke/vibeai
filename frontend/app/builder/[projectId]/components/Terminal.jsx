@@ -119,13 +119,30 @@ const Terminal = forwardRef(function Terminal({ projectId, onUrlDetected, onProb
                   newOutput.push(line);
                   
                   // Detect URLs in output (like http://localhost:3000)
-                  const urlRegex = /(https?:\/\/[^\s]+|localhost:\d+|127\.0\.0\.1:\d+)/gi;
+                  // ⚡ VERBESSERT: Erkenne auch Flutter-URLs (z.B. "http://localhost:49749")
+                  const urlRegex = /(https?:\/\/[^\s\)]+|localhost:\d+|127\.0\.0\.1:\d+)/gi;
                   const urls = line.match(urlRegex);
                   if (urls && onUrlDetected) {
                     urls.forEach(url => {
-                      const fullUrl = url.startsWith('http') ? url : `http://${url}`;
+                      // ⚡ WICHTIG: Entferne Klammern und andere Zeichen am Ende
+                      const cleanUrl = url.replace(/[\)\]\},;]+$/, '').trim();
+                      const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `http://${cleanUrl}`;
+                      // ⚡ WICHTIG: Erkenne auch flutter run URLs
+                      if (trimmedCommand.includes('flutter') && trimmedCommand.includes('run')) {
+                        console.log('🚀 Flutter run detected, URL:', fullUrl);
+                      }
                       onUrlDetected(fullUrl, trimmedCommand);
                     });
+                  }
+                  
+                  // ⚡ SPEZIAL: Erkenne Flutter-spezifische URL-Patterns
+                  // Flutter zeigt oft: "Flutter run key commands: ..." oder "An Observatory debugger and profiler on ... is available at: http://localhost:XXXXX"
+                  const flutterUrlMatch = line.match(/(?:available at|running at|listening on|serving at).*?(https?:\/\/[^\s]+|localhost:\d+|127\.0\.0\.1:\d+)/i);
+                  if (flutterUrlMatch && onUrlDetected) {
+                    const flutterUrl = flutterUrlMatch[1];
+                    const fullUrl = flutterUrl.startsWith('http') ? flutterUrl : `http://${flutterUrl}`;
+                    console.log('🚀 Flutter URL detected from pattern:', fullUrl);
+                    onUrlDetected(fullUrl, trimmedCommand);
                   }
                   
                   // Detect errors and add to problems
