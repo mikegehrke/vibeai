@@ -578,7 +578,15 @@ Ich bin dein intelligenter Auto-Coder Agent. Hier sind meine Fähigkeiten:
     };
     
     ws.onerror = (error) => {
+      // ⚡ BESSERE FEHLERBEHANDLUNG: WebSocket error Event hat keine message
       console.error('WebSocket error:', error);
+      // Versuche mehr Details zu bekommen
+      if (error.target && error.target.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket connection failed. State:', error.target.readyState);
+        console.error('WebSocket URL:', error.target.url);
+      }
+      // Zeige Fehler im Chat
+      addChatMessage('assistant', '⚠️ **WebSocket-Verbindungsfehler**\n\nDie Live-Updates funktionieren möglicherweise nicht. Bitte Seite neu laden.');
     };
     
     ws.onclose = () => {

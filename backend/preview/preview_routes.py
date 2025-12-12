@@ -72,13 +72,21 @@ async def start_preview(request: Request) -> Dict[str, Any]:
     if not project_id:
         raise HTTPException(400, "Missing project_id")
 
-    # Projekt laden
+    # ⚡ Projekt-Pfad direkt prüfen (auch ohne project.json)
+    project_path = project_manager._get_project_path(user_email, project_id)
+    
+    # Prüfe ob Projekt-Verzeichnis existiert (auch ohne Metadaten)
+    if not os.path.exists(project_path):
+        raise HTTPException(404, f"Project directory not found: {project_id} (user: {user_email}, path: {project_path})")
+    
+    # Versuche Metadaten zu laden (optional - Projekt kann auch ohne existieren)
     try:
         project = project_manager.get_project(user_email, project_id)
     except (FileNotFoundError, KeyError):
-        raise HTTPException(404, f"Project not found: {project_id} (user: {user_email})")
-
-    project_path = project_manager._get_project_path(user_email, project_id)
+        # ⚡ FALLBACK: Projekt existiert als Verzeichnis, aber keine Metadaten
+        # Das ist OK - viele Projekte haben keine project.json
+        project = None
+        print(f"⚠️  No metadata found for project {project_id}, but directory exists")
     
     # ⚡ WICHTIG: Speichere Dateien IMMER, auch wenn Verzeichnis existiert
     # (Smart Agent speichert Dateien direkt, aber Preview sollte sie auch haben)
