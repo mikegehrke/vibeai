@@ -906,16 +906,17 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
                 import os
                 if os.path.exists(os.path.join(project_path, "pubspec.yaml")):
                     # Flutter
-                    yield f"data: {json.dumps({'content': '🚀 Starte die Flutter-App...\n\nTERMINAL: flutter run -d web-server\n\n'})}\n\n"
+                    newline = '\n'
+                    yield f"data: {json.dumps({'content': f'🚀 Starte die Flutter-App...{newline}{newline}TERMINAL: flutter run -d web-server{newline}{newline}'})}\n\n"
                 elif os.path.exists(os.path.join(project_path, "package.json")):
                     # React/Next.js
-                    yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\nTERMINAL: npm start\n\n'})}\n\n"
+                    yield f"data: {json.dumps({'content': f'🚀 Starte die App...{newline}{newline}TERMINAL: npm start{newline}{newline}'})}\n\n"
                 else:
-                    yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+                    yield f"data: {json.dumps({'content': f'🚀 Starte die App...{newline}{newline}'})}\n\n"
             except:
-                yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+                yield f"data: {json.dumps({'content': f'🚀 Starte die App...{newline}{newline}'})}\n\n"
         else:
-            yield f"data: {json.dumps({'content': '🚀 Starte die App...\n\n'})}\n\n"
+            yield f"data: {json.dumps({'content': f'🚀 Starte die App...{newline}{newline}'})}\n\n"
     else:
         # ⚡ IMMER echte Antwort sofort senden, nicht nur "typing_start"!
         # Sende erste Worte sofort, damit User sieht dass Agent antwortet
