@@ -326,7 +326,12 @@ export default function BuilderPage({ params, searchParams }) {
           return false;
         }
       } else {
-        console.error(`❌ Failed to load files: ${response.status} ${response.statusText}`);
+        const errorText = await response.text().catch(() => response.statusText);
+        console.error(`❌ Failed to load files: ${response.status} ${errorText}`);
+        
+        // Zeige Fehler im Preview-Panel
+        setPreviewError(`HTTP ${response.status}: ${errorText || 'Backend-Fehler'}`);
+        
         // Retry once after 2 seconds on error
         if (retryCount < 1) {
           console.log('🔄 Retrying in 2 seconds...');
@@ -336,6 +341,18 @@ export default function BuilderPage({ params, searchParams }) {
       }
     } catch (error) {
       console.error('❌ Error loading project files:', error);
+      
+      // ⚡ BESSERE FEHLERMELDUNGEN
+      let errorMessage = error.message || 'Failed to load files';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        errorMessage = 'Backend nicht erreichbar. Prüfe ob Backend auf Port 8005 läuft.';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout') || errorMessage.includes('AbortError')) {
+        errorMessage = 'Verbindungs-Timeout: Backend antwortet nicht.';
+      }
+      
+      // Zeige Fehler im Preview-Panel
+      setPreviewError(errorMessage);
+      
       // Retry once after 2 seconds on exception
       if (retryCount < 1) {
         console.log('🔄 Retrying in 2 seconds...');
