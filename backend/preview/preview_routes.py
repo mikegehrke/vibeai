@@ -95,9 +95,9 @@ async def start_preview(request: Request) -> Dict[str, Any]:
     try:
         # Preview starten
         if preview_type == "web":
-            result = await preview_manager.start_web_preview(user.email, project_id, project_path)
+            result = await preview_manager.start_web_preview(user_email, project_id, project_path)
         elif preview_type == "flutter":
-            result = await preview_manager.start_flutter_preview(user.email, project_id, project_path)
+            result = await preview_manager.start_flutter_preview(user_email, project_id, project_path)
         else:
             raise HTTPException(400, f"Invalid preview type: {preview_type}. Use 'web' or 'flutter'.")
 
