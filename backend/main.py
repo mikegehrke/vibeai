@@ -127,6 +127,8 @@ class ChatRequest(BaseModel):
     conversation_history: Optional[List[Dict[str, Any]]] = []
     session_id: Optional[int] = None
     project_id: Optional[str] = None  # For code access
+    images: Optional[List[str]] = None  # Base64 encoded images
+    videos: Optional[List[str]] = None  # Base64 encoded videos
 
 class ModelInfo(BaseModel):
     id: str
@@ -897,6 +899,9 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
     user_message_lower = request.prompt.lower()
     
     # ⚡ INTELLIGENTE SOFORT-ANTWORT: Erkenne Befehle sofort und antworte sofort!
+    # Image Generation vorerst deaktiviert für Stabilität
+    # TODO: Später wieder aktivieren mit besserer Fehlerbehandlung
+    
     if any(phrase in user_message_lower for phrase in ["starte die app", "kannst du die app starten", "app starten", "starte app", "run die app", "app run"]):
         # Flutter oder React/Next.js?
         if project_id:
@@ -1149,12 +1154,13 @@ CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: 
             if msg.get("role") in ["user", "assistant"]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
         
+        # Add current prompt to messages (images/videos support temporarily disabled for stability)
         if request.model in ["o1", "o1-mini"]:
             full_prompt = f"{request.system_prompt}\n\n{request.prompt}"
+            messages.append({"role": "user", "content": full_prompt})
         else:
-            full_prompt = request.prompt
-            
-        messages.append({"role": "user", "content": full_prompt})
+            # Normal text message - images/videos support will be added later
+            messages.append({"role": "user", "content": request.prompt})
         
         # Stream response based on provider
         if model_info["provider"] == "OpenAI":
@@ -1172,18 +1178,26 @@ CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: 
                 yield f"data: {json.dumps({'content': content, 'done': True})}\n\n"
             else:
                 # ⚡ STREAMING: Sofort starten, keine Verzögerung!
-                stream = openai_client.chat.completions.create(
-                    model=request.model,
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=4000,
-                    stream=True
-                )
-                # ⚡ ECHTE AI-ANTWORTEN - KEINE DUMMY-TEXTE!
-                for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
-                yield f"data: {json.dumps({'done': True})}\n\n"
+                try:
+                    stream = openai_client.chat.completions.create(
+                        model=request.model,
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=4000,
+                        stream=True
+                    )
+                    # ⚡ ECHTE AI-ANTWORTEN - KEINE DUMMY-TEXTE!
+                    for chunk in stream:
+                        if chunk.choices and len(chunk.choices) > 0:
+                            if chunk.choices[0].delta and chunk.choices[0].delta.content:
+                                yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
+                    yield f"data: {json.dumps({'done': True})}\n\n"
+                except Exception as e:
+                    import traceback
+                    error_trace = traceback.format_exc()
+                    print(f"❌ OpenAI streaming error: {str(e)}")
+                    print(f"Traceback: {error_trace}")
+                    yield f"data: {json.dumps({'error': f'OpenAI API error: {str(e)}', 'done': True})}\n\n"
         
         elif model_info["provider"] == "Anthropic":
             if not anthropic_client:
