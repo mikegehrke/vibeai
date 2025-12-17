@@ -175,6 +175,9 @@ export default function CopilotPage() {
   const [isDragging, setIsDragging] = useState(false); // Drag & Drop State
   const [showPlusMenu, setShowPlusMenu] = useState(false); // Plus-Menü anzeigen
   const [showScreenshotSubmenu, setShowScreenshotSubmenu] = useState(false); // Screenshot-Untermenü
+  const [selectedCategory, setSelectedCategory] = useState('Landing Pages'); // Ausgewählte Kategorie
+  const categories = ['Landing Pages', 'AI App', 'Dashboard', 'E-Commerce', 'Portfolio', 'Interactive Experience'];
+  const selectedCategoryIndex = categories.indexOf(selectedCategory);
   const plusMenuRef = useRef(null); // Ref für Plus-Menü
   const typingTimeoutRef = useRef(null);
   const typewriterTimeoutRef = useRef(null); // Separater Ref für Typewriter-Effekt
@@ -621,16 +624,22 @@ export default function CopilotPage() {
       background: 'white',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
-      {/* Header - WHITE, kein Border */}
+      {/* Header - WHITE, kein Border, immer sichtbar beim Scrollen */}
       <header style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
         background: 'white',
         color: '#000000',
         padding: '1.5rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        width: '100%'
-        // KEIN borderBottom
+        width: '100%',
+        boxShadow: '0 1px 0 rgba(0,0,0,0.05)'
+        // Fixed damit immer sichtbar, unabhängig vom Scrollen
       }}>
         {/* Left Side - Hamburger + Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -688,7 +697,9 @@ export default function CopilotPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '3rem 2rem'
+        padding: '3rem 2rem',
+        paddingTop: 'calc(3rem + 80px)'
+        // Padding-Top damit Content nicht unter fixed Header verschwindet
       }}>
         {/* Title - klein, nicht so dick aber fett */}
         <h1 style={{
@@ -719,7 +730,7 @@ export default function CopilotPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+          justifyContent: 'center',
               gap: '0.4rem',
               padding: activeTab === 'app' ? '0.75rem 2.5rem' : '0.5rem 2.5rem',
               background: activeTab === 'app' ? '#f8f8f8' : 'transparent',
@@ -730,7 +741,7 @@ export default function CopilotPage() {
               borderTopRightRadius: '6px',
               cursor: 'pointer',
               fontWeight: activeTab === 'app' ? '600' : '400',
-              fontSize: '0.9rem',
+          fontSize: '0.9rem',
               color: activeTab === 'app' ? '#000000' : '#666666',
               transition: 'all 0.2s',
               flex: 1
@@ -840,12 +851,12 @@ export default function CopilotPage() {
               pointerEvents: 'none'
             }}>
               📎 Dateien hier ablegen
-            </div>
+        </div>
           )}
 
           {/* Angehängte Dateien Preview */}
           {attachedFiles.length > 0 && (
-            <div style={{
+      <div style={{
               marginBottom: '1rem',
               padding: '0.75rem',
               background: '#f8f8f8',
@@ -868,7 +879,7 @@ export default function CopilotPage() {
                     <img 
                       src={file.url} 
                       alt={file.name}
-                      style={{
+            style={{
                         width: '100%',
                         height: 'auto',
                         borderRadius: '8px',
@@ -890,7 +901,7 @@ export default function CopilotPage() {
                   <div style={{
                     padding: '0.25rem 0.5rem',
                     background: 'rgba(0,0,0,0.7)',
-                    color: 'white',
+              color: 'white',
                     fontSize: '0.7rem',
                     position: 'absolute',
                     bottom: 0,
@@ -936,7 +947,7 @@ export default function CopilotPage() {
               style={{
                 maxHeight: '400px',
                 overflowY: 'auto',
-                marginBottom: '1rem',
+              marginBottom: '1rem',
                 paddingBottom: '0.5rem',
                 borderBottom: '1px solid #e5e5e5'
               }}
@@ -1087,8 +1098,8 @@ export default function CopilotPage() {
                       color: '#000000',
                       whiteSpace: 'pre-wrap',
                       wordWrap: 'break-word',
-                      lineHeight: '1.5'
-                    }}>
+              lineHeight: '1.5'
+            }}>
                       {typewriterText}
                       {isLoading && <span style={{ opacity: 0.5, marginLeft: '2px' }}>|</span>}
                     </div>
@@ -1125,7 +1136,7 @@ export default function CopilotPage() {
             <div style={{ position: 'relative', flex: 1, width: '100%', paddingBottom: '2.5rem' }}>
               {/* Placeholder nur wenn kein Text eingegeben wird */}
               {!prompt && !isLoading && (
-                <div style={{
+            <div style={{
                   position: 'absolute',
                   left: 0,
                   top: 0,
@@ -1191,7 +1202,7 @@ export default function CopilotPage() {
                 <div style={{ position: 'relative' }} ref={plusMenuRef}>
                   <button
                     onClick={() => setShowPlusMenu(!showPlusMenu)}
-                    style={{
+                  style={{
                       background: showPlusMenu ? '#f0f0f0' : 'transparent',
                       border: 'none',
                       cursor: 'pointer',
@@ -1309,7 +1320,7 @@ export default function CopilotPage() {
                       >
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           📸 Screenshot machen
-                        </span>
+                </span>
                         <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>→</span>
                         
                         {/* Screenshot-Untermenü */}
@@ -1365,10 +1376,10 @@ export default function CopilotPage() {
                             >
                               <span>🖥️</span>
                               <span style={{ flex: 1 }}>Integriertes Retina-Display</span>
-                            </div>
-                            
+            </div>
+
                             {/* Fenster Sektion */}
-                            <div style={{
+            <div style={{
                               padding: '0.25rem 1rem',
                               fontSize: '0.75rem',
                               color: '#888888',
@@ -1390,7 +1401,7 @@ export default function CopilotPage() {
                                 padding: '0.5rem 1rem',
                                 color: '#ffffff',
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
+              fontSize: '0.9rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem'
@@ -1703,7 +1714,7 @@ export default function CopilotPage() {
                       background: 'white',
                       borderRadius: '1px'
                     }} />
-                  </div>
+            </div>
                 </button>
                 
                 {/* ArrowUp Button - Für Text senden, ganz rechts außen */}
@@ -1755,8 +1766,220 @@ export default function CopilotPage() {
               </div>
             </div>
           </div>
+      </div>
+
+        {/* Template Selection Area - Unter dem Chat */}
+      <div style={{
+          width: '100%',
+          maxWidth: '1200px',
+          margin: '6rem auto',
+          padding: '0 2rem'
+        }}>
+          {/* Title */}
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            color: '#000000',
+            marginBottom: '1.5rem',
+            textAlign: 'left'
+          }}>
+            Start with a template
+          </h2>
+
+          {/* Category Tabs */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginBottom: '2rem',
+            flexWrap: 'wrap'
+          }}>
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '20px',
+                  border: 'none',
+                  background: selectedCategory === category ? '#f0f0f0' : 'white',
+                  color: '#000000',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: '400'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== category) {
+                    e.currentTarget.style.background = '#f8f8f8';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== category) {
+                    e.currentTarget.style.background = 'white';
+                  }
+                }}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {/* Template Slider - Ein Bild pro Tab, verschiebt sich nach links */}
+          <style>{`
+            @keyframes rotate {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+          <div style={{
+            width: '100%',
+            marginBottom: '3rem',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              display: 'flex',
+              transform: `translateX(-${selectedCategoryIndex * (100 / categories.length)}%)`,
+              transition: 'transform 0.5s ease-in-out',
+              width: `${categories.length * 100}%`
+            }}>
+              {categories.map((category, categoryIndex) => {
+                // Ein Bild pro Kategorie
+                const templatesByCategory = {
+                  'Landing Pages': { image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop', title: 'Landing page', gradient: 'rgba(255, 140, 66, 0.1)', animation: '20s' },
+                  'AI App': { image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop', title: 'AI App', gradient: 'rgba(59, 130, 246, 0.1)', animation: '20s' },
+                  'Dashboard': { image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop', title: 'Dashboard', gradient: 'rgba(16, 185, 129, 0.1)', animation: '20s' },
+                  'E-Commerce': { image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop', title: 'E-Commerce', gradient: 'rgba(236, 72, 153, 0.1)', animation: '20s' },
+                  'Portfolio': { image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop', title: 'Portfolio', gradient: 'rgba(139, 92, 246, 0.1)', animation: '20s' },
+                  'Interactive Experience': { image: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&h=600&fit=crop', title: 'Interactive Experience', gradient: 'rgba(236, 72, 153, 0.1)', animation: '20s' }
+                };
+                
+                const template = templatesByCategory[category];
+                
+                return (
+                  <div
+                    key={category}
+                    style={{
+                      width: `${100 / categories.length}%`,
+                      flexShrink: 0,
+                      paddingRight: categoryIndex < categories.length - 1 ? '1.5rem' : '0'
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid #e5e5e5',
+                        padding: '0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                      }}
+                    >
+                      {/* Animierter runder Hintergrund */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '-50%',
+                        right: '-50%',
+                        width: '200%',
+                        height: '200%',
+                        background: `radial-gradient(circle, ${template.gradient} 0%, transparent 70%)`,
+                        borderRadius: '50%',
+                        animation: `rotate ${template.animation} linear infinite`,
+                        pointerEvents: 'none',
+                        zIndex: 1
+                      }} />
+                      
+                      {/* Bild */}
+                      <div style={{ position: 'relative', zIndex: 2 }}>
+                        <img
+                          src={template.image}
+                          alt={template.title}
+                          style={{
+                            width: '100%',
+                            height: '400px',
+                            objectFit: 'cover',
+                            display: 'block'
+                          }}
+                        />
+                        
+                        {/* Titel und Icon/Logo unten */}
+                        <div style={{
+                          padding: '1rem 1.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: 'white'
+                        }}>
+                          <div style={{
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            color: '#000000'
+                          }}>
+                            {template.title}
+                          </div>
+                          
+                          {/* Icon und Logo */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}>
+                            <AnimatedLogoIcon />
+                            <span style={{
+                              fontSize: '0.85rem',
+                              color: '#666666',
+                              fontWeight: '400'
+                            }}>
+                              Logo
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Logo Icon unten */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: '3rem',
+            paddingBottom: '2rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <AnimatedLogoIcon />
+              <div style={{
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                letterSpacing: '-0.01em',
+                color: '#000000'
+              }}>
+                Logo
+              </div>
+          </div>
         </div>
-      </main>
+      </div>
+    </main>
       </div>
   );
-}
+} 
