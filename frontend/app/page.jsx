@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Box, Pencil, ArrowUp, Paperclip, Menu, Plus, Globe, Search, Grid3x3, Mic, Circle } from 'lucide-react';
+import { Box, Pencil, ArrowUp, Paperclip, Menu, Plus, Globe, Search, Grid3x3, Mic, Circle, CheckCircle, RefreshCw, MessageCircle, CheckSquare, ArrowDown, Play } from 'lucide-react';
 
 // Animiertes Logo-Icon Komponente - Striche bewegen sich rechts/links, orange/schwarz leuchten
 function AnimatedLogoIcon() {
@@ -1953,14 +1953,473 @@ export default function CopilotPage() {
             </div>
           </div>
 
-          {/* Logo Icon unten */}
+          {/* Company Logos Karussell + Logo Icon - Grauer Hintergrund, volle Breite */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: '3rem',
-            paddingBottom: '2rem'
+            width: '100vw',
+            marginLeft: 'calc(-50vw + 50%)',
+            marginTop: '6rem',
+            background: '#f5f5f5',
+            paddingBottom: '4rem'
           }}>
+            {/* Logos Karussell */}
+            <div style={{
+              width: '100%',
+              padding: '4rem 0',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <style>{`
+                @keyframes scrollLogos {
+                  0% {
+                    transform: translateX(0);
+                  }
+                  100% {
+                    transform: translateX(-50%);
+                  }
+                }
+                .logos-container {
+                  animation: scrollLogos 30s linear infinite;
+                }
+              `}</style>
+              <div className="logos-container" style={{
+                display: 'flex',
+                gap: '6rem',
+                alignItems: 'center',
+                width: 'fit-content',
+                minWidth: '200%'
+              }}>
+                {/* Doppelte Logos für endloses Loop */}
+                {[...Array(2)].map((_, loopIndex) => (
+                  <div key={loopIndex} style={{ display: 'flex', gap: '6rem', alignItems: 'center' }}>
+                    {[
+                      'Adobe',
+                      'Atlassian',
+                      'Boeing',
+                      'ClickUp',
+                      'Coinbase',
+                      'Duolingo',
+                      'Google',
+                      'Gusto',
+                      'Microsoft',
+                      'PayPal',
+                      'SoFi',
+                      'Stripe',
+                      'Zillow',
+                      'Plaid'
+                    ].map((company, index) => (
+                      <div
+                        key={`${loopIndex}-${index}`}
+                        style={{
+                          fontSize: '1.5rem',
+                          fontWeight: '600',
+                          color: '#666666',
+                          whiteSpace: 'nowrap',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          opacity: 0.7,
+                          transition: 'opacity 0.2s',
+                          padding: '0 1rem'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                      >
+                        {company}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Features Section - Enterprise Controls, Workflow Automation, Agent Chat - Weißer Hintergrund */}
+            <div style={{
+              width: '100%',
+              maxWidth: '1200px',
+              margin: '6rem auto 0',
+              padding: '4rem 2rem',
+              background: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e5e5e5'
+            }}>
+              {/* Titel oben */}
+              <h2 style={{
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                color: '#000000',
+                textAlign: 'center',
+                marginBottom: '4rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              }}>
+                Build smarter, ship faster
+              </h2>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '2rem',
+                marginBottom: '4rem'
+              }}>
+                {/* Enterprise Controls */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  border: '1px solid #e5e5e5',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {/* Visuelle Elemente oben - Graue Boxen */}
+                  <div style={{ 
+                    marginBottom: '2rem',
+                    background: '#f8f8f8',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '8px',
+                    padding: '1.5rem'
+                  }}>
+                    {/* Checkboxen Liste */}
+                    <div style={{ 
+                      marginBottom: '1.5rem',
+                      background: 'white',
+                      borderRadius: '6px',
+                      padding: '1rem'
+                    }}>
+                      {[
+                        'Role-based access controls (RBAC)',
+                        'SOC 2 compliant',
+                        'SAML / Identity Provider support',
+                        'Single Sign-On (SSO)',
+                        'Centralized admin controls'
+                      ].map((item, index) => (
+                        <div key={index} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          marginBottom: '0.75rem'
+                        }}>
+                          <CheckSquare size={18} color="#10b981" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.9rem', color: '#666666' }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Progress Bars */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '6px',
+                      padding: '1rem'
+                    }}>
+                      {[
+                        { label: 'SOC 2', value: 84 },
+                        { label: 'SAST 2', value: 62 },
+                        { label: 'Pre-Deploy Evaluation', value: 35 }
+                      ].map((item, index) => (
+                        <div key={index} style={{ marginBottom: '1rem' }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '0.5rem'
+                          }}>
+                            <span style={{ fontSize: '0.85rem', color: '#666666', fontWeight: '600' }}>{item.label}</span>
+                            <span style={{ fontSize: '0.85rem', color: '#666666', fontWeight: '600' }}>{item.value}%</span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '8px',
+                            background: '#e5e5e5',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: `${item.value}%`,
+                              height: '100%',
+                              background: '#10b981',
+                              borderRadius: '4px',
+                              transition: 'width 0.3s ease'
+                            }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Text unten */}
+                  <div style={{ marginTop: 'auto' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <CheckCircle size={20} color="#1976d2" />
+                      <h3 style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: '#000000',
+                        margin: 0
+                      }}>
+                        Enterprise Controls
+                      </h3>
+                    </div>
+                    <p style={{
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: '#666666',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Security & controls that scale to enterprise.
+                    </p>
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: '#666666',
+                      lineHeight: '1.6',
+                      margin: 0
+                    }}>
+                      SSO/SAML, SOC2 & all the standard Enterprise admin controls. Plus, pre deployment security screening, secure in-built services and better defaults to ensure the apps you build remain secure too.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Workflow Automation */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  border: '1px solid #e5e5e5',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {/* Flowchart oben - Graue Box */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '2rem',
+                    background: '#f8f8f8',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '8px',
+                    padding: '1.5rem'
+                  }}>
+                    {[
+                      { title: 'Trigger', desc: 'Start automation sequence' },
+                      { title: 'Agent 1', desc: 'Intake target information' },
+                      { title: 'Agent 2', desc: 'Create an action plan' },
+                      { title: 'Agent 3', desc: 'Publish action plan to app' }
+                    ].map((step, index) => (
+                      <div key={index} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: '100%',
+                          background: 'white',
+                          border: '1px solid #e5e5e5',
+                          borderRadius: '8px',
+                          padding: '1rem',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#000000', marginBottom: '0.25rem' }}>
+                            {step.title}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#666666' }}>
+                            {step.desc}
+                          </div>
+                        </div>
+                        {index < 3 && (
+                          <div style={{
+                            width: '2px',
+                            height: '1rem',
+                            background: '#d0d0d0',
+                            margin: '0.25rem 0',
+                            borderStyle: 'dashed',
+                            borderWidth: '0 0 2px 0',
+                            borderColor: '#d0d0d0'
+                          }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Text unten */}
+                  <div style={{ marginTop: 'auto' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <RefreshCw size={20} color="#1976d2" />
+                      <h3 style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: '#000000',
+                        margin: 0
+                      }}>
+                        Workflow Automation
+                      </h3>
+                    </div>
+                    <p style={{
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: '#666666',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Automate the routine, focus on what matters.
+                    </p>
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: '#666666',
+                      lineHeight: '1.6',
+                      margin: 0
+                    }}>
+                      Create agents and automations to handle repetitive or operational work. Plug them into tools & data you already use, and build bots or automations that save you time to focus on what truly matters.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Agent Chat */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  border: '1px solid #e5e5e5',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {/* Build → Text Box → Publish Flow oben - Graue Box */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '2rem',
+                    background: '#f8f8f8',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '8px',
+                    padding: '1.5rem'
+                  }}>
+                    {/* Build Button */}
+                    <button style={{
+                      background: '#1976d2',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      width: '100%',
+                      justifyContent: 'center'
+                    }}>
+                      <Box size={18} />
+                      Build
+                    </button>
+                    
+                    <div style={{
+                      width: '2px',
+                      height: '0.75rem',
+                      background: '#d0d0d0',
+                      borderStyle: 'dashed',
+                      borderWidth: '0 0 2px 0',
+                      borderColor: '#d0d0d0'
+                    }} />
+                    
+                    {/* Text Box */}
+                    <div style={{
+                      width: '100%',
+                      background: 'white',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px',
+                      padding: '1.25rem',
+                      fontSize: '0.85rem',
+                      color: '#666666',
+                      lineHeight: '1.6',
+                      minHeight: '120px'
+                    }}>
+                      Design an AI fitness app that opens with a live AI coach in the hero. Users can ask for workouts, training plans, or recovery advice, and see results appear instantly in a bold, athletic interface.
+                    </div>
+                    
+                    <div style={{
+                      width: '2px',
+                      height: '0.75rem',
+                      background: '#d0d0d0',
+                      borderStyle: 'dashed',
+                      borderWidth: '0 0 2px 0',
+                      borderColor: '#d0d0d0'
+                    }} />
+                    
+                    {/* Publish App Button */}
+                    <button style={{
+                      background: '#1976d2',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      width: '100%',
+                      justifyContent: 'center'
+                    }}>
+                      <Globe size={18} />
+                      Publish App
+                    </button>
+                  </div>
+
+                  {/* Text unten */}
+                  <div style={{ marginTop: 'auto' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <MessageCircle size={20} color="#1976d2" />
+                      <h3 style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: '#000000',
+                        margin: 0
+                      }}>
+                        Agent Chat
+                      </h3>
+                    </div>
+                    <p style={{
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: '#666666',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Describe it. Publish It. Improve it.
+                    </p>
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: '#666666',
+                      lineHeight: '1.6',
+                      margin: 0
+                    }}>
+                      Tell the Agent what you're building — it writes real production-ready code, evolves it as you iterate, and stays out of your way while you build.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Logo Icon unten */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: '3rem'
+            }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -1976,6 +2435,7 @@ export default function CopilotPage() {
               }}>
                 Logo
               </div>
+            </div>
           </div>
         </div>
       </div>
