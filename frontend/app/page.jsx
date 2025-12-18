@@ -176,6 +176,7 @@ export default function CopilotPage() {
   const [showPlusMenu, setShowPlusMenu] = useState(false); // Plus-Menü anzeigen
   const [showScreenshotSubmenu, setShowScreenshotSubmenu] = useState(false); // Screenshot-Untermenü
   const [selectedCategory, setSelectedCategory] = useState('Landing Pages'); // Ausgewählte Kategorie
+  const [isYearly, setIsYearly] = useState(false); // Monthly/Yearly Toggle
   const categories = ['Landing Pages', 'AI App', 'Dashboard', 'E-Commerce', 'Portfolio', 'Interactive Experience'];
   const selectedCategoryIndex = categories.indexOf(selectedCategory);
   const plusMenuRef = useRef(null); // Ref für Plus-Menü
@@ -653,7 +654,7 @@ export default function CopilotPage() {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             letterSpacing: '-0.01em'
           }}>
-            Logo
+            Vibe AI go
           </div>
           
           {/* Navigation */}
@@ -662,30 +663,32 @@ export default function CopilotPage() {
             <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Module</Link>
             <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Framework</Link>
             <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Resources</Link>
-            <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Pricing</Link>
+            <Link href="/pricing" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Pricing</Link>
             <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Careers</Link>
           </nav>
         </div>
 
         {/* Right Side - Log in & Start building */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <Link href="#" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Log in</Link>
-          <button style={{
-            background: '#ff8c42',
-            color: 'white',
-            padding: '0.625rem 1.25rem',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: '500',
-            fontSize: '0.9rem',
-            transition: 'opacity 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-          >
-            Start building
-          </button>
+          <Link href="/login" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Log in</Link>
+          <Link href="/register" style={{ textDecoration: 'none' }}>
+            <button style={{
+              background: '#ff8c42',
+              color: 'white',
+              padding: '0.625rem 1.25rem',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: '500',
+              fontSize: '0.9rem',
+              transition: 'opacity 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Start building
+            </button>
+          </Link>
         </div>
       </header>
 
@@ -1941,7 +1944,7 @@ export default function CopilotPage() {
                               color: '#666666',
                               fontWeight: '400'
                             }}>
-                              Logo
+                              Vibe AI go
                             </span>
                           </div>
                         </div>
@@ -2413,14 +2416,718 @@ export default function CopilotPage() {
               </div>
             </div>
 
-            {/* Logo Icon unten */}
+            {/* Weißer Hintergrund Container - Testimonials + Plans & Pricing */}
             <div style={{
+              width: '100%',
+              background: 'white',
+              marginTop: '6rem',
+              padding: '0'
+            }}>
+              {/* Testimonials Section - 6 Karten, 3 oben, 3 unten, grauer Hintergrund */}
+              <div style={{
+                width: '100%',
+                maxWidth: '1200px',
+                margin: '0 auto',
+                paddingTop: '4rem',
+                paddingBottom: '4rem',
+                paddingLeft: '2rem',
+                paddingRight: '2rem',
+                background: 'white'
+              }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.5rem',
+                rowGap: '0.5rem'
+              }}>
+                {[
+                  {
+                    headline: 'Our collaboration democratizes application development',
+                    text: 'Our collaboration democratizes application development enabling business teams across enterprises to innovate and solve problems without traditional technical barriers. Our relationship exemplifies our commitment to making powerful development tools accessible to everyone.',
+                    name: 'Deb Cupp',
+                    position: 'President',
+                    company: 'Microsoft Americas',
+                    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces'
+                  },
+                  {
+                    headline: 'I asked to clone LinkedIn',
+                    text: 'just to see how far it would get with a single prompt. The result? A surprisingly functional prototype. It\'s a powerful reminder: with the right framing, today\'s AI tools can turn a single idea into working software.',
+                    name: 'Reid Hoffman',
+                    position: 'Co-founder',
+                    company: 'LinkedIn',
+                    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces'
+                  },
+                  {
+                    headline: 'Ok, I\'m addicted',
+                    text: 'For my entire design career, I\'ve always had to hire developers to do even the most basic stuff for me. Having an absolute blast having a free AI programmer at my behest.',
+                    name: 'Andrew Wilkinson',
+                    position: 'Co-founder',
+                    company: 'Tiny',
+                    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=faces'
+                  },
+                  {
+                    headline: 'Gets you from 0→1 in breakneck speed',
+                    text: 'If I went to my developer and said, make this, it would probably take him a week of his time. I did it in an hour or two',
+                    name: 'Preston Zeller',
+                    position: 'Chief Growth Officer',
+                    company: 'Batchdata',
+                    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces'
+                  },
+                  {
+                    headline: 'I can honestly say that if it weren\'t for this',
+                    text: 'and that prototype that I was able to build in two weeks, it just wouldn\'t have happened. The opportunity would have perished. Someone else would have done it first... This was the way to actually do it. And it actually completely and utterly changed the trajectory of our company in a massive way.',
+                    name: 'Scott Stevenson',
+                    position: 'Co-founder & CEO',
+                    company: 'Spellbook',
+                    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=faces'
+                  },
+                  {
+                    headline: 'The ability to go from idea to working application in minutes',
+                    text: 'has opened new possibilities for innovation across our portfolio. We\'re seeing apps built in 45 minutes that saves our team hours every week.',
+                    name: 'Key Vaidya',
+                    position: 'Portfolio CTO',
+                    company: 'HG Capital',
+                    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces'
+                  }
+                ].map((testimonial, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: '#f5f5f5',
+      padding: '2rem',
+                      border: 'none',
+                      boxShadow: 'none',
+                      transition: 'all 0.3s ease',
+                      animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                    }}
+                  >
+                    <style>{`
+                      @keyframes fadeInUp {
+                        from {
+                          opacity: 0;
+                          transform: translateY(20px);
+                        }
+                        to {
+                          opacity: 1;
+                          transform: translateY(0);
+                        }
+                      }
+                    `}</style>
+                    
+                    {/* Headline */}
+                    <h3 style={{
+                      fontSize: '1.1rem',
+                      fontWeight: '700',
+                      color: '#000000',
+          marginBottom: '1rem',
+                      lineHeight: '1.4'
+                    }}>
+                      {testimonial.headline}
+                    </h3>
+                    
+                    {/* Text */}
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: '#666666',
+                      lineHeight: '1.6',
+                      marginBottom: '1.5rem'
+                    }}>
+                      {testimonial.text}
+                    </p>
+                    
+                    {/* Author Info */}
+        <div style={{
+          display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem'
+                    }}>
+                      {/* Avatar */}
+                      <div style={{
+                        padding: '8px',
+                        background: '#f5f5f5',
+                        borderRadius: '50%',
+                        display: 'inline-block',
+                        marginRight: '0.5rem'
+                      }}>
+                        <img 
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            flexShrink: 0,
+                            display: 'block'
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Name, Position, Company */}
+                      <div>
+                        <div style={{
+                          fontSize: '0.95rem',
+                          fontWeight: '600',
+                          color: '#000000',
+                          marginBottom: '0.25rem'
+                        }}>
+                          {testimonial.name}
+                        </div>
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: '#666666'
+                        }}>
+                          {testimonial.position}, {testimonial.company}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+        </div>
+      </div>
+
+            {/* Plans & Pricing Section */}
+      <div style={{
+              width: '100%',
+        maxWidth: '1400px',
+              margin: '0 auto',
+              padding: '4rem 2rem'
+            }}>
+              {/* Header mit Toggle */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '3rem'
+              }}>
+                <h2 style={{
+                  fontSize: '2rem',
+                  fontWeight: '700',
+                  color: '#000000',
+                  margin: 0
+                }}>
+                  Plans & Pricing
+                </h2>
+                
+                {/* Monthly/Yearly Toggle */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem'
+                }}>
+                  <span style={{
+                    fontSize: '0.95rem',
+                    color: !isYearly ? '#1976d2' : '#666666',
+                    fontWeight: !isYearly ? '600' : '400',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setIsYearly(false)}
+                  >
+                    Monthly
+                  </span>
+                  <div 
+            style={{
+                      width: '48px',
+                      height: '24px',
+                      background: '#e0e0e0',
+                      borderRadius: '12px',
+                      position: 'relative',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setIsYearly(!isYearly)}
+                  >
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      background: '#1976d2',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      top: '2px',
+                      left: isYearly ? '26px' : '2px',
+                      transition: 'left 0.3s ease'
+                    }} />
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span 
+                      style={{
+                        fontSize: '0.95rem',
+                        color: isYearly ? '#1976d2' : '#666666',
+                        fontWeight: isYearly ? '600' : '400',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setIsYearly(true)}
+                    >
+                      Yearly
+                    </span>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      background: '#ff8c42',
+              color: 'white',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontWeight: '600'
+                    }}>
+                      Save up to 20%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Cards Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '1.5rem',
+                rowGap: '2rem'
+              }}>
+                {[
+                  {
+                    name: 'Starter',
+                    price: 'Free',
+                    description: 'Explore the possibilities of making apps.',
+                    buttonText: 'Sign up',
+                    buttonStyle: 'light',
+                    features: [
+                      'Vibe AI Agent trial included',
+                      '10 development apps',
+                      'Public apps only',
+                      'Limited build time',
+                      'Basic Editor access',
+                      'Basic Chat Generator'
+                    ]
+                  },
+                  {
+                    name: 'Vibe AI Core',
+                    price: '24,99',
+                    priceCurrency: '€',
+                    pricePeriod: 'per month',
+                    yearlyPrice: '19,99',
+                    yearlyDiscount: '20%',
+                    description: 'Make, launch, and scale your apps.',
+                    buttonText: 'Join Vibe AI Core',
+                    buttonStyle: 'primary',
+                    features: [
+                      'Full Vibe AI Agent access',
+                      'Editor access with syntax highlighting',
+                      'Chat Generator & Prompt Generator',
+                      'Private and public apps',
+                      'GitHub integration & Commit',
+                      'ZIP export functionality',
+                      'Access to latest AI models',
+                      'Publish and host live apps',
+                      'Autonomous long builds'
+                    ]
+                  },
+                  {
+                    name: 'Vibe AI Pro+',
+                    price: '39,99',
+                    priceCurrency: '€',
+                    pricePeriod: 'per month',
+                    yearlyPrice: '31,99',
+                    yearlyDiscount: '20%',
+                    description: 'Advanced features for professional developers.',
+                    buttonText: 'Join Vibe AI Pro+',
+                    buttonStyle: 'primary',
+                    features: [
+                      'Everything in Vibe AI Core',
+                      'Advanced Editor with AI assistance',
+                      'Enhanced Chat & Prompt Generator',
+                      'Unlimited GitHub commits',
+                      'Priority AI model access',
+                      'Advanced ZIP export options',
+                      'Project templates library',
+                      'Extended build time',
+                      'Priority support'
+                    ]
+                  },
+                  {
+                    name: 'Vibe AI Ultra',
+                    price: '54,99',
+                    priceCurrency: '€',
+                    pricePeriod: 'per month',
+                    yearlyPrice: '43,99',
+                    yearlyDiscount: '20%',
+                    description: 'Maximum power for serious development.',
+                    buttonText: 'Join Vibe AI Ultra',
+                    buttonStyle: 'primary',
+                    features: [
+                      'Everything in Vibe AI Pro+',
+                      'Premium Editor with live collaboration',
+                      'Advanced Chat & Prompt features',
+                      'Unlimited projects & apps',
+                      'Premium AI models access',
+                      'Advanced GitHub workflows',
+                      'Custom project templates',
+                      'Extended autonomous builds',
+                      '24/7 priority support'
+                    ]
+                  },
+                  {
+                    name: 'Vibe AI Ultra+',
+                    price: '79,99',
+                    priceCurrency: '€',
+                    pricePeriod: 'per month',
+                    yearlyPrice: '63,99',
+                    yearlyDiscount: '20%',
+                    description: 'Complete development suite with app store publishing.',
+                    buttonText: 'Join Vibe AI Ultra+',
+                    buttonStyle: 'primary',
+                    features: [
+                      'Everything in Vibe AI Ultra',
+                      'Unlimited APK generation',
+                      'App Store preparation & setup',
+                      'Automatic app store publishing',
+                      'Advanced project management',
+                      'Custom domain integration',
+                      'White-label options',
+                      'Advanced analytics',
+                      'Dedicated account manager'
+                    ]
+                  },
+                  {
+                    name: 'Teams',
+                    price: '99,99',
+                    priceCurrency: '€',
+                    pricePeriod: 'per user per month',
+                    yearlyPrice: '79,99',
+                    yearlyDiscount: '20%',
+                    description: 'Collaborate with your entire team in real-time.',
+                    buttonText: 'Join Vibe AI Teams',
+                    buttonStyle: 'light',
+                    features: [
+                      'Everything in Vibe AI Ultra+',
+                      'Real-time team collaboration',
+                      'Simultaneous Editor access',
+                      'Shared Chat & Prompt workspace',
+                      'Team project management',
+                      'Project extension & completion',
+                      'Team-wide GitHub integration',
+                      'Centralized billing',
+                      'Role-based access control',
+                      '50 Viewer seats included'
+                    ]
+                  },
+                  {
+                    name: 'On Demand',
+                    price: 'Pay-as-you-go',
+                    description: 'Pay only for what you use.',
+                    buttonText: 'Get Started',
+                    buttonStyle: 'light',
+                    features: [
+                      'Flexible pricing model',
+                      'Pay per API call',
+                      'Pay per build minute',
+                      'Pay per storage GB',
+                      'No monthly commitment',
+                      'Scale as you grow',
+                      'Usage-based billing',
+                      'Real-time usage tracking'
+                    ]
+                  },
+                  {
+                    name: 'Enterprise',
+                    price: 'Custom pricing',
+                    description: 'Enterprise-grade solutions with dedicated support.',
+                    buttonText: 'Contact us',
+                    buttonStyle: 'light',
+                    features: [
+                      'Everything in Teams',
+                      'Custom database creation',
+                      'PostgreSQL, MySQL, MongoDB',
+                      'Redis, SQLite, DynamoDB',
+                      'Custom database configurations',
+                      'SSO/SAML integration',
+                      'SCIM provisioning',
+                      'Advanced security controls',
+                      'Dedicated infrastructure',
+                      'Custom SLA & support',
+                      'On-premise deployment options'
+                    ]
+                  }
+                ].map((plan, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '12px',
+              padding: '2rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                    onClick={() => {
+                      // Weiterleitung zur Plan-Seite
+                      const planSlugMap = {
+                        'Starter': 'starter',
+                        'Vibe AI Core': 'vibe-ai-core',
+                        'Vibe AI Pro+': 'vibe-ai-pro-plus',
+                        'Vibe AI Ultra': 'vibe-ai-ultra',
+                        'Vibe AI Ultra+': 'vibe-ai-ultra-plus',
+                        'Teams': 'teams',
+                        'On Demand': 'on-demand',
+                        'Enterprise': 'enterprise'
+                      };
+                      const planSlug = planSlugMap[plan.name] || plan.name.toLowerCase().replace(/\s+/g, '-');
+                      window.location.href = `/pricing/${planSlug}`;
+                    }}
+                  >
+                    {/* Plan Name */}
+                    <h3 style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '700',
+                      color: '#000000',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {plan.name}
+                    </h3>
+                    
+                    {/* Price */}
+                    <div style={{
+                      marginBottom: '0.5rem'
+                    }}>
+                      {plan.price === 'Free' ? (
+                        <span style={{
+              fontSize: '2rem',
+                          fontWeight: '700',
+                          color: '#000000'
+                        }}>
+                          {plan.price}
+                        </span>
+                      ) : plan.price === 'Custom pricing' ? (
+                        <span style={{
+                          fontSize: '1.5rem',
+                          fontWeight: '700',
+                          color: '#000000'
+                        }}>
+                          {plan.price}
+                        </span>
+                      ) : plan.price === 'Pay-as-you-go' ? (
+                        <span style={{
+                          fontSize: '1.25rem',
+                          fontWeight: '700',
+                          color: '#000000'
+                        }}>
+                          {plan.price}
+                        </span>
+                      ) : (
+                        <>
+                          {isYearly && plan.yearlyPrice ? (
+                            <>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: '0.5rem',
+                                marginBottom: '0.25rem'
+                              }}>
+                                <span style={{
+                                  fontSize: '1.25rem',
+                                  fontWeight: '400',
+                                  color: '#999999',
+                                  textDecoration: 'line-through'
+                                }}>
+                                  {(parseFloat(plan.price.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}{plan.priceCurrency}
+                                </span>
+                                <span style={{
+                                  fontSize: '2rem',
+                                  fontWeight: '700',
+                                  color: '#000000'
+                                }}>
+                                  {(parseFloat(plan.yearlyPrice.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}
+                                </span>
+                                {plan.priceCurrency && (
+                                  <span style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: '600',
+                                    color: '#000000'
+                                  }}>
+                                    {plan.priceCurrency}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{
+                                fontSize: '0.95rem',
+                                color: '#666666'
+                              }}>
+                                per year
+                              </div>
+                              {plan.yearlyDiscount && (
+                                <div style={{
+                                  fontSize: '0.85rem',
+                                  color: '#ff8c42',
+                                  marginTop: '0.25rem',
+                                  fontWeight: '600'
+                                }}>
+                                  {plan.yearlyDiscount} discount
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: '0.25rem'
+                              }}>
+                                <span style={{
+                                  fontSize: '2rem',
+                                  fontWeight: '700',
+                                  color: '#000000'
+                                }}>
+                                  {plan.price}
+                                </span>
+                                {plan.priceCurrency && (
+                                  <span style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: '600',
+                                    color: '#000000'
+                                  }}>
+                                    {plan.priceCurrency}
+                                  </span>
+                                )}
+                                <span style={{
+                                  fontSize: '0.95rem',
+                                  color: '#666666',
+                                  marginLeft: '0.25rem'
+                                }}>
+                                  {plan.pricePeriod}
+                                </span>
+                              </div>
+                              {plan.yearlyPrice && (
+                                <div style={{
+                                  fontSize: '0.85rem',
+                                  color: '#666666',
+                                  marginTop: '0.25rem'
+                                }}>
+                                  {(parseFloat(plan.yearlyPrice.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}{plan.priceCurrency} per year
+                                  {plan.yearlyDiscount && (
+                                    <span style={{
+                                      color: '#ff8c42',
+                                      fontWeight: '600',
+                                      marginLeft: '0.5rem'
+                                    }}>
+                                      ({plan.yearlyDiscount} discount)
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Description */}
+            <p style={{
+                      fontSize: '0.9rem',
+                      color: '#666666',
+              marginBottom: '1.5rem',
+              lineHeight: '1.5'
+            }}>
+                      {plan.description}
+                    </p>
+                    
+                    {/* Button */}
+                    <button
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        fontSize: '0.95rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        marginBottom: '1.5rem',
+                        background: plan.buttonStyle === 'primary' ? '#ff8c42' : '#f5f5f5',
+                        color: plan.buttonStyle === 'primary' ? 'white' : '#000000',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (plan.buttonStyle === 'primary') {
+                          e.currentTarget.style.background = '#e67a2e';
+                        } else {
+                          e.currentTarget.style.background = '#e0e0e0';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (plan.buttonStyle === 'primary') {
+                          e.currentTarget.style.background = '#ff8c42';
+                        } else {
+                          e.currentTarget.style.background = '#f5f5f5';
+                        }
+                      }}
+                    >
+                      {plan.buttonText}
+                    </button>
+                    
+                    {/* Features */}
+            <div style={{
+              display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem'
+            }}>
+                      {plan.features.map((feature, idx) => (
+                        <div
+                  key={idx}
+                  style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.5rem'
+                          }}
+                        >
+                          <CheckCircle
+                            size={18}
+                            style={{
+                              color: '#4caf50',
+                              flexShrink: 0,
+                              marginTop: '2px'
+                            }}
+                          />
+                          <span style={{
+                            fontSize: '0.9rem',
+                            color: '#666666',
+                            lineHeight: '1.5'
+                          }}>
+                  {feature}
+                </span>
+                        </div>
+              ))}
+            </div>
+            </div>
+        ))}
+              </div>
+            </div>
+      </div>
+
+            {/* Logo Icon unten */}
+      <div style={{
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               marginTop: '3rem'
             }}>
-            <div style={{
+        <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem'
@@ -2433,13 +3140,13 @@ export default function CopilotPage() {
                 letterSpacing: '-0.01em',
                 color: '#000000'
               }}>
-                Logo
-              </div>
-            </div>
+                Vibe AI go
+          </div>
+          </div>
           </div>
         </div>
       </div>
     </main>
       </div>
   );
-} 
+}

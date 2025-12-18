@@ -1407,6 +1407,28 @@ except ImportError:
 except Exception as e:
     print(f"⚠️  Download Router failed to load: {e}")
 
+# THEME GENERATOR
+# -------------------------------------------------------------
+try:
+    from ai.theme.theme_routes import router as theme_router
+    app.include_router(theme_router, prefix="/api/theme", tags=["Theme Generator"])
+    print("✅ Theme Router loaded")
+except ImportError:
+    print("⚠️  Theme routes not available")
+except Exception as e:
+    print(f"⚠️  Theme Router failed to load: {e}")
+
+# PRICING SYSTEM
+# -------------------------------------------------------------
+try:
+    from pricing.routes import router as pricing_router
+    app.include_router(pricing_router)
+    print("✅ Pricing Router loaded")
+except ImportError:
+    print("⚠️  Pricing routes not available")
+except Exception as e:
+    print(f"⚠️  Pricing Router failed to load: {e}")
+
 # AUDIO TRANSCRIPTION (Whisper)
 # -------------------------------------------------------------
 import io
