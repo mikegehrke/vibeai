@@ -29,10 +29,12 @@ function Tooltip({ text, children, position = 'right', featureName, planName }) 
       return;
     }
 
-    // Prüfe Cache
+    // Prüfe Cache ZUERST - wenn vorhanden, sofort anzeigen
     const cacheKey = `${featureName}|${planName}`;
     if (tooltipCache.has(cacheKey)) {
-      setTooltipText(tooltipCache.get(cacheKey));
+      const cachedText = tooltipCache.get(cacheKey);
+      setTooltipText(cachedText);
+      setIsLoading(false);
       return;
     }
 
@@ -43,44 +45,69 @@ function Tooltip({ text, children, position = 'right', featureName, planName }) 
 
     loadingRef.current = true;
     setIsLoading(true);
+    setTooltipText(null); // Setze auf null, um Loading-Status zu zeigen
 
     try {
+      // Verwende relative URL, da Next.js Proxy auf Port 8000 zeigt
       const url = `/api/pricing/tooltip?plan=${encodeURIComponent(planName)}&feature=${encodeURIComponent(featureName)}`;
+      console.log('🔍 [Tooltip] Loading from:', url);
       const response = await fetch(url);
+      console.log('📡 [Tooltip] Response status:', response.status, response.statusText);
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.tooltip) {
-          setTooltipText(data.tooltip);
-          tooltipCache.set(cacheKey, data.tooltip);
-        } else if (text) {
+      // WICHTIG: response.text() verwenden, damit wir auch bei 500-Fehlern die Antwort lesen können
+      // Der Backend gibt auch bei Fehlern JSON zurück
+      const responseText = await response.text();
+      console.log('📄 [Tooltip] Response text (first 200 chars):', responseText.substring(0, 200));
+      
+      // Prüfe, ob die Antwort mit "Internal" oder anderen HTML-Fehlermeldungen beginnt
+      if (responseText.trim().startsWith('Internal') || 
+          responseText.trim().startsWith('<') || 
+          responseText.trim().startsWith('<!DOCTYPE')) {
+        console.error('❌ [Tooltip] Backend returned HTML error instead of JSON:', responseText.substring(0, 100));
+        // Backend hat HTML-Fehlermeldung zurückgegeben - verwende Fallback
+        if (text) {
           setTooltipText(text);
         } else {
           setTooltipText('Additional information available');
         }
-      } else {
-        // Versuche Error-Details zu lesen, aber falle nicht zurück wenn es fehlschlägt
-        let errorData = { detail: 'Unknown error' };
-        try {
-          const errorText = await response.text();
-          if (errorText) {
-            try {
-              errorData = JSON.parse(errorText);
-            } catch {
-              errorData = { detail: errorText };
-            }
-          }
-        } catch {
-          // Ignoriere Fehler beim Lesen der Error-Response
+        return;
+      }
+      
+      let data = null;
+      try {
+        data = JSON.parse(responseText);
+        console.log('✅ [Tooltip] Parsed JSON:', data);
+      } catch (parseError) {
+        console.error('❌ [Tooltip] Failed to parse response as JSON:', parseError, 'Response:', responseText.substring(0, 100));
+        // Wenn Parsing fehlschlägt, verwende Fallback
+        if (text) {
+          setTooltipText(text);
+        } else {
+          setTooltipText('Additional information available');
         }
-        // Verwende Fallback-Text
+        return;
+      }
+      
+      // Wenn wir JSON haben, prüfe ob es ein tooltip-Feld gibt
+      if (data && data.tooltip) {
+        console.log('✅ [Tooltip] Setting tooltip text:', data.tooltip.substring(0, 50) + '...');
+        setTooltipText(data.tooltip);
+        tooltipCache.set(cacheKey, data.tooltip);
+      } else {
+        console.warn('⚠️ [Tooltip] No tooltip in response:', data);
         if (text) {
           setTooltipText(text);
         } else {
           setTooltipText('Additional information available');
         }
       }
+      
+      // Wenn response nicht OK war, logge es, aber verwende trotzdem die Daten falls vorhanden
+      if (!response.ok) {
+        console.warn('⚠️ [Tooltip] Response status was', response.status, 'but got valid data');
+      }
     } catch (error) {
+      console.error('❌ Error loading tooltip:', error);
       // Fallback: text bleibt wie übergeben
       if (text) {
         setTooltipText(text);
@@ -88,22 +115,39 @@ function Tooltip({ text, children, position = 'right', featureName, planName }) 
         setTooltipText('Additional information available');
       }
     } finally {
+      console.log('🏁 Loading finished, setting isLoading to false');
       setIsLoading(false);
       loadingRef.current = false;
     }
   };
 
-  // Lade Tooltip beim ersten Hover, wenn noch nicht geladen
-  useEffect(() => {
-    if (showTooltip && featureName && planName && tooltipText === null && !isLoading && !loadingRef.current) {
-      loadTooltipFromBackend();
-    }
-  }, [showTooltip, featureName, planName, tooltipText, isLoading]);
-
   const handleMouseEnter = () => {
+    console.log('🖱️ [Tooltip] Mouse enter - featureName:', featureName, 'planName:', planName);
     setShowTooltip(true);
-    // Lade Tooltip sofort beim Hover
-    loadTooltipFromBackend();
+    // Lade Tooltip sofort beim Hover - rufe die Funktion direkt auf
+    if (featureName && planName) {
+      const cacheKey = `${featureName}|${planName}`;
+      console.log('🔑 [Tooltip] Cache key:', cacheKey);
+      if (tooltipCache.has(cacheKey)) {
+        // Cache hit - sofort anzeigen
+        const cached = tooltipCache.get(cacheKey);
+        console.log('💾 [Tooltip] Cache hit:', cached.substring(0, 50) + '...');
+        setTooltipText(cached);
+        setIsLoading(false);
+      } else if (!loadingRef.current) {
+        // Cache miss - lade vom Backend
+        console.log('📥 [Tooltip] Cache miss, loading from backend...');
+        loadTooltipFromBackend();
+      } else {
+        console.log('⏳ [Tooltip] Already loading, skipping...');
+      }
+    } else if (text) {
+      // Keine Backend-Daten - verwende text prop
+      console.log('📝 [Tooltip] Using text prop');
+      setTooltipText(text);
+    } else {
+      console.log('⚠️ [Tooltip] No featureName/planName and no text');
+    }
   };
 
   const getTooltipStyle = () => {
@@ -280,9 +324,10 @@ export default function PricingPage() {
     {
       name: 'Vibe AI Core',
       priceMonthly: '24,99',
-      priceYearly: '19,99',
+      priceYearly: '239,88', // 24,99 * 12 * 0.8 (20% Rabatt)
+      priceYearlyMonthly: '19,99', // Monatlich bei jährlicher Zahlung
       priceCurrency: '€',
-      pricePeriod: 'per month',
+      pricePeriod: 'pro Monat',
       description: 'Make, launch, and scale your apps.',
       buttonText: 'Join Vibe AI Core',
       buttonStyle: 'primary',
@@ -299,9 +344,10 @@ export default function PricingPage() {
     {
       name: 'Vibe AI Pro+',
       priceMonthly: '39,99',
-      priceYearly: '31,99',
+      priceYearly: '383,90', // 39,99 * 12 * 0.8 (20% Rabatt)
+      priceYearlyMonthly: '31,99', // Monatlich bei jährlicher Zahlung
       priceCurrency: '€',
-      pricePeriod: 'per month',
+      pricePeriod: 'pro Monat',
       description: 'Advanced features for professional developers.',
       buttonText: 'Join Vibe AI Pro+',
       buttonStyle: 'primary',
@@ -320,9 +366,10 @@ export default function PricingPage() {
     {
       name: 'Vibe AI Ultra',
       priceMonthly: '54,99',
-      priceYearly: '43,99',
+      priceYearly: '527,90', // 54,99 * 12 * 0.8 (20% Rabatt)
+      priceYearlyMonthly: '43,99', // Monatlich bei jährlicher Zahlung
       priceCurrency: '€',
-      pricePeriod: 'per month',
+      pricePeriod: 'pro Monat',
       description: 'Maximum power for serious development.',
       buttonText: 'Join Vibe AI Ultra',
       buttonStyle: 'primary',
@@ -341,9 +388,10 @@ export default function PricingPage() {
     {
       name: 'Vibe AI Ultra+',
       priceMonthly: '79,99',
-      priceYearly: '63,99',
+      priceYearly: '767,90', // 79,99 * 12 * 0.8 (20% Rabatt)
+      priceYearlyMonthly: '63,99', // Monatlich bei jährlicher Zahlung
       priceCurrency: '€',
-      pricePeriod: 'per month',
+      pricePeriod: 'pro Monat',
       description: 'Complete development suite with app store publishing.',
       buttonText: 'Join Vibe AI Ultra+',
       buttonStyle: 'primary',
@@ -362,9 +410,10 @@ export default function PricingPage() {
     {
       name: 'Teams',
       priceMonthly: '99,99',
-      priceYearly: '79,99',
+      priceYearly: '959,90', // 99,99 * 12 * 0.8 (20% Rabatt)
+      priceYearlyMonthly: '79,99', // Monatlich bei jährlicher Zahlung
       priceCurrency: '€',
-      pricePeriod: 'per user per month',
+      pricePeriod: 'pro Nutzer pro Monat',
       description: 'Bring the power of Vibe AI go to your entire team.',
       buttonText: 'Join Vibe AI Teams',
       buttonStyle: 'light',
@@ -598,7 +647,7 @@ export default function PricingPage() {
               alignItems: 'center',
               gap: '0.25rem'
             }}>
-              🔥 Save €60
+              🔥 20% sparen
             </span>
           </div>
         </div>
@@ -695,7 +744,7 @@ export default function PricingPage() {
                       color: '#666666',
                       marginTop: '0.25rem'
                     }}>
-                      {isYearly ? 'per month billed annually' : plan.pricePeriod}
+                      {isYearly ? (plan.name === 'Teams' ? 'pro Jahr (pro Nutzer)' : 'pro Jahr') : plan.pricePeriod}
                     </div>
                   </>
                 )}

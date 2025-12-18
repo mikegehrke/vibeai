@@ -2712,8 +2712,9 @@ export default function CopilotPage() {
                     name: 'Vibe AI Core',
                     price: '24,99',
                     priceCurrency: '€',
-                    pricePeriod: 'per month',
-                    yearlyPrice: '19,99',
+                    pricePeriod: 'pro Monat',
+                    yearlyPrice: '239,88', // Komplett für Jahr (24,99 * 12 * 0.8)
+                    yearlyPriceMonthly: '19,99', // Monatlich bei jährlicher Zahlung
                     yearlyDiscount: '20%',
                     description: 'Make, launch, and scale your apps.',
                     buttonText: 'Join Vibe AI Core',
@@ -2734,8 +2735,9 @@ export default function CopilotPage() {
                     name: 'Vibe AI Pro+',
                     price: '39,99',
                     priceCurrency: '€',
-                    pricePeriod: 'per month',
-                    yearlyPrice: '31,99',
+                    pricePeriod: 'pro Monat',
+                    yearlyPrice: '383,90', // Komplett für Jahr (39,99 * 12 * 0.8)
+                    yearlyPriceMonthly: '31,99', // Monatlich bei jährlicher Zahlung
                     yearlyDiscount: '20%',
                     description: 'Advanced features for professional developers.',
                     buttonText: 'Join Vibe AI Pro+',
@@ -2756,8 +2758,9 @@ export default function CopilotPage() {
                     name: 'Vibe AI Ultra',
                     price: '54,99',
                     priceCurrency: '€',
-                    pricePeriod: 'per month',
-                    yearlyPrice: '43,99',
+                    pricePeriod: 'pro Monat',
+                    yearlyPrice: '527,90', // Komplett für Jahr (54,99 * 12 * 0.8)
+                    yearlyPriceMonthly: '43,99', // Monatlich bei jährlicher Zahlung
                     yearlyDiscount: '20%',
                     description: 'Maximum power for serious development.',
                     buttonText: 'Join Vibe AI Ultra',
@@ -2778,8 +2781,9 @@ export default function CopilotPage() {
                     name: 'Vibe AI Ultra+',
                     price: '79,99',
                     priceCurrency: '€',
-                    pricePeriod: 'per month',
-                    yearlyPrice: '63,99',
+                    pricePeriod: 'pro Monat',
+                    yearlyPrice: '767,90', // Komplett für Jahr (79,99 * 12 * 0.8)
+                    yearlyPriceMonthly: '63,99', // Monatlich bei jährlicher Zahlung
                     yearlyDiscount: '20%',
                     description: 'Complete development suite with app store publishing.',
                     buttonText: 'Join Vibe AI Ultra+',
@@ -2800,8 +2804,9 @@ export default function CopilotPage() {
                     name: 'Teams',
                     price: '99,99',
                     priceCurrency: '€',
-                    pricePeriod: 'per user per month',
-                    yearlyPrice: '79,99',
+                    pricePeriod: 'pro Nutzer pro Monat',
+                    yearlyPrice: '959,90', // Komplett für Jahr (99,99 * 12 * 0.8)
+                    yearlyPriceMonthly: '79,99', // Monatlich bei jährlicher Zahlung
                     yearlyDiscount: '20%',
                     description: 'Collaborate with your entire team in real-time.',
                     buttonText: 'Join Vibe AI Teams',
@@ -2954,7 +2959,7 @@ export default function CopilotPage() {
                                   fontWeight: '700',
                                   color: '#000000'
                                 }}>
-                                  {(parseFloat(plan.yearlyPrice.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}
+                                  {plan.yearlyPrice}
                                 </span>
                                 {plan.priceCurrency && (
                                   <span style={{
@@ -2970,7 +2975,7 @@ export default function CopilotPage() {
                                 fontSize: '0.95rem',
                                 color: '#666666'
                               }}>
-                                per year
+                                pro Jahr
                               </div>
                               {plan.yearlyDiscount && (
                                 <div style={{
@@ -2979,7 +2984,7 @@ export default function CopilotPage() {
                                   marginTop: '0.25rem',
                                   fontWeight: '600'
                                 }}>
-                                  {plan.yearlyDiscount} discount
+                                  {plan.yearlyDiscount} Rabatt
                                 </div>
                               )}
                             </>
@@ -3020,14 +3025,14 @@ export default function CopilotPage() {
                                   color: '#666666',
                                   marginTop: '0.25rem'
                                 }}>
-                                  {(parseFloat(plan.yearlyPrice.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}{plan.priceCurrency} per year
+                                  {plan.yearlyPrice}{plan.priceCurrency} pro Jahr
                                   {plan.yearlyDiscount && (
                                     <span style={{
                                       color: '#ff8c42',
                                       fontWeight: '600',
                                       marginLeft: '0.5rem'
                                     }}>
-                                      ({plan.yearlyDiscount} discount)
+                                      ({plan.yearlyDiscount} Rabatt)
                                     </span>
                                   )}
                                 </div>

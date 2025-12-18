@@ -33,6 +33,13 @@ class FeatureType(str, Enum):
     APP_STORAGE_ADVANCED_OPS = "App Storage advanced operations"
     DEVELOPMENT_TIME = "Development Time (minutes)"
     COLLABORATORS = "Collaborators"
+    RESERVED_VM_DEPLOYMENTS = "Reserved VM deployments"
+    AUTOSCALE_DEPLOYMENTS = "Autoscale deployments"
+    AUTOSCALE_COMPUTE_UNITS = "Autoscale compute units"
+    AUTOSCALE_REQUESTS = "Autoscale requests"
+    SCHEDULED_DEPLOYMENTS = "Scheduled deployments"
+    SCHEDULED_COMPUTE_UNITS = "Scheduled compute units"
+    STATIC_DEPLOYMENTS = "Static deployments"
 
 
 class PricingModel:
@@ -189,95 +196,136 @@ class PricingModel:
             
             if feature == FeatureType.AGENT:
                 if plan == PlanType.STARTER:
-                    return "Limited access to the Vibe AI Agent for testing purposes"
-                return "Full access to all Vibe AI Agents with unlimited requests"
+                    return "Eingeschränkter Zugriff auf Vibe AI Agent für Testzwecke"
+                return "Vollzugriff auf alle Vibe AI Agents mit unbegrenzten Anfragen"
             
             elif feature == FeatureType.CODE_GENERATION:
                 agents = pricing.get("code_generation", "")
                 agent_map = {
-                    "chat_agent_only": "Access to Chat Agent",
-                    "chat_core_smart": "Access to Chat Agent, Core Agent, and Smart Agent",
-                    "chat_core_smart_fix": "Access to Chat Agent, Core Agent, Smart Agent, and Fix Agent",
-                    "chat_core_smart_fix_theme": "Access to Chat Agent, Core Agent, Smart Agent, Fix Agent, and Theme Agent",
-                    "all_agents": "Access to all AI agents: Chat, Core, Smart, Fix, Theme, and Code Agent"
+                    "chat_agent_only": "Zugriff auf Chat Agent",
+                    "chat_core_smart": "Zugriff auf Chat Agent, Core Agent und Smart Agent",
+                    "chat_core_smart_fix": "Zugriff auf Chat Agent, Core Agent, Smart Agent und Fix Agent",
+                    "chat_core_smart_fix_theme": "Zugriff auf Chat Agent, Core Agent, Smart Agent, Fix Agent und Theme Agent",
+                    "all_agents": "Zugriff auf alle AI Agents: Chat, Core, Smart, Fix, Theme und Code Agent"
                 }
-                return agent_map.get(agents, "Access to Chat Agent")
+                return agent_map.get(agents, "Zugriff auf Chat Agent")
             
             elif feature == FeatureType.DEBUGGER:
                 agents = pricing.get("debugger", "")
                 agent_map = {
-                    "chat_agent_only": "Access to Chat Agent",
-                    "chat_core_smart": "Access to Chat Agent, Core Agent, and Smart Agent",
-                    "chat_core_smart_fix": "Access to Chat Agent, Core Agent, Smart Agent, and Fix Agent",
-                    "chat_core_smart_fix_theme": "Access to Chat Agent, Core Agent, Smart Agent, Fix Agent, and Theme Agent",
-                    "all_agents": "Access to all AI agents: Chat, Core, Smart, Fix, Theme, and Code Agent"
+                    "chat_agent_only": "Zugriff auf Chat Agent",
+                    "chat_core_smart": "Zugriff auf Chat Agent, Core Agent und Smart Agent",
+                    "chat_core_smart_fix": "Zugriff auf Chat Agent, Core Agent, Smart Agent und Fix Agent",
+                    "chat_core_smart_fix_theme": "Zugriff auf Chat Agent, Core Agent, Smart Agent, Fix Agent und Theme Agent",
+                    "all_agents": "Zugriff auf alle AI Agents: Chat, Core, Smart, Fix, Theme und Code Agent"
                 }
-                return agent_map.get(agents, "Access to Chat Agent")
+                return agent_map.get(agents, "Zugriff auf Chat Agent")
             
             elif feature == FeatureType.AUTONOMY:
-                return "Unlimited basic chat. Quick code edits for $0.05 per request."
+                return "Unbegrenzter Basis-Chat. Schnelle Code-Änderungen für 0,05€ pro Anfrage."
             
             elif feature == FeatureType.OUTBOUND_DATA_TRANSFER:
                 included = pricing.get("outbound_data_transfer_included")
                 price = pricing.get("outbound_data_transfer_price", 0.10)
                 if plan == PlanType.STARTER:
-                    return f"1 GiB included. Then ${price:.2f} per GiB."
+                    return f"1 GiB inklusive. Danach {price:.2f}€ pro GiB."
                 if included is None:
-                    return f"Custom limits. Then ${price:.2f} per GiB."
-                return f"{included} GiB included. Then ${price:.2f} per GiB."
+                    return f"Individuelle Limits. Danach {price:.2f}€ pro GiB."
+                return f"{included} GiB inklusive. Danach {price:.2f}€ pro GiB."
             
             elif feature == FeatureType.POSTGRESQL_STORAGE:
                 price = pricing.get("postgresql_storage_price", 1.5)
                 if plan == PlanType.STARTER:
-                    return f"Card on file required to deploy. ${price:.2f} per GiB per month."
-                return f"${price:.2f} per GiB per month."
+                    return f"Kreditkarte erforderlich für Deployment. {price:.2f}€ pro GiB pro Monat."
+                return f"{price:.2f}€ pro GiB pro Monat."
             
             elif feature == FeatureType.POSTGRESQL_COMPUTE:
                 price = pricing.get("postgresql_compute_price", 0.16)
                 if plan == PlanType.STARTER:
-                    return f"Card on file required to deploy. ${price:.2f} per compute hour."
-                return f"${price:.2f} per compute hour."
+                    return f"Kreditkarte erforderlich für Deployment. {price:.2f}€ pro Compute-Stunde."
+                return f"{price:.2f}€ pro Compute-Stunde."
             
             elif feature == FeatureType.APP_STORAGE:
                 if plan == PlanType.STARTER:
-                    return "Card on file required to use."
-                return "App Storage for file uploads and management"
+                    return "Kreditkarte erforderlich für Nutzung."
+                return "App Storage für Datei-Uploads und Verwaltung"
             
             elif feature == FeatureType.APP_STORAGE_DATA_TRANSFER:
                 price = pricing.get("app_storage_data_transfer_price", 0.03)
                 if plan == PlanType.STARTER:
-                    return f"Card on file required to use. ${price:.2f} per GiB."
+                    return f"Kreditkarte erforderlich für Nutzung. {price:.2f}€ pro GiB."
                 if plan == PlanType.ENTERPRISE:
-                    return f"${price:.2f} per GiB."
-                return f"${price:.2f} per GiB per month."
+                    return f"{price:.2f}€ pro GiB."
+                return f"{price:.2f}€ pro GiB pro Monat."
             
             elif feature == FeatureType.APP_STORAGE_BASIC_OPS:
                 price = pricing.get("app_storage_basic_ops_price")
                 if plan == PlanType.STARTER:
-                    return "Card on file required to use."
+                    return "Kreditkarte erforderlich für Nutzung."
                 if price is None:
-                    return "Basic App Storage operations included"
-                return f"${price:.4f} per 1 thousand."
+                    return "Basis App Storage Operationen inklusive"
+                return f"{price:.4f}€ pro 1.000 Operationen."
             
             elif feature == FeatureType.APP_STORAGE_ADVANCED_OPS:
                 price = pricing.get("app_storage_advanced_ops_price", 0.0075)
                 if plan == PlanType.STARTER:
-                    return f"Card on file required to use. ${price:.4f} per 1 thousand."
-                return f"${price:.4f} per 1 thousand."
+                    return f"Kreditkarte erforderlich für Nutzung. {price:.4f}€ pro 1.000 Operationen."
+                return f"{price:.4f}€ pro 1.000 Operationen."
+            
+            elif feature == FeatureType.RESERVED_VM_DEPLOYMENTS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                if plan == PlanType.VIBE_AI_CORE:
+                    return "Reservierte VM-Deployments verfügbar. Dedizierte Ressourcen für konsistente Performance."
+                return "Reservierte VM-Deployments inklusive. Dedizierte Ressourcen mit garantierter Verfügbarkeit."
+            
+            elif feature == FeatureType.AUTOSCALE_DEPLOYMENTS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                return "Automatische Skalierung basierend auf Traffic. Deployments passen sich automatisch der Last an."
+            
+            elif feature == FeatureType.AUTOSCALE_COMPUTE_UNITS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                if plan == PlanType.VIBE_AI_CORE:
+                    return "Bis zu 10 Compute-Einheiten mit automatischer Skalierung."
+                if plan == PlanType.VIBE_AI_PRO_PLUS:
+                    return "Bis zu 50 Compute-Einheiten mit automatischer Skalierung."
+                return "Unbegrenzte Compute-Einheiten mit automatischer Skalierung."
+            
+            elif feature == FeatureType.AUTOSCALE_REQUESTS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                return "Automatische Skalierung von Anfragen. System passt sich automatisch an die Last an."
+            
+            elif feature == FeatureType.SCHEDULED_DEPLOYMENTS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                return "Zeitgesteuerte Deployments verfügbar. Automatische Deployments zu festgelegten Zeiten."
+            
+            elif feature == FeatureType.SCHEDULED_COMPUTE_UNITS:
+                if plan == PlanType.STARTER:
+                    return "Nicht verfügbar im Starter-Plan. Upgrade erforderlich."
+                return "Zeitgesteuerte Compute-Einheiten. Ressourcen werden zu festgelegten Zeiten aktiviert."
+            
+            elif feature == FeatureType.STATIC_DEPLOYMENTS:
+                if plan == PlanType.STARTER:
+                    return "1 statisches Deployment verfügbar."
+                return "Unbegrenzte statische Deployments. Perfekt für statische Websites und Frontend-Apps."
             
             elif feature == FeatureType.DEVELOPMENT_TIME:
                 minutes = pricing.get("development_time_minutes")
                 if minutes is None:
-                    return "Unlimited development time"
+                    return "Unbegrenzte Entwicklungszeit"
                 if plan == PlanType.VIBE_AI_CORE:
-                    return "# of concurrent users may impact performance"
-                return f"{minutes} minutes per month"
+                    return "Anzahl gleichzeitiger Nutzer kann Performance beeinflussen"
+                return f"{minutes} Minuten pro Monat"
             
             elif feature == FeatureType.COLLABORATORS:
                 count = pricing.get("collaborators")
                 if count is None:
-                    return "All team members"
-                return f"Up to {count} collaborators per project"
+                    return "Alle Teammitglieder"
+                return f"Bis zu {count} Mitarbeiter pro Projekt"
             
             return "Additional information available"
         except Exception as e:

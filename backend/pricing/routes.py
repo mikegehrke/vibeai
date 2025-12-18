@@ -61,16 +61,25 @@ async def get_plan_details(plan_name: str):
 @router.get("/tooltip")
 async def get_tooltip(plan: str, feature: str):
     """Get tooltip text for a feature in a plan"""
+    # WICHTIG: Alle Exceptions müssen abgefangen werden, um 500-Fehler zu vermeiden
     try:
         # Konvertiere Plan-Name zu Enum
         plan_normalized = plan.replace(" ", "_").replace("+", "_PLUS").upper()
-        plan_type = PlanType[plan_normalized]
+        try:
+            plan_type = PlanType[plan_normalized]
+        except (KeyError, AttributeError, TypeError) as e:
+            # Plan nicht gefunden - gib generischen Fallback zurück
+            return {
+                "plan": plan,
+                "feature": feature,
+                "tooltip": f"Feature '{feature}' is available in the {plan} plan. Contact us for more details."
+            }
         
         # Konvertiere Feature-Name zu Enum
         # Feature-Namen können Leerzeichen enthalten, müssen aber exakt übereinstimmen
         try:
             feature_type = FeatureType(feature)
-        except ValueError:
+        except (ValueError, AttributeError, TypeError):
             # Feature nicht gefunden - gib generischen Fallback zurück
             return {
                 "plan": plan,
@@ -78,6 +87,7 @@ async def get_tooltip(plan: str, feature: str):
                 "tooltip": f"Feature '{feature}' is available in the {plan} plan. Contact us for more details."
             }
         
+        # Generiere Tooltip-Text
         try:
             tooltip_text = PricingModel.get_tooltip_text(plan_type, feature_type)
             return {
@@ -92,15 +102,11 @@ async def get_tooltip(plan: str, feature: str):
                 "feature": feature,
                 "tooltip": f"Additional information about '{feature}' in the {plan} plan. Contact us for details."
             }
-    except KeyError as e:
-        # Plan nicht gefunden - gib generischen Fallback zurück statt 404
-        return {
-            "plan": plan,
-            "feature": feature,
-            "tooltip": f"Feature '{feature}' is available in the {plan} plan. Contact us for more details."
-        }
     except Exception as e:
-        # Unerwarteter Fehler - gib generischen Fallback zurück
+        # Unerwarteter Fehler - logge den Fehler und gib generischen Fallback zurück
+        # WICHTIG: Niemals einen 500-Fehler werfen, immer einen Fallback zurückgeben
+        import logging
+        logging.error(f"Unexpected error in get_tooltip for plan='{plan}', feature='{feature}': {str(e)}", exc_info=True)
         return {
             "plan": plan,
             "feature": feature,
