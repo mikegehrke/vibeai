@@ -21,7 +21,7 @@ export default function HomePage() {
   const [hoveringTab, setHoveringTab] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentModel, setCurrentModel] = useState('gpt-4o-mini');
+  const [currentModel, setCurrentModel] = useState('gpt-5');
   const [currentAgent, setCurrentAgent] = useState('smart_agent');
   const [typingMessageIndex, setTypingMessageIndex] = useState(null);
   const [displayedText, setDisplayedText] = useState('');

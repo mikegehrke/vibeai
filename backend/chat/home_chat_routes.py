@@ -50,19 +50,55 @@ router = APIRouter(prefix="/api/home", tags=["Home Chat"])
 # WebSocket connections
 active_connections: Dict[str, List[WebSocket]] = {}
 
-# Available models
+# Available models - PREMIUM ACCESS
 AVAILABLE_MODELS = {
-    "gpt-4": {
-        "name": "GPT-4",
+    "gpt-5": {
+        "name": "GPT-5",
         "provider": "openai",
-        "icon": "🧠",
-        "capabilities": ["text", "code", "analysis", "images"]
+        "icon": "🌟",
+        "capabilities": ["text", "code", "analysis", "images", "reasoning", "multimodal", "best"]
     },
-    "gpt-4-turbo": {
-        "name": "GPT-4 Turbo",
+    "gpt-5-pro": {
+        "name": "GPT-5 Pro",
+        "provider": "openai",
+        "icon": "👑",
+        "capabilities": ["text", "code", "analysis", "images", "advanced-reasoning", "multimodal"]
+    },
+    "o3": {
+        "name": "O3",
+        "provider": "openai",
+        "icon": "🎯",
+        "capabilities": ["text", "code", "complex-reasoning", "math", "science"]
+    },
+    "o3-pro": {
+        "name": "O3 Pro",
+        "provider": "openai",
+        "icon": "💎",
+        "capabilities": ["text", "code", "advanced-reasoning", "research", "complex-problems"]
+    },
+    "o3-mini": {
+        "name": "O3 Mini",
         "provider": "openai",
         "icon": "⚡",
-        "capabilities": ["text", "code", "analysis", "images", "speed"]
+        "capabilities": ["text", "code", "reasoning", "speed", "efficient"]
+    },
+    "gpt-4o": {
+        "name": "GPT-4o",
+        "provider": "openai",
+        "icon": "🧠",
+        "capabilities": ["text", "code", "analysis", "images", "multimodal"]
+    },
+    "gpt-4o-mini": {
+        "name": "GPT-4o Mini",
+        "provider": "openai",
+        "icon": "⚡",
+        "capabilities": ["text", "code", "analysis", "speed"]
+    },
+    "gpt-5-codex": {
+        "name": "GPT-5 Codex",
+        "provider": "openai",
+        "icon": "💻",
+        "capabilities": ["code", "programming", "debugging", "all-languages"]
     },
     "claude-3-sonnet": {
         "name": "Claude 3 Sonnet",
@@ -79,7 +115,7 @@ AVAILABLE_MODELS = {
     "gemini-pro": {
         "name": "Gemini Pro",
         "provider": "google",
-        "icon": "💎",
+        "icon": "🔮",
         "capabilities": ["text", "code", "analysis", "multimodal"]
     }
 }
@@ -191,13 +227,8 @@ async def call_openai_model(model: str, messages: List[Dict], stream: bool = Tru
     if not openai_client:
         raise HTTPException(500, "OpenAI client not initialized")
     
-    # Map models to available ones
-    model_mapping = {
-        "gpt-4": "gpt-4o-mini",  # Fallback to gpt-4o-mini if no access to gpt-4
-        "gpt-4-turbo": "gpt-4o-mini",
-    }
-    
-    actual_model = model_mapping.get(model, model)
+    # Direct model usage - no mapping needed (full access)
+    actual_model = model
     
     try:
         response = await asyncio.to_thread(
