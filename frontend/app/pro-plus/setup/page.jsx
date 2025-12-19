@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Search, Plus, Home, Code, Globe, ChevronDown, 
@@ -11,9 +10,8 @@ import {
 } from 'lucide-react';
 import AnimatedLogoIcon from '../../components/AnimatedLogoIcon';
 
-export default function PricingPlanPage() {
-  const params = useParams();
-  const planKey = params?.plan || 'starter';
+export default function ProPlusSetupPage() {
+  const planKey = 'pro-plus';
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isYearly, setIsYearly] = useState(false);
@@ -620,49 +618,31 @@ export default function PricingPlanPage() {
             </div>
           </div>
 
-          {(() => {
-            const upgradeMap = {
-              'starter': { text: 'Upgrade to Vibe AI Core', href: '/core/setup' },
-              'core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'vibe-ai-core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'vibe-ai-pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'vibe-ai-ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'vibe-ai-ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'teams': { text: 'Upgrade to Enterprise', href: '/pricing/enterprise' },
-              'on-demand': { text: 'Upgrade to Teams', href: '/teams/setup' }
-            };
-            const upgrade = upgradeMap[planKey] || { text: 'Upgrade to Vibe AI Core', href: '/core/setup' };
-            return (
-              <Link href={upgrade.href} style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'transparent',
-                color: '#ececec',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontWeight: '500',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                justifyContent: 'center',
-                transition: 'background 0.2s',
-                textDecoration: 'none',
-                animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
-                {upgrade.text}
-              </Link>
-            );
-          })()}
+          <Link href="/ultra/setup" style={{
+            width: '100%',
+            padding: '0.75rem',
+            background: 'transparent',
+            color: '#ececec',
+            border: '1px solid #4a4a4a',
+            borderRadius: '6px',
+            fontWeight: '500',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            justifyContent: 'center',
+            transition: 'background 0.2s',
+            textDecoration: 'none',
+            animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
+            Upgrade to Vibe AI Ultra
+          </Link>
 
           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -867,7 +847,7 @@ export default function PricingPlanPage() {
               </button>
             </div>
 
-            {/* Vibe AI Core Plan - Highlighted */}
+            {/* Vibe AI Pro+ Plan - Highlighted */}
             <div style={{
               background: '#1e3a5f',
               borderRadius: '12px',
@@ -904,7 +884,7 @@ export default function PricingPlanPage() {
                 color: '#ececec',
                 marginBottom: '0.5rem'
               }}>
-                Vibe AI Core
+                Vibe AI Pro+
               </h3>
               <div style={{
                 display: 'flex',
@@ -917,7 +897,7 @@ export default function PricingPlanPage() {
                   fontWeight: '700',
                   color: '#ececec'
                 }}>
-                  {isYearly ? '23,99' : '29,99'}
+                  {isYearly ? '31,99' : '39,99'}
                 </span>
                 <span style={{
                   fontSize: '0.85rem',
@@ -945,7 +925,7 @@ export default function PricingPlanPage() {
                 color: '#999',
                 marginBottom: '0.75rem'
               }}>
-                Create, launch, and share your apps.
+                Advanced features for professional developers.
               </p>
               <div style={{
                 display: 'flex',
@@ -956,26 +936,26 @@ export default function PricingPlanPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Sparkles size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Vibe AI Agent</span>
+                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Everything in Core</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Rocket size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Publish and host live apps</span>
+                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Advanced Editor with AI</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Lock size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Unlimited private apps</span>
+                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Unlimited GitHub commits</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <DollarSign size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>30€ monthly credits</span>
+                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>40€ monthly credits</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ArrowUp size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Pay-as-you-go for usage</span>
+                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Priority AI model access</span>
                 </div>
               </div>
-              <Link href={`/pricing/core/checkout?yearly=${isYearly}`} style={{
+              <Link href={`/pricing/pro-plus/checkout?yearly=${isYearly}`} style={{
                 marginTop: 'auto',
                 width: '100%',
                 padding: '0.875rem',
@@ -996,7 +976,7 @@ export default function PricingPlanPage() {
               onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
               onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
-                Continue with Core
+                Continue with Pro+
                 <ArrowRight size={18} />
               </Link>
             </div>

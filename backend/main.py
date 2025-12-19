@@ -1434,6 +1434,9 @@ except Exception as e:
 try:
     from teams_setup_routes import router as teams_setup_router
     app.include_router(teams_setup_router)
+    
+    from checkout_routes import router as checkout_router
+    app.include_router(checkout_router)
     print("✅ Teams Setup Router loaded")
 except ImportError:
     print("⚠️  Teams setup routes not available")

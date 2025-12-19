@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Search, Plus, Home, Code, Globe, ChevronDown, 
@@ -11,12 +10,13 @@ import {
 } from 'lucide-react';
 import AnimatedLogoIcon from '../../components/AnimatedLogoIcon';
 
-export default function PricingPlanPage() {
-  const params = useParams();
-  const planKey = params?.plan || 'starter';
+export default function OnDemandSetupPage() {
+  const planKey = 'on-demand';
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isYearly, setIsYearly] = useState(false);
+  const [amount, setAmount] = useState(10);
+  const [amountError, setAmountError] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -620,49 +620,31 @@ export default function PricingPlanPage() {
             </div>
           </div>
 
-          {(() => {
-            const upgradeMap = {
-              'starter': { text: 'Upgrade to Vibe AI Core', href: '/core/setup' },
-              'core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'vibe-ai-core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'vibe-ai-pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'vibe-ai-ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'vibe-ai-ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'teams': { text: 'Upgrade to Enterprise', href: '/pricing/enterprise' },
-              'on-demand': { text: 'Upgrade to Teams', href: '/teams/setup' }
-            };
-            const upgrade = upgradeMap[planKey] || { text: 'Upgrade to Vibe AI Core', href: '/core/setup' };
-            return (
-              <Link href={upgrade.href} style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'transparent',
-                color: '#ececec',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontWeight: '500',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                justifyContent: 'center',
-                transition: 'background 0.2s',
-                textDecoration: 'none',
-                animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
-                {upgrade.text}
-              </Link>
-            );
-          })()}
+          <Link href="/teams/setup" style={{
+            width: '100%',
+            padding: '0.75rem',
+            background: 'transparent',
+            color: '#ececec',
+            border: '1px solid #4a4a4a',
+            borderRadius: '6px',
+            fontWeight: '500',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            justifyContent: 'center',
+            transition: 'background 0.2s',
+            textDecoration: 'none',
+            animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
+            Upgrade to Teams
+          </Link>
 
           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -715,436 +697,189 @@ export default function PricingPlanPage() {
             Back to Pricing
           </Link>
           <h1 style={{
-            fontSize: '1.75rem',
+            fontSize: '2rem',
             fontWeight: '700',
             color: '#ececec',
             marginBottom: '0.5rem',
             textAlign: 'center'
           }}>
-            Compare VibeAI plans
+            On Demand - Add Credits
           </h1>
           <p style={{
             fontSize: '0.9rem',
             color: '#999',
-            marginBottom: '1.5rem',
+            marginBottom: '2rem',
             textAlign: 'center'
           }}>
-            Autonomy for all. Choose the best plan for you.
+            Add credits to your account. Minimum 10€, no upper limit.
           </p>
 
-          {/* Plan Selector Tabs */}
+          {/* Amount Input Form */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            marginBottom: '2rem'
+            background: '#2a2a2a',
+            borderRadius: '12px',
+            padding: '2rem',
+            border: '1px solid #2f2f2f',
+            width: '100%',
+            maxWidth: '500px'
           }}>
-            <button
-              onClick={() => setIsYearly(false)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'transparent',
-                color: !isYearly ? '#ececec' : '#999',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
                 fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsYearly(true)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'transparent',
-                color: isYearly ? '#ececec' : '#999',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Yearly
-            </button>
-            {isYearly && (
-              <span style={{
-                fontSize: '0.75rem',
-                color: '#3b82f6',
+                color: '#ececec',
+                marginBottom: '0.5rem',
                 fontWeight: '600'
               }}>
-                Up to 20% off
-              </span>
-            )}
-          </div>
-
-          {/* Pricing Cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '1.25rem',
-            marginBottom: '2rem',
-            width: '100%',
-            maxWidth: '900px'
-          }}>
-            {/* Starter Plan */}
-            <div style={{
-              background: '#2a2a2a',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              border: '1px solid #2f2f2f',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer',
-              height: '100%'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <h3 style={{
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Starter
-              </h3>
-              <div style={{
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Free
-              </div>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Limited Vibe AI Agent access</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Eye size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>10 public apps</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Zap size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Basic AI features</span>
-                </div>
-              </div>
-              <button style={{
-                marginTop: 'auto',
-                width: '100%',
-                padding: '0.75rem',
-                background: '#3a3a3a',
-                color: '#ececec',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              >
-                Your current plan
-              </button>
-            </div>
-
-            {/* Vibe AI Core Plan - Highlighted */}
-            <div style={{
-              background: '#1e3a5f',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              border: '2px solid #3b82f6',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer',
-              height: '100%'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              {isYearly && (
-                <div style={{
+                Amount (€)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number"
+                  min="10"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0;
+                    if (value < 10) {
+                      setAmountError('Minimum amount is 10€');
+                      setAmount(value);
+                    } else {
+                      setAmountError('');
+                      setAmount(value);
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem',
+                    background: '#1a1a1a',
+                    border: amountError ? '1px solid #ef4444' : '1px solid #4a4a4a',
+                    borderRadius: '6px',
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    color: '#ececec',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = amountError ? '#ef4444' : '#4a4a4a'}
+                />
+                <span style={{
                   position: 'absolute',
-                  top: '1rem',
                   right: '1rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: '600'
-                }}>
-                  20% off
-                </div>
-              )}
-              <h3 style={{
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Vibe AI Core
-              </h3>
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-                marginBottom: '0.25rem'
-              }}>
-                <span style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  color: '#ececec'
-                }}>
-                  {isYearly ? '23,99' : '29,99'}
-                </span>
-                <span style={{
-                  fontSize: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
                   color: '#999'
                 }}>
                   €
                 </span>
               </div>
+              {amountError && (
+                <div style={{
+                  marginTop: '0.5rem',
+                  fontSize: '0.85rem',
+                  color: '#ef4444'
+                }}>
+                  {amountError}
+                </div>
+              )}
               <div style={{
+                marginTop: '0.5rem',
                 fontSize: '0.75rem',
-                color: '#999',
-                marginBottom: '0.25rem'
+                color: '#999'
               }}>
-                per month
+                Minimum: 10€ | No maximum limit
               </div>
-              <div style={{
-                fontSize: '0.65rem',
-                color: '#999',
-                marginBottom: '0.5rem'
-              }}>
-                {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
-              <p style={{
-                fontSize: '0.8rem',
-                color: '#999',
-                marginBottom: '0.75rem'
-              }}>
-                Create, launch, and share your apps.
-              </p>
+            </div>
+
+            <div style={{
+              background: '#1a1a1a',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              border: '1px solid #2f2f2f'
+            }}>
               <div style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Vibe AI Agent</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Rocket size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Publish and host live apps</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Lock size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Unlimited private apps</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <DollarSign size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>30€ monthly credits</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ArrowUp size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Pay-as-you-go for usage</span>
-                </div>
+                <span style={{ fontSize: '0.9rem', color: '#999' }}>Amount</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec' }}>
+                  {amount.toFixed(2)} €
+                </span>
               </div>
-              <Link href={`/pricing/core/checkout?yearly=${isYearly}`} style={{
-                marginTop: 'auto',
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid #2f2f2f'
+              }}>
+                <span style={{ fontSize: '0.9rem', color: '#999' }}>VAT (19%)</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec' }}>
+                  {(amount * 0.19).toFixed(2)} €
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid #2f2f2f'
+              }}>
+                <span style={{ fontSize: '1rem', fontWeight: '600', color: '#ececec' }}>Total</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>
+                  {(amount * 1.19).toFixed(2)} €
+                </span>
+              </div>
+            </div>
+
+            <Link 
+              href={`/pricing/on-demand/checkout?amount=${amount.toFixed(2)}`}
+              style={{
                 width: '100%',
                 padding: '0.875rem',
-                background: '#3b82f6',
+                background: amount >= 10 ? '#3b82f6' : '#4a4a4a',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                fontSize: '0.9rem',
+                fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer',
+                cursor: amount >= 10 ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
                 transition: 'opacity 0.2s',
-                textDecoration: 'none'
+                textDecoration: 'none',
+                opacity: amount >= 10 ? 1 : 0.5
               }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-              >
-                Continue with Core
-                <ArrowRight size={18} />
-              </Link>
-            </div>
-
-            {/* Teams Plan */}
-            <div style={{
-              background: '#2a2a2a',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              border: '1px solid #2f2f2f',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              onClick={(e) => {
+                if (amount < 10) {
+                  e.preventDefault();
+                  setAmountError('Minimum amount is 10€');
+                }
+              }}
+              onMouseEnter={(e) => {
+                if (amount >= 10) {
+                  e.currentTarget.style.opacity = '0.9';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (amount >= 10) {
+                  e.currentTarget.style.opacity = '1';
+                }
+              }}
             >
-              {isYearly && (
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: '600'
-                }}>
-                  13% off
-                </div>
-              )}
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Teams
-              </h3>
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-                marginBottom: '0.25rem'
-              }}>
-                <span style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  color: '#ececec'
-                }}>
-                  {isYearly ? '79,99' : '99,99'}
-                </span>
-                <span style={{
-                  fontSize: '0.9rem',
-                  color: '#999'
-                }}>
-                  €
-                </span>
-              </div>
-              <div style={{
-                fontSize: '0.8rem',
-                color: '#999',
-                marginBottom: '0.25rem'
-              }}>
-                per user
-              </div>
-              <div style={{
-                fontSize: '0.7rem',
-                color: '#999',
-                marginBottom: '0.75rem'
-              }}>
-                {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
-              <p style={{
-                fontSize: '0.85rem',
-                color: '#999',
-                marginBottom: '1rem'
-              }}>
-                Bring Vibe AI to your entire team.
-              </p>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ArrowLeft size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Everything in Core</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileCode size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Centralized billing</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Role-based access control</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <DollarSign size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>100€ monthly credits</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Shield size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Private deployments</span>
-                </div>
-              </div>
-              <Link href="/teams/setup" style={{
-                marginTop: 'auto',
-                width: '100%',
-                padding: '0.75rem',
-                background: '#3a3a3a',
-                color: '#ececec',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'background 0.2s',
-                textDecoration: 'none'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              >
-                Continue with Teams
-                <ArrowRight size={16} />
-              </Link>
-            </div>
+              Continue to Checkout
+              <ArrowRight size={18} />
+            </Link>
           </div>
-
-          {/* Disclaimer */}
-          <p style={{
-            fontSize: '0.75rem',
-            color: '#999',
-            lineHeight: '1.5',
-            maxWidth: '750px',
-            textAlign: 'center'
-          }}>
-            *Prices are subject to tax depending on your location. Vibe AI Agent is powered by large language models. While it can produce powerful results, its behavior is probabilistic—meaning it may occasionally make mistakes.
-          </p>
         </div>
       </div>
     </div>

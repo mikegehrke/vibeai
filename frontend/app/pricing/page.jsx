@@ -464,18 +464,27 @@ export default function PricingPage() {
   ];
 
   const handlePlanClick = (plan) => {
-    const planSlugMap = {
-      'Starter': 'starter',
-      'Vibe AI Core': 'vibe-ai-core',
-      'Vibe AI Pro+': 'vibe-ai-pro-plus',
-      'Vibe AI Ultra': 'vibe-ai-ultra',
-      'Vibe AI Ultra+': 'vibe-ai-ultra-plus',
-      'Teams': 'teams',
-      'On Demand': 'on-demand',
-      'Enterprise': 'enterprise'
-    };
-    const planSlug = planSlugMap[plan.name] || plan.name.toLowerCase().replace(/\s+/g, '-');
-    router.push(`/pricing/${planSlug}`);
+    // Zu Setup-Seiten für bezahlte Pläne, zu Pricing-Detail für Starter/Enterprise/Teams
+    if (plan.name === 'Starter' || plan.name === 'Enterprise' || plan.name === 'Teams') {
+      const planSlugMap = {
+        'Starter': 'starter',
+        'Enterprise': 'enterprise',
+        'Teams': 'teams'
+      };
+      const planSlug = planSlugMap[plan.name] || plan.name.toLowerCase().replace(/\s+/g, '-');
+      router.push(`/pricing/${planSlug}`);
+    } else {
+      // Zu Setup-Seiten
+      const setupPathMap = {
+        'Vibe AI Core': '/core/setup',
+        'Vibe AI Pro+': '/pro-plus/setup',
+        'Vibe AI Ultra': '/ultra/setup',
+        'Vibe AI Ultra+': '/ultra-plus/setup',
+        'On Demand': '/on-demand/setup'
+      };
+      const setupPath = setupPathMap[plan.name] || '/core/setup';
+      router.push(setupPath);
+    }
   };
 
   return (
@@ -764,37 +773,76 @@ export default function PricingPage() {
               </p>
 
               {/* Button */}
-              <button
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  marginBottom: '1.5rem',
-                  background: plan.buttonStyle === 'primary' ? '#ff8c42' : '#f5f5f5',
-                  color: plan.buttonStyle === 'primary' ? 'white' : '#000000',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (plan.buttonStyle === 'primary') {
-                    e.currentTarget.style.background = '#e67a2e';
-                  } else {
-                    e.currentTarget.style.background = '#e0e0e0';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (plan.buttonStyle === 'primary') {
-                    e.currentTarget.style.background = '#ff8c42';
-                  } else {
-                    e.currentTarget.style.background = '#f5f5f5';
-                  }
-                }}
-              >
-                {plan.isCurrent ? 'Current plan' : plan.buttonText}
-              </button>
+              {plan.name === 'Starter' || plan.name === 'Enterprise' || plan.name === 'On Demand' ? (
+                <button
+                  onClick={() => handlePlanClick(plan)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    marginBottom: '1.5rem',
+                    background: plan.buttonStyle === 'primary' ? '#ff8c42' : '#f5f5f5',
+                    color: plan.buttonStyle === 'primary' ? 'white' : '#000000',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (plan.buttonStyle === 'primary') {
+                      e.currentTarget.style.background = '#e67a2e';
+                    } else {
+                      e.currentTarget.style.background = '#e0e0e0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (plan.buttonStyle === 'primary') {
+                      e.currentTarget.style.background = '#ff8c42';
+                    } else {
+                      e.currentTarget.style.background = '#f5f5f5';
+                    }
+                  }}
+                >
+                  {plan.isCurrent ? 'Current plan' : plan.buttonText}
+                </button>
+              ) : (
+                <Link
+                  href={`${plan.name === 'Vibe AI Core' ? '/core/setup' : plan.name === 'Vibe AI Pro+' ? '/pro-plus/setup' : plan.name === 'Vibe AI Ultra+' ? '/ultra-plus/setup' : plan.name === 'Vibe AI Ultra' ? '/ultra/setup' : plan.name === 'Teams' ? '/pricing/teams' : plan.name === 'On Demand' ? '/on-demand/setup' : plan.name === 'Starter' ? '/pricing/starter' : plan.name === 'Enterprise' ? '/pricing/enterprise' : `/pricing/${plan.name.toLowerCase().replace(/\s+/g, '-')}/checkout?yearly=${isYearly}`}`}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    marginBottom: '1.5rem',
+                    background: plan.buttonStyle === 'primary' ? '#ff8c42' : '#f5f5f5',
+                    color: plan.buttonStyle === 'primary' ? 'white' : '#000000',
+                    transition: 'all 0.2s ease',
+                    textDecoration: 'none',
+                    display: 'block',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (plan.buttonStyle === 'primary') {
+                      e.currentTarget.style.background = '#e67a2e';
+                    } else {
+                      e.currentTarget.style.background = '#e0e0e0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (plan.buttonStyle === 'primary') {
+                      e.currentTarget.style.background = '#ff8c42';
+                    } else {
+                      e.currentTarget.style.background = '#f5f5f5';
+                    }
+                  }}
+                >
+                  {plan.isCurrent ? 'Current plan' : plan.buttonText}
+                </Link>
+              )}
 
               {/* Features */}
               <div style={{

@@ -309,7 +309,7 @@ export default function CopilotPage() {
       }
 
       // Call backend chat API with streaming
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -347,6 +347,14 @@ export default function CopilotPage() {
                   fullResponse += data.content;
                   responseBufferRef.current = fullResponse; // Update buffer
                   setCurrentResponse(fullResponse); // Update current response in chat history
+                  // Scroll nur innerhalb des Chat-Containers während des Streamings
+                  if (chatHistoryRef.current) {
+                    setTimeout(() => {
+                      if (chatHistoryRef.current) {
+                        chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+                      }
+                    }, 10);
+                  }
                 }
                 
                 // Handle generated images
@@ -455,10 +463,13 @@ export default function CopilotPage() {
     };
   }, [currentResponse, isLoading]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change - nur innerhalb des Chat-Containers
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversationHistory, typewriterText]);
+    if (chatHistoryRef.current) {
+      // Scroll nur innerhalb des Chat-Containers, nicht die ganze Seite
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+    }
+  }, [conversationHistory, typewriterText, currentResponse]);
 
   // Schließe Plus-Menü wenn außerhalb geklickt wird
   useEffect(() => {
@@ -949,9 +960,13 @@ export default function CopilotPage() {
               style={{
                 maxHeight: '400px',
                 overflowY: 'auto',
-              marginBottom: '1rem',
+                overflowX: 'hidden',
+                marginBottom: '1rem',
                 paddingBottom: '0.5rem',
-                borderBottom: '1px solid #e5e5e5'
+                borderBottom: '1px solid #e5e5e5',
+                scrollBehavior: 'smooth',
+                // Verhindere, dass scrollIntoView die ganze Seite scrollt
+                position: 'relative'
               }}
             >
               {conversationHistory.map((message, index) => (
@@ -2882,19 +2897,27 @@ export default function CopilotPage() {
                       e.currentTarget.style.boxShadow = 'none';
                     }}
                     onClick={() => {
-                      // Weiterleitung zur Plan-Seite
-                      const planSlugMap = {
-                        'Starter': 'starter',
-                        'Vibe AI Core': 'vibe-ai-core',
-                        'Vibe AI Pro+': 'vibe-ai-pro-plus',
-                        'Vibe AI Ultra': 'vibe-ai-ultra',
-                        'Vibe AI Ultra+': 'vibe-ai-ultra-plus',
-                        'Teams': 'teams',
-                        'On Demand': 'on-demand',
-                        'Enterprise': 'enterprise'
-                      };
-                      const planSlug = planSlugMap[plan.name] || plan.name.toLowerCase().replace(/\s+/g, '-');
-                      window.location.href = `/pricing/${planSlug}`;
+                      // Weiterleitung zu Setup-Seiten oder Pricing-Detail-Seiten
+                      if (plan.name === 'Starter' || plan.name === 'Enterprise' || plan.name === 'Teams') {
+                        const planSlugMap = {
+                          'Starter': 'starter',
+                          'Enterprise': 'enterprise',
+                          'Teams': 'teams'
+                        };
+                        const planSlug = planSlugMap[plan.name] || plan.name.toLowerCase().replace(/\s+/g, '-');
+                        window.location.href = `/pricing/${planSlug}`;
+                      } else {
+                        // Zu Setup-Seiten
+                        const setupSlugMap = {
+                          'Vibe AI Core': '/core/setup',
+                          'Vibe AI Pro+': '/pro-plus/setup',
+                          'Vibe AI Ultra': '/ultra/setup',
+                          'Vibe AI Ultra+': '/ultra-plus/setup',
+                          'On Demand': '/on-demand/setup'
+                        };
+                        const setupPath = setupSlugMap[plan.name] || '/core/setup';
+                        window.location.href = setupPath;
+                      }
                     }}
                   >
                     {/* Plan Name */}

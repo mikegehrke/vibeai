@@ -49,3 +49,4 @@ docker
 
 # Payment Processing
 stripe
+paypalrestsdk

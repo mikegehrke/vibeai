@@ -6,7 +6,7 @@ import {
   Search, Plus, Home, Code, Globe, ChevronDown, 
   CheckCircle, ArrowRight, ExternalLink, FileCode,
   User, Bell, Users, Terminal, Palette, Sun, Moon, HelpCircle, LogOut, ChevronRight, Download,
-  Lock, Users2, Building2, Shield, ArrowUp, Cloud, DollarSign, Star, Smartphone, Sparkles
+  Lock, Users2, Building2, Shield, ArrowUp, ArrowLeft, Cloud, DollarSign, Star, Smartphone, Sparkles
 } from 'lucide-react';
 import AnimatedLogoIcon from '../../components/AnimatedLogoIcon';
 
@@ -46,6 +46,22 @@ export default function TeamsSetupPage() {
         50% { 
           box-shadow: 0 0 20px rgba(96, 165, 250, 0.8);
           opacity: 0.9;
+        }
+      }
+      @keyframes upgradeButtonColor {
+        0%, 100% { 
+          color: white;
+        }
+        50% { 
+          color: #60a5fa;
+        }
+      }
+      @keyframes upgradeButtonGlow {
+        0%, 100% { 
+          text-shadow: 0 0 5px rgba(96, 165, 250, 0.3);
+        }
+        50% { 
+          text-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
         }
       }
       /* Hide scrollbars but keep scrolling */
@@ -136,22 +152,23 @@ export default function TeamsSetupPage() {
         }}>
           {/* Logo Icon only - Links */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }} ref={dropdownRef}>
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.5rem',
-                borderRadius: '6px',
-                background: showDropdown ? '#2a2a2a' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background 0.2s'
-              }}
+            <Link href="/" style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.5rem',
+              borderRadius: '6px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              textDecoration: 'none'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               <AnimatedLogoIcon size={16} />
-            </button>
+            </Link>
             <ChevronDown size={16} color="#ececec" style={{ cursor: 'pointer' }} onClick={() => setShowDropdown(!showDropdown)} />
 
           {/* Dropdown Menu */}
@@ -625,7 +642,7 @@ export default function TeamsSetupPage() {
             </div>
           </div>
 
-          <button style={{
+          <Link href="/pricing/enterprise" style={{
             width: '100%',
             padding: '0.75rem',
             background: 'transparent',
@@ -639,14 +656,16 @@ export default function TeamsSetupPage() {
             alignItems: 'center',
             gap: '0.5rem',
             justifyContent: 'center',
-            transition: 'background 0.2s'
+            transition: 'background 0.2s',
+            textDecoration: 'none',
+            animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
           }}
           onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            <Sparkles size={16} />
-            Upgrade to Vibe AI Core
-          </button>
+            <Sparkles size={16} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
+            Upgrade to Enterprise
+          </Link>
         </div>
 
         {/* Install Vibe AI */}
@@ -684,6 +703,29 @@ export default function TeamsSetupPage() {
           marginRight: '380px',
           height: '100vh'
         }}>
+        {/* Back Button */}
+        <div style={{
+          width: '100%',
+          maxWidth: '600px',
+          padding: '2rem 2rem 0 2rem'
+        }}>
+          <Link href="/pricing" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: '#999',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            transition: 'color 0.2s',
+            marginBottom: '1rem'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#ececec'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
+          >
+            <ArrowLeft size={18} />
+            Back to Pricing
+          </Link>
+        </div>
         {/* Breadcrumbs */}
         <div style={{
           display: 'flex',
@@ -1107,7 +1149,7 @@ export default function TeamsSetupPage() {
         </p>
 
         <div style={{ marginBottom: '2rem' }}>
-          <button style={{
+          <Link href="/pricing/teams/checkout?yearly=false" style={{
             background: '#3b82f6',
             color: 'white',
             padding: '0.75rem 1.5rem',
@@ -1117,13 +1159,15 @@ export default function TeamsSetupPage() {
             fontSize: '0.9rem',
             cursor: 'pointer',
             marginRight: '0.75rem',
-            transition: 'opacity 0.2s'
+            transition: 'opacity 0.2s',
+            textDecoration: 'none',
+            display: 'inline-block'
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
-            Starts at 39,99€/user per month
-          </button>
+            Starts at 99,99€/user per month
+          </Link>
           <Link href="#" style={{
             color: '#3b82f6',
             textDecoration: 'none',
@@ -1196,7 +1240,7 @@ export default function TeamsSetupPage() {
               <DollarSign size={16} color="#3b82f6" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '0.85rem', color: '#ececec', fontWeight: '500', marginBottom: '0.4rem' }}>
-                  39,99€/mo in usage credits included
+                  100€/mo in usage credits included
                 </div>
                 <ul style={{ fontSize: '0.75rem', color: '#999', marginLeft: '1rem', lineHeight: '1.5', margin: 0, padding: 0 }}>
                   <li>Credits granted upfront with annual plan</li>

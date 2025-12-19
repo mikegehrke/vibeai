@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Search, Plus, Home, Code, Globe, ChevronDown, 
@@ -11,9 +10,8 @@ import {
 } from 'lucide-react';
 import AnimatedLogoIcon from '../../components/AnimatedLogoIcon';
 
-export default function PricingPlanPage() {
-  const params = useParams();
-  const planKey = params?.plan || 'starter';
+export default function CoreSetupPage() {
+  const planKey = 'core';
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isYearly, setIsYearly] = useState(false);
@@ -620,49 +618,31 @@ export default function PricingPlanPage() {
             </div>
           </div>
 
-          {(() => {
-            const upgradeMap = {
-              'starter': { text: 'Upgrade to Vibe AI Core', href: '/core/setup' },
-              'core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'vibe-ai-core': { text: 'Upgrade to Vibe AI Pro+', href: '/pro-plus/setup' },
-              'pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'vibe-ai-pro-plus': { text: 'Upgrade to Vibe AI Ultra', href: '/ultra/setup' },
-              'ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'vibe-ai-ultra': { text: 'Upgrade to Vibe AI Ultra+', href: '/ultra-plus/setup' },
-              'ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'vibe-ai-ultra-plus': { text: 'Upgrade to Teams', href: '/teams/setup' },
-              'teams': { text: 'Upgrade to Enterprise', href: '/pricing/enterprise' },
-              'on-demand': { text: 'Upgrade to Teams', href: '/teams/setup' }
-            };
-            const upgrade = upgradeMap[planKey] || { text: 'Upgrade to Vibe AI Core', href: '/core/setup' };
-            return (
-              <Link href={upgrade.href} style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: 'transparent',
-                color: '#ececec',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontWeight: '500',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                justifyContent: 'center',
-                transition: 'background 0.2s',
-                textDecoration: 'none',
-                animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
-                {upgrade.text}
-              </Link>
-            );
-          })()}
+          <Link href="/pro-plus/setup" style={{
+            width: '100%',
+            padding: '0.75rem',
+            background: 'transparent',
+            color: '#ececec',
+            border: '1px solid #4a4a4a',
+            borderRadius: '6px',
+            fontWeight: '500',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            justifyContent: 'center',
+            transition: 'background 0.2s',
+            textDecoration: 'none',
+            animation: 'upgradeButtonColor 2s ease-in-out infinite, upgradeButtonGlow 2s ease-in-out infinite'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
+            Upgrade to Vibe AI Pro+
+          </Link>
 
           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
