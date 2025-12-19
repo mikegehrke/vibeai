@@ -23,8 +23,11 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentModel, setCurrentModel] = useState('gpt-4');
   const [currentAgent, setCurrentAgent] = useState('smart_agent');
+  const [typingMessageIndex, setTypingMessageIndex] = useState(null);
+  const [displayedText, setDisplayedText] = useState('');
   const dropdownRef = useRef(null);
   const wsRef = useRef(null);
+  const typingIntervalRef = useRef(null);
 
   // Typewriter Effect - stabil ohne Blinken
   useEffect(() => {
@@ -224,6 +227,51 @@ export default function HomePage() {
       sendMessage();
     }
   };
+
+  // Typewriter Effect for Agent Messages
+  useEffect(() => {
+    // Find the last assistant message that needs typing
+    const lastAssistantIdx = messages.findLastIndex(m => m.role === 'assistant' && !m.isThinking && !m.typingComplete);
+    
+    if (lastAssistantIdx !== -1 && lastAssistantIdx !== typingMessageIndex) {
+      const message = messages[lastAssistantIdx];
+      
+      // Clear previous interval
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+      
+      setTypingMessageIndex(lastAssistantIdx);
+      setDisplayedText('');
+      
+      let charIndex = 0;
+      const fullText = message.content;
+      
+      typingIntervalRef.current = setInterval(() => {
+        if (charIndex < fullText.length) {
+          setDisplayedText(fullText.substring(0, charIndex + 1));
+          charIndex++;
+        } else {
+          clearInterval(typingIntervalRef.current);
+          // Mark message as typing complete
+          setMessages(prev => {
+            const updated = [...prev];
+            if (updated[lastAssistantIdx]) {
+              updated[lastAssistantIdx].typingComplete = true;
+            }
+            return updated;
+          });
+          setTypingMessageIndex(null);
+        }
+      }, 30); // 30ms per character = natürliche Geschwindigkeit
+      
+      return () => {
+        if (typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current);
+        }
+      };
+    }
+  }, [messages, typingMessageIndex]);
 
   useEffect(() => {
     // Add CSS animations for progress bars and upgrade button
@@ -1050,11 +1098,11 @@ export default function HomePage() {
                           <div style={{
                             width: '32px',
                             height: '32px',
-                            opacity: msg.isThinking ? 1 : 0.6
+                            opacity: (msg.isThinking || idx === typingMessageIndex) ? 1 : 0.6
                           }}>
                             <AnimatedLogoIcon 
                               size={32} 
-                              color={msg.isThinking ? undefined : '#3b82f6'}
+                              color={(msg.isThinking || idx === typingMessageIndex) ? undefined : '#3b82f6'}
                             />
                           </div>
                         )}
@@ -1076,7 +1124,10 @@ export default function HomePage() {
                           fontSize: '0.95rem',
                           lineHeight: '1.6'
                         }}>
-                          {msg.content}
+                          {msg.role === 'assistant' && idx === typingMessageIndex && !msg.typingComplete
+                            ? displayedText + '▋' 
+                            : msg.content
+                          }
                         </div>
                       </div>
                     </div>
