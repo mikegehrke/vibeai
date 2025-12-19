@@ -50,8 +50,9 @@ router = APIRouter(prefix="/api/home", tags=["Home Chat"])
 # WebSocket connections
 active_connections: Dict[str, List[WebSocket]] = {}
 
-# Available models - PREMIUM ACCESS
+# Available models - ALL LATEST & WORKING
 AVAILABLE_MODELS = {
+    # GPT-5 Familie (Neueste)
     "gpt-5": {
         "name": "GPT-5",
         "provider": "openai",
@@ -64,6 +65,26 @@ AVAILABLE_MODELS = {
         "icon": "👑",
         "capabilities": ["text", "code", "analysis", "images", "advanced-reasoning", "multimodal"]
     },
+    "gpt-5-mini": {
+        "name": "GPT-5 Mini",
+        "provider": "openai",
+        "icon": "⚡",
+        "capabilities": ["text", "code", "analysis", "speed", "efficient"]
+    },
+    "gpt-5-nano": {
+        "name": "GPT-5 Nano",
+        "provider": "openai",
+        "icon": "🔹",
+        "capabilities": ["text", "code", "ultra-fast", "lightweight"]
+    },
+    "gpt-5-codex": {
+        "name": "GPT-5 Codex",
+        "provider": "openai",
+        "icon": "💻",
+        "capabilities": ["code", "programming", "debugging", "all-languages", "best-coding"]
+    },
+    
+    # O3 Familie (Advanced Reasoning)
     "o3": {
         "name": "O3",
         "provider": "openai",
@@ -82,6 +103,48 @@ AVAILABLE_MODELS = {
         "icon": "⚡",
         "capabilities": ["text", "code", "reasoning", "speed", "efficient"]
     },
+    "o3-deep-research": {
+        "name": "O3 Deep Research",
+        "provider": "openai",
+        "icon": "🔬",
+        "capabilities": ["research", "analysis", "deep-thinking", "complex-problems"]
+    },
+    
+    # O4 Familie
+    "o4-mini": {
+        "name": "O4 Mini",
+        "provider": "openai",
+        "icon": "🚀",
+        "capabilities": ["text", "code", "reasoning", "fast", "efficient"]
+    },
+    "o4-mini-deep-research": {
+        "name": "O4 Mini Deep Research",
+        "provider": "openai",
+        "icon": "🔍",
+        "capabilities": ["research", "analysis", "reasoning", "fast"]
+    },
+    
+    # GPT-4.1 Familie
+    "gpt-4.1": {
+        "name": "GPT-4.1",
+        "provider": "openai",
+        "icon": "🧠",
+        "capabilities": ["text", "code", "analysis", "reasoning", "improved"]
+    },
+    "gpt-4.1-mini": {
+        "name": "GPT-4.1 Mini",
+        "provider": "openai",
+        "icon": "⚡",
+        "capabilities": ["text", "code", "analysis", "speed"]
+    },
+    "gpt-4.1-nano": {
+        "name": "GPT-4.1 Nano",
+        "provider": "openai",
+        "icon": "🔹",
+        "capabilities": ["text", "code", "ultra-fast", "lightweight"]
+    },
+    
+    # GPT-4o Familie (Latest)
     "gpt-4o": {
         "name": "GPT-4o",
         "provider": "openai",
@@ -94,11 +157,79 @@ AVAILABLE_MODELS = {
         "icon": "⚡",
         "capabilities": ["text", "code", "analysis", "speed"]
     },
-    "gpt-5-codex": {
-        "name": "GPT-5 Codex",
+    "chatgpt-4o-latest": {
+        "name": "ChatGPT-4o Latest",
         "provider": "openai",
-        "icon": "💻",
-        "capabilities": ["code", "programming", "debugging", "all-languages"]
+        "icon": "💬",
+        "capabilities": ["text", "chat", "conversational", "latest"]
+    },
+    
+    # O1 Familie
+    "o1": {
+        "name": "O1",
+        "provider": "openai",
+        "icon": "🎓",
+        "capabilities": ["text", "code", "reasoning", "problem-solving"]
+    },
+    "o1-pro": {
+        "name": "O1 Pro",
+        "provider": "openai",
+        "icon": "💼",
+        "capabilities": ["text", "code", "advanced-reasoning", "professional"]
+    },
+    "o1-mini": {
+        "name": "O1 Mini",
+        "provider": "openai",
+        "icon": "⚡",
+        "capabilities": ["text", "code", "reasoning", "fast"]
+    },
+    
+    # Spezial-Modelle
+    "dall-e-3": {
+        "name": "DALL-E 3",
+        "provider": "openai",
+        "icon": "🎨",
+        "capabilities": ["image-generation", "art", "creative", "high-quality"]
+    },
+    "sora-2": {
+        "name": "Sora 2",
+        "provider": "openai",
+        "icon": "🎬",
+        "capabilities": ["video-generation", "creative", "cinematic"]
+    },
+    "sora-2-pro": {
+        "name": "Sora 2 Pro",
+        "provider": "openai",
+        "icon": "🎥",
+        "capabilities": ["video-generation", "professional", "high-quality", "cinematic"]
+    },
+    "whisper-1": {
+        "name": "Whisper",
+        "provider": "openai",
+        "icon": "🎙️",
+        "capabilities": ["audio-transcription", "multilingual", "speech-to-text"]
+    },
+    
+    # Audio & Realtime
+    "gpt-audio": {
+        "name": "GPT Audio",
+        "provider": "openai",
+        "icon": "🔊",
+        "capabilities": ["audio", "voice", "realtime", "conversational"]
+    },
+    "gpt-realtime": {
+        "name": "GPT Realtime",
+        "provider": "openai",
+        "icon": "⚡",
+        "capabilities": ["realtime", "fast", "interactive", "conversational"]
+    },
+    
+    # Claude (Anthropic) - ALLE Versionen
+    "claude-3-5-sonnet": {
+        "name": "Claude 3.5 Sonnet",
+        "provider": "anthropic",
+        "icon": "🎭",
+        "capabilities": ["text", "code", "analysis", "reasoning", "latest"]
     },
     "claude-3-sonnet": {
         "name": "Claude 3 Sonnet",
@@ -110,18 +241,85 @@ AVAILABLE_MODELS = {
         "name": "Claude 3 Opus",
         "provider": "anthropic",
         "icon": "🎨",
-        "capabilities": ["text", "code", "analysis", "deep-reasoning"]
+        "capabilities": ["text", "code", "analysis", "deep-reasoning", "best"]
+    },
+    "claude-3-haiku": {
+        "name": "Claude 3 Haiku",
+        "provider": "anthropic",
+        "icon": "⚡",
+        "capabilities": ["text", "code", "fast", "efficient"]
+    },
+    
+    # Gemini (Google) - ALLE Versionen
+    "gemini-2.0-flash-exp": {
+        "name": "Gemini 2.0 Flash",
+        "provider": "google",
+        "icon": "✨",
+        "capabilities": ["text", "code", "analysis", "multimodal", "fast", "latest"]
+    },
+    "gemini-exp-1206": {
+        "name": "Gemini Exp 1206",
+        "provider": "google",
+        "icon": "🔮",
+        "capabilities": ["text", "code", "analysis", "multimodal", "experimental"]
     },
     "gemini-pro": {
         "name": "Gemini Pro",
         "provider": "google",
         "icon": "🔮",
         "capabilities": ["text", "code", "analysis", "multimodal"]
+    },
+    "gemini-pro-vision": {
+        "name": "Gemini Pro Vision",
+        "provider": "google",
+        "icon": "👁️",
+        "capabilities": ["text", "code", "images", "vision", "multimodal"]
+    },
+    "gemini-ultra": {
+        "name": "Gemini Ultra",
+        "provider": "google",
+        "icon": "💎",
+        "capabilities": ["text", "code", "analysis", "multimodal", "best"]
+    },
+    
+    # GitHub Copilot
+    "copilot": {
+        "name": "GitHub Copilot",
+        "provider": "github",
+        "icon": "🐙",
+        "capabilities": ["code", "programming", "completion", "github-integration"]
+    },
+    
+    # Ollama (Local Models)
+    "ollama-llama3": {
+        "name": "Llama 3 (Local)",
+        "provider": "ollama",
+        "icon": "🦙",
+        "capabilities": ["text", "code", "local", "privacy", "offline"]
+    },
+    "ollama-codellama": {
+        "name": "CodeLlama (Local)",
+        "provider": "ollama",
+        "icon": "💻",
+        "capabilities": ["code", "programming", "local", "privacy", "offline"]
+    },
+    "ollama-mistral": {
+        "name": "Mistral (Local)",
+        "provider": "ollama",
+        "icon": "🌬️",
+        "capabilities": ["text", "code", "local", "fast", "privacy"]
+    },
+    "ollama-phi": {
+        "name": "Phi (Local)",
+        "provider": "ollama",
+        "icon": "📱",
+        "capabilities": ["text", "code", "local", "lightweight", "efficient"]
     }
 }
 
-# Available agents
+# Available agents - ALLE AGENTEN
 AVAILABLE_AGENTS = {
+    # App Building Agents
     "smart_agent": {
         "name": "Smart Agent",
         "description": "Builds complete apps with best practices",
@@ -134,17 +332,97 @@ AVAILABLE_AGENTS = {
         "icon": "⚡",
         "capabilities": ["app-building", "optimization", "deployment"]
     },
+    "vibeai_agent": {
+        "name": "VibeAI Agent",
+        "description": "Complete project generation with live streaming",
+        "icon": "✨",
+        "capabilities": ["app-building", "full-stack", "real-time"]
+    },
+    
+    # Conversation Agents
     "aura": {
         "name": "Aura",
         "description": "General conversation and help",
         "icon": "💬",
-        "capabilities": ["chat", "questions", "help"]
+        "capabilities": ["chat", "conversation", "questions", "help", "general"]
     },
+    
+    # Code Agents
     "cora": {
         "name": "Cora",
         "description": "Code assistant and debugger",
         "icon": "💻",
-        "capabilities": ["coding", "debugging", "refactoring"]
+        "capabilities": ["coding", "debugging", "refactoring", "programming"]
+    },
+    "codex_agent": {
+        "name": "Codex Agent",
+        "description": "Advanced coding agent for all languages",
+        "icon": "🔧",
+        "capabilities": ["coding", "all-languages", "debugging", "optimization"]
+    },
+    
+    # Creative Agents
+    "lumi": {
+        "name": "Lumi",
+        "description": "Creative writing and design",
+        "icon": "🌟",
+        "capabilities": ["creative", "writing", "design", "art", "ideas"]
+    },
+    
+    # Reasoning Agents
+    "devra": {
+        "name": "Devra",
+        "description": "Deep reasoning and analysis",
+        "icon": "🧠",
+        "capabilities": ["reasoning", "analysis", "logic", "research", "philosophy"]
+    },
+    
+    # Vision Agents
+    "vision": {
+        "name": "Vision",
+        "description": "Image analysis and generation",
+        "icon": "👁️",
+        "capabilities": ["image", "vision", "analysis", "generation", "visual"]
+    },
+    
+    # Team Agents
+    "team_agent": {
+        "name": "Team Agent",
+        "description": "Multi-agent collaboration for complex projects",
+        "icon": "👥",
+        "capabilities": ["team-work", "collaboration", "multi-agent", "complex-projects"]
+    },
+    
+    # Auto-Fix Agent
+    "auto_fix": {
+        "name": "Auto-Fix Agent",
+        "description": "Automatically finds and fixes code errors",
+        "icon": "🔨",
+        "capabilities": ["debugging", "auto-fix", "error-detection", "code-repair"]
+    },
+    
+    # Testing Agent
+    "test_agent": {
+        "name": "Test Agent",
+        "description": "Generates tests and ensures code quality",
+        "icon": "🧪",
+        "capabilities": ["testing", "quality-assurance", "test-generation"]
+    },
+    
+    # Deployment Agent
+    "deploy_agent": {
+        "name": "Deploy Agent",
+        "description": "Handles deployment and DevOps",
+        "icon": "🚀",
+        "capabilities": ["deployment", "devops", "ci-cd", "cloud"]
+    },
+    
+    # Database Agent
+    "db_agent": {
+        "name": "Database Agent",
+        "description": "Database design and optimization",
+        "icon": "🗄️",
+        "capabilities": ["database", "sql", "optimization", "data-modeling"]
     }
 }
 
@@ -330,7 +608,7 @@ async def call_model(model: str, messages: List[Dict], stream: bool = True):
     
     provider = model_info["provider"]
     
-    if provider == "openai":
+    if provider == "openai" or provider == "github":
         async for chunk in call_openai_model(model, messages, stream):
             yield chunk
     
@@ -344,8 +622,53 @@ async def call_model(model: str, messages: List[Dict], stream: bool = True):
         async for chunk in call_gemini_model(model, prompt, stream):
             yield chunk
     
+    elif provider == "ollama":
+        # Use Ollama local models
+        async for chunk in call_ollama_model(model, messages, stream):
+            yield chunk
+    
     else:
         raise HTTPException(400, f"Unknown provider: {provider}")
+
+
+async def call_ollama_model(model: str, messages: List[Dict], stream: bool = True):
+    """Call Ollama local models"""
+    try:
+        import requests
+        
+        # Extract model name (e.g., "ollama-llama3" -> "llama3")
+        ollama_model = model.replace("ollama-", "")
+        
+        # Ollama API endpoint (default local)
+        url = "http://localhost:11434/api/chat"
+        
+        response = requests.post(url, json={
+            "model": ollama_model,
+            "messages": messages,
+            "stream": stream
+        }, stream=stream)
+        
+        if stream:
+            full_response = ""
+            for line in response.iter_lines():
+                if line:
+                    import json
+                    data = json.loads(line)
+                    if "message" in data and "content" in data["message"]:
+                        content = data["message"]["content"]
+                        full_response += content
+                        yield {"type": "chunk", "content": content}
+            yield {"type": "done", "content": full_response}
+        else:
+            data = response.json()
+            content = data["message"]["content"]
+            yield {"type": "done", "content": content}
+    
+    except Exception as e:
+        # Fallback to OpenAI if Ollama not available
+        print(f"Ollama not available, falling back to OpenAI: {e}")
+        async for chunk in call_openai_model("gpt-4o-mini", messages, stream):
+            yield chunk
 
 
 async def build_app_with_agent(agent: str, description: str, user_id: str):
