@@ -638,9 +638,8 @@ export default function CopilotPage() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        width: '100%',
-        boxShadow: '0 1px 0 rgba(0,0,0,0.05)'
-        // Fixed damit immer sichtbar, unabhängig vom Scrollen
+        width: '100%'
+        // Fixed damit immer sichtbar, unabhängig vom Scrollen, kein Unterstrich
       }}>
         {/* Left Side - Hamburger + Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

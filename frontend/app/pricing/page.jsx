@@ -484,17 +484,19 @@ export default function PricingPage() {
       background: 'white',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* Header */}
+      {/* Header - Fixed, kein Unterstrich */}
       <header style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 1000,
         background: 'white',
-        borderBottom: '1px solid #e5e5e5',
         padding: '1rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        width: '100%'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
@@ -556,6 +558,7 @@ export default function PricingPage() {
       {/* Main Content */}
       <main style={{
         padding: '4rem 2rem',
+        paddingTop: 'calc(4rem + 80px)',
         maxWidth: '1400px',
         margin: '0 auto'
       }}>
@@ -2211,12 +2214,107 @@ export default function PricingPage() {
             </table>
           </div>
         </div>
+
+        {/* Get Started Section */}
+        <div style={{
+          marginTop: '6rem',
+          marginBottom: '4rem',
+          padding: '4rem 2rem',
+          background: '#f5f5f5',
+          marginLeft: '-2rem',
+          marginRight: '-2rem'
+        }}>
+          <div style={{
+            maxWidth: '1400px',
+            margin: '0 auto',
+            background: '#f5f5f5',
+            borderRadius: '24px',
+            padding: '4rem',
+            display: 'flex',
+            gap: '4rem',
+            alignItems: 'center'
+          }}>
+            {/* Left Side */}
+            <div style={{
+              flex: '1',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              <h2 style={{
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                color: '#000000',
+                margin: 0,
+                lineHeight: '1.2',
+                letterSpacing: '-0.02em'
+              }}>
+                Get started with Vibe AI Teams
+              </h2>
+              <p style={{
+                fontSize: '1.1rem',
+                color: '#666666',
+                margin: 0,
+                lineHeight: '1.6'
+              }}>
+                Get enhanced security and compute for professional developers and teams shipping to production.
+              </p>
+              <Link href="/teams/setup" style={{ textDecoration: 'none' }}>
+                <button style={{
+                  background: '#ff8c42',
+                  color: 'white',
+                  padding: '0.875rem 2rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '1rem',
+                  width: 'fit-content',
+                  transition: 'opacity 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                >
+                  Get started
+                </button>
+              </Link>
+            </div>
+
+            {/* Right Side - Quote */}
+            <div style={{
+              flex: '1',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              <blockquote style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#333333',
+                margin: 0,
+                lineHeight: '1.4',
+                fontStyle: 'normal',
+                padding: 0,
+                border: 'none'
+              }}>
+                "The rapid prototypes we build on Vibe AI shift the dialog from 'Should we?' to 'How should we?' and that's a world of difference when driving substantive change."
+              </blockquote>
+              <cite style={{
+                fontSize: '1rem',
+                color: '#666666',
+                fontStyle: 'normal',
+                fontWeight: '400'
+              }}>
+                Chris Stevens, CMO of Spot Hero
+              </cite>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
       <footer style={{
         background: 'white',
-        borderTop: '1px solid #e5e5e5',
         padding: '3rem 2rem 1rem',
         marginTop: '4rem'
       }}>
@@ -2314,7 +2412,6 @@ export default function PricingPage() {
         </div>
 
         <div style={{
-          borderTop: '1px solid #e5e5e5',
           paddingTop: '1rem',
           display: 'flex',
           justifyContent: 'space-between',
@@ -2324,9 +2421,25 @@ export default function PricingPage() {
           fontSize: '0.85rem',
           color: '#999999'
         }}>
-          <Link href="#" style={{ color: '#999999', textDecoration: 'none' }}>
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{ 
+              color: '#999999', 
+              textDecoration: 'none',
+              background: '#f5f5f5',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              marginRight: '4rem',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#e5e5e5'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
+          >
             Scroll to top
-          </Link>
+          </button>
           <span>
             ALL RIGHTS RESERVED. COPYRIGHT © 2025 VIBE AI GO
           </span>
