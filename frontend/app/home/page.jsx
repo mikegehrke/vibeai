@@ -263,7 +263,7 @@ export default function HomePage() {
           });
           setTypingMessageIndex(null);
         }
-      }, 30); // 30ms per character = natürliche Geschwindigkeit
+      }, 15); // 15ms per character = schnellere, natürliche Geschwindigkeit
       
       return () => {
         if (typingIntervalRef.current) {

@@ -401,70 +401,60 @@ async def home_chat(
         # For now, use a default user_id (we can add auth later)
         user_id = "default_user"
         
-        # TEMPORARY: Simple echo response for testing
+        # Build conversation history
+        messages = []
+        
+        # Add system prompt - MULTILINGUAL
+        messages.append({
+            "role": "system",
+            "content": "You are VibeAI, a powerful multilingual AI assistant. You can communicate in ANY language (English, German, Spanish, French, Arabic, Chinese, Japanese, etc.). Always respond in the SAME language the user writes in. You can help with coding, app building, general questions, and understand all programming languages. Be helpful, clear, and natural."
+        })
+        
+        # Add conversation history
+        if request.conversation_history:
+            messages.extend(request.conversation_history)
+        
+        # Add current message
+        messages.append({
+            "role": "user",
+            "content": request.message
+        })
+        
+        # Check if user wants to build an app
+        if request.build_app or any(keyword in request.message.lower() for keyword in ["build app", "create app", "generate app", "make app", "erstelle", "baue"]):
+            # Start app building in background
+            asyncio.create_task(build_app_with_agent(request.agent, request.message, user_id))
+            
+            return HomeChatResponse(
+                success=True,
+                response="🚀 Starting app generation! I'll keep you updated via WebSocket.",
+                model_used=request.model,
+                agent_used=request.agent,
+                timestamp=datetime.now(),
+                metadata={"building": True}
+            )
+        
+        # Regular chat - call the actual AI model
+        full_response = ""
+        
+        async for chunk in call_model(request.model, messages, request.stream):
+            if chunk["type"] == "chunk":
+                full_response += chunk["content"]
+                # Broadcast chunk via WebSocket if connected
+                await broadcast_to_user(user_id, {
+                    "event": "chat.chunk",
+                    "content": chunk["content"]
+                })
+            elif chunk["type"] == "done":
+                full_response = chunk["content"]
+        
         return HomeChatResponse(
             success=True,
-            response=f"Hello! You said: {request.message}\n\nI'm the {request.agent} using {request.model}. Chat is working! 🎉",
+            response=full_response,
             model_used=request.model,
             agent_used=request.agent,
             timestamp=datetime.now()
         )
-        
-        # TODO: Re-enable AI model calls once we confirm basic chat works
-        # Build conversation history
-        # messages = []
-        # 
-        # # Add system prompt
-        # messages.append({
-        #     "role": "system",
-        #     "content": "You are VibeAI, a powerful AI assistant that can help with coding, app building, and general questions. You have access to multiple AI models and can build complete applications."
-        # })
-        # 
-        # # Add conversation history
-        # if request.conversation_history:
-        #     messages.extend(request.conversation_history)
-        # 
-        # # Add current message
-        # messages.append({
-        #     "role": "user",
-        #     "content": request.message
-        # })
-        # 
-        # # Check if user wants to build an app
-        # if request.build_app or any(keyword in request.message.lower() for keyword in ["build app", "create app", "generate app", "make app"]):
-        #     # Start app building in background
-        #     asyncio.create_task(build_app_with_agent(request.agent, request.message, user_id))
-        #     
-        #     return HomeChatResponse(
-        #         success=True,
-        #         response="🚀 Starting app generation! I'll keep you updated via WebSocket.",
-        #         model_used=request.model,
-        #         agent_used=request.agent,
-        #         timestamp=datetime.now(),
-        #         metadata={"building": True}
-        #     )
-        # 
-        # # Regular chat
-        # full_response = ""
-        # 
-        # async for chunk in call_model(request.model, messages, request.stream):
-        #     if chunk["type"] == "chunk":
-        #         full_response += chunk["content"]
-        #         # Broadcast chunk via WebSocket if connected
-        #         await broadcast_to_user(user_id, {
-        #             "event": "chat.chunk",
-        #             "content": chunk["content"]
-        #         })
-        #     elif chunk["type"] == "done":
-        #         full_response = chunk["content"]
-        # 
-        # return HomeChatResponse(
-        #     success=True,
-        #     response=full_response,
-        #     model_used=request.model,
-        #     agent_used=request.agent,
-        #     timestamp=datetime.now()
-        # )
     
     except Exception as e:
         import traceback
