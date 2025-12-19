@@ -15,11 +15,24 @@ from auth import get_current_user_v2
 from db import get_db
 from sqlalchemy.orm import Session
 
-# Import all agent systems
-from builder.smart_agent_generator import SmartAgentGenerator, SmartAgentRequest
-from vibeai.agent.core.super_agent import SuperAgent
-from chat.agent_manager import run_agent_v2
-from ai.model_selector import ModelSelector, SelectionCriteria, OptimizationStrategy
+# Import all agent systems - avoid circular imports
+try:
+    from builder.smart_agent_generator import SmartAgentGenerator, SmartAgentRequest
+    SMART_AGENT_AVAILABLE = True
+except:
+    SMART_AGENT_AVAILABLE = False
+
+try:
+    from vibeai.agent.core.super_agent import SuperAgent
+    SUPER_AGENT_AVAILABLE = True
+except:
+    SUPER_AGENT_AVAILABLE = False
+
+try:
+    from chat.agent_manager import run_agent_v2
+    AGENT_MANAGER_AVAILABLE = True
+except:
+    AGENT_MANAGER_AVAILABLE = False
 
 # Import AI clients
 import openai
