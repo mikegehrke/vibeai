@@ -391,7 +391,6 @@ async def get_available_agents():
 @router.post("/chat")
 async def home_chat(
     request: HomeChatRequest,
-    user = Depends(get_current_user_v2),
     db: Session = Depends(get_db)
 ):
     """
@@ -399,7 +398,8 @@ async def home_chat(
     Handles all chat requests with any model/agent combination
     """
     try:
-        user_id = str(user.id)
+        # For now, use a default user_id (we can add auth later)
+        user_id = "default_user"
         
         # Build conversation history
         messages = []
@@ -503,7 +503,6 @@ async def websocket_home_chat(
 @router.post("/chat/stream")
 async def stream_home_chat(
     request: HomeChatRequest,
-    user = Depends(get_current_user_v2),
     db: Session = Depends(get_db)
 ):
     """

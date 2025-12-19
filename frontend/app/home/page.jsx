@@ -144,19 +144,28 @@ export default function HomePage() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentPrompt = prompt;
     setPrompt('');
     setIsLoading(true);
 
+    // Add "thinking" message with animated icon
+    const thinkingMessage = {
+      role: 'assistant',
+      content: '',
+      isThinking: true,
+      agent_used: currentAgent === 'smart_agent' ? 'Smart Agent' : 'AI Assistant',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, thinkingMessage]);
+
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8000/api/home/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: userMessage.content,
+          message: currentPrompt,
           model: currentModel,
           agent: currentAgent,
           conversation_history: messages.map(m => ({
@@ -165,35 +174,44 @@ export default function HomePage() {
           })),
           stream: true,
           build_app: activeTab === 'app' && (
-            prompt.toLowerCase().includes('build') ||
-            prompt.toLowerCase().includes('create') ||
-            prompt.toLowerCase().includes('make')
+            currentPrompt.toLowerCase().includes('build') ||
+            currentPrompt.toLowerCase().includes('create') ||
+            currentPrompt.toLowerCase().includes('make')
           )
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
       
-      if (data.success && !data.metadata?.building) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: data.response,
-          model_used: data.model_used,
-          agent_used: data.agent_used,
-          timestamp: new Date()
-        }]);
+      if (data.success) {
+        // Remove thinking message and add real response
+        setMessages(prev => {
+          const filtered = prev.filter(m => !m.isThinking);
+          return [...filtered, {
+            role: 'assistant',
+            content: data.response,
+            model_used: data.model_used,
+            agent_used: data.agent_used,
+            isThinking: false,
+            timestamp: new Date()
+          }];
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: '❌ Error sending message. Please try again.',
-        timestamp: new Date()
-      }]);
+      // Remove thinking message and show error
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.isThinking);
+        return [...filtered, {
+          role: 'system',
+          content: `❌ ${error.message}`,
+          timestamp: new Date()
+        }];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -251,6 +269,13 @@ export default function HomePage() {
         display: none;
       }
       .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      textarea::-webkit-scrollbar {
+        display: none;
+      }
+      textarea {
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
@@ -984,26 +1009,76 @@ export default function HomePage() {
               {messages.length > 0 && (
                 <div style={{
                   marginBottom: '1.5rem',
-                  maxHeight: '300px',
+                  maxHeight: '400px',
                   overflowY: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '1rem'
-                }}>
+                  gap: '1.5rem',
+                  paddingRight: '0.5rem'
+                }}
+                className="hide-scrollbar">
                   {messages.map((msg, idx) => (
                     <div key={idx} style={{
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      background: msg.role === 'user' ? '#2a2a2a' : msg.role === 'system' ? '#1e3a5f' : '#1e3a1e',
-                      color: '#ffffff',
-                      fontSize: '0.9rem',
-                      lineHeight: '1.6'
+                      display: 'flex',
+                      gap: '1rem',
+                      alignItems: 'flex-start'
                     }}>
-                      <div style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#9ca3af' }}>
-                        {msg.role === 'user' ? 'You' : msg.role === 'system' ? 'System' : 'AI'}
-                        {msg.model_used && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>({msg.model_used})</span>}
+                      {/* Icon */}
+                      <div style={{
+                        minWidth: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {msg.role === 'user' ? (
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: '#3b82f6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontWeight: '600',
+                            fontSize: '0.85rem'
+                          }}>
+                            MG
+                          </div>
+                        ) : (
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            opacity: msg.isThinking ? 1 : 0.6
+                          }}>
+                            <AnimatedLogoIcon 
+                              size={32} 
+                              color={msg.isThinking ? undefined : '#3b82f6'}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                      
+                      {/* Content */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          fontWeight: '600', 
+                          marginBottom: '0.5rem', 
+                          color: '#9ca3af',
+                          fontSize: '0.85rem'
+                        }}>
+                          {msg.role === 'user' ? 'You' : (msg.agent_used || 'Smart Agent')}
+                        </div>
+                        <div style={{ 
+                          whiteSpace: 'pre-wrap',
+                          color: '#e5e5e5',
+                          fontSize: '0.95rem',
+                          lineHeight: '1.6'
+                        }}>
+                          {msg.content}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1011,15 +1086,19 @@ export default function HomePage() {
 
               {/* Input Area */}
               <div style={{
-                flex: 1,
-                marginBottom: '2rem'
+                marginBottom: '2rem',
+                position: 'relative'
               }}>
                 {prompt === '' && messages.length === 0 && (
                   <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
                     color: '#6b7280',
                     fontSize: '0.95rem',
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    lineHeight: '1.6'
+                    lineHeight: '1.6',
+                    pointerEvents: 'none'
                   }}>
                     {placeholderText}
                   </div>
@@ -1029,9 +1108,11 @@ export default function HomePage() {
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={handleKeyPress}
                   disabled={isLoading}
+                  autoFocus
                   style={{
                     width: '100%',
-                    minHeight: messages.length > 0 ? '60px' : '100px',
+                    height: messages.length > 0 ? '60px' : '100px',
+                    maxHeight: messages.length > 0 ? '60px' : '100px',
                     background: 'transparent',
                     border: 'none',
                     color: '#ffffff',
@@ -1040,8 +1121,10 @@ export default function HomePage() {
                     resize: 'none',
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     lineHeight: '1.6',
-                    display: prompt === '' && messages.length === 0 ? 'none' : 'block',
-                    opacity: isLoading ? 0.5 : 1
+                    opacity: isLoading ? 0.5 : 1,
+                    overflowY: 'auto',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
                   }}
                   placeholder={messages.length > 0 ? "Type your message..." : ""}
                 />
