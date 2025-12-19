@@ -191,10 +191,18 @@ async def call_openai_model(model: str, messages: List[Dict], stream: bool = Tru
     if not openai_client:
         raise HTTPException(500, "OpenAI client not initialized")
     
+    # Map models to available ones
+    model_mapping = {
+        "gpt-4": "gpt-4o-mini",  # Fallback to gpt-4o-mini if no access to gpt-4
+        "gpt-4-turbo": "gpt-4o-mini",
+    }
+    
+    actual_model = model_mapping.get(model, model)
+    
     try:
         response = await asyncio.to_thread(
             openai_client.chat.completions.create,
-            model=model,
+            model=actual_model,
             messages=messages,
             stream=stream
         )
