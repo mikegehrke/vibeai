@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 // Animiertes Logo-Icon Komponente
@@ -86,6 +87,18 @@ function AnimatedLogoIcon() {
 }
 
 export default function Header({ showProducts = true, showStartBuilding = true, currentPage = null }) {
+  const router = useRouter();
+
+  const handleStartBuilding = (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.push('/home');
+    } else {
+      router.push('/login?redirect=/home');
+    }
+  };
+
   return (
     <header style={{
       position: 'fixed',
@@ -139,8 +152,9 @@ export default function Header({ showProducts = true, showStartBuilding = true, 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
         <Link href="/login" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Log in</Link>
         {showStartBuilding && (
-          <Link href="/register" style={{ textDecoration: 'none' }}>
-            <button style={{
+          <button 
+            onClick={handleStartBuilding}
+            style={{
               background: '#ff8c42',
               color: 'white',
               padding: '0.625rem 1.25rem',
@@ -153,10 +167,9 @@ export default function Header({ showProducts = true, showStartBuilding = true, 
             }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              Start building
-            </button>
-          </Link>
+          >
+            Start building
+          </button>
         )}
       </div>
     </header>

@@ -542,8 +542,16 @@ export default function PricingPage() {
           </nav>
         </div>
 
-        <Link href="/login" style={{ textDecoration: 'none' }}>
-          <button style={{
+        <button 
+          onClick={() => {
+            const token = localStorage.getItem('token');
+            if (token) {
+              router.push('/home');
+            } else {
+              router.push('/login?redirect=/home');
+            }
+          }}
+          style={{
             background: 'transparent',
             border: 'none',
             color: '#000000',
@@ -558,10 +566,9 @@ export default function PricingPage() {
           }}
           onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            Go to account <ArrowRight size={16} />
-          </button>
-        </Link>
+        >
+          Go to account <ArrowRight size={16} />
+        </button>
       </header>
 
       {/* Main Content */}
