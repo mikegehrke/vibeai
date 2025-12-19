@@ -1374,6 +1374,18 @@ try:
 except Exception as e:
     print(f"⚠️  Chat Agent Router failed to load: {e}")
 
+# HOME CHAT - Unified Chat with All Models & Agents
+# -------------------------------------------------------------
+try:
+    from chat.home_chat_routes import router as home_chat_router
+    app.include_router(home_chat_router, tags=["Home Chat"])
+    print("✅ Home Chat Router loaded")
+    print("   Endpoints: /api/home/chat, /api/home/ws, /api/home/models, /api/home/agents")
+except Exception as e:
+    print(f"⚠️  Home Chat Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
 # TEAM COLLABORATION
 # -------------------------------------------------------------
 try:

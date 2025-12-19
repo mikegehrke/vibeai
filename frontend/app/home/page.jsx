@@ -19,7 +19,12 @@ export default function HomePage() {
   const [placeholderText, setPlaceholderText] = useState('');
   const [isHoveringChat, setIsHoveringChat] = useState(false);
   const [hoveringTab, setHoveringTab] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentModel, setCurrentModel] = useState('gpt-4');
+  const [currentAgent, setCurrentAgent] = useState('smart_agent');
   const dropdownRef = useRef(null);
+  const wsRef = useRef(null);
 
   // Typewriter Effect - stabil ohne Blinken
   useEffect(() => {
@@ -59,6 +64,148 @@ export default function HomePage() {
       }
     };
   }, [activeTab]);
+
+  // WebSocket Connection
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('⚠️  No token found - skipping WebSocket connection');
+      return;
+    }
+
+    try {
+      const ws = new WebSocket(`ws://localhost:8000/api/home/ws?token=${token}`);
+      
+      ws.onopen = () => {
+        console.log('✅ Connected to Home Chat WebSocket');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('WebSocket message:', data);
+
+          if (data.event === 'chat.chunk') {
+            setMessages(prev => {
+              const newMessages = [...prev];
+              const lastMsg = newMessages[newMessages.length - 1];
+              if (lastMsg && lastMsg.role === 'assistant') {
+                lastMsg.content += data.content;
+              } else {
+                newMessages.push({
+                  role: 'assistant',
+                  content: data.content,
+                  timestamp: new Date()
+                });
+              }
+              return newMessages;
+            });
+          } else if (data.event === 'build.started' || data.event === 'build.progress' || data.event === 'build.complete') {
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: data.message,
+              timestamp: new Date()
+            }]);
+          }
+        } catch (e) {
+          console.warn('Failed to parse WebSocket message:', e);
+        }
+      };
+
+      ws.onerror = () => {
+        // Silent - server might not be running
+        console.log('⚠️  WebSocket connection failed (server might not be running)');
+      };
+
+      ws.onclose = () => {
+        console.log('⚠️  WebSocket disconnected');
+      };
+
+      wsRef.current = ws;
+
+      return () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    } catch (e) {
+      console.log('⚠️  WebSocket not available (server might not be running)');
+    }
+  }, []);
+
+  // Send Chat Message
+  const sendMessage = async () => {
+    if (!prompt.trim() || isLoading) return;
+
+    const userMessage = {
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setPrompt('');
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/home/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          model: currentModel,
+          agent: currentAgent,
+          conversation_history: messages.map(m => ({
+            role: m.role,
+            content: m.content
+          })),
+          stream: true,
+          build_app: activeTab === 'app' && (
+            prompt.toLowerCase().includes('build') ||
+            prompt.toLowerCase().includes('create') ||
+            prompt.toLowerCase().includes('make')
+          )
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && !data.metadata?.building) {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.response,
+          model_used: data.model_used,
+          agent_used: data.agent_used,
+          timestamp: new Date()
+        }]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '❌ Error sending message. Please try again.',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle Key Press
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   useEffect(() => {
     // Add CSS animations for progress bars and upgrade button
@@ -833,12 +980,41 @@ export default function HomePage() {
                 zIndex: 1
               }}
             >
+              {/* Messages Display */}
+              {messages.length > 0 && (
+                <div style={{
+                  marginBottom: '1.5rem',
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}>
+                  {messages.map((msg, idx) => (
+                    <div key={idx} style={{
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      background: msg.role === 'user' ? '#2a2a2a' : msg.role === 'system' ? '#1e3a5f' : '#1e3a1e',
+                      color: '#ffffff',
+                      fontSize: '0.9rem',
+                      lineHeight: '1.6'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#9ca3af' }}>
+                        {msg.role === 'user' ? 'You' : msg.role === 'system' ? 'System' : 'AI'}
+                        {msg.model_used && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>({msg.model_used})</span>}
+                      </div>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Input Area */}
               <div style={{
                 flex: 1,
                 marginBottom: '2rem'
               }}>
-                {prompt === '' && (
+                {prompt === '' && messages.length === 0 && (
                   <div style={{
                     color: '#6b7280',
                     fontSize: '0.95rem',
@@ -851,9 +1027,11 @@ export default function HomePage() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading}
                   style={{
                     width: '100%',
-                    minHeight: '100px',
+                    minHeight: messages.length > 0 ? '60px' : '100px',
                     background: 'transparent',
                     border: 'none',
                     color: '#ffffff',
@@ -862,8 +1040,10 @@ export default function HomePage() {
                     resize: 'none',
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     lineHeight: '1.6',
-                    display: prompt === '' ? 'none' : 'block'
+                    display: prompt === '' && messages.length === 0 ? 'none' : 'block',
+                    opacity: isLoading ? 0.5 : 1
                   }}
+                  placeholder={messages.length > 0 ? "Type your message..." : ""}
                 />
               </div>
 
@@ -919,16 +1099,19 @@ export default function HomePage() {
                       </svg>
                     </div>
                   )}
-                  <span style={{
-                    color: '#9ca3af',
-                    fontSize: '0.95rem',
-                    fontWeight: '400',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    Start
+                  <span 
+                    onClick={sendMessage}
+                    style={{
+                      color: isLoading ? '#6b7280' : '#9ca3af',
+                      fontSize: '0.95rem',
+                      fontWeight: '400',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      opacity: isLoading ? 0.5 : 1
+                    }}>
+                    {isLoading ? 'Sending...' : 'Start'}
                     <ArrowRight size={16} />
                   </span>
                 </div>
