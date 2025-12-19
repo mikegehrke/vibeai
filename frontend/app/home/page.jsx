@@ -6,15 +6,13 @@ import {
   Search, Plus, Home, Code, Globe, ChevronDown, 
   CheckCircle, ArrowRight, ExternalLink, FileCode,
   User, Bell, Users, Terminal, Palette, Sun, Moon, HelpCircle, LogOut, ChevronRight, Download,
-  Cloud, Star, Smartphone, Sparkles, Rocket, Lock, DollarSign, ArrowUp, ArrowLeft, Eye, Zap, Shield
+  Cloud, Star, Smartphone, Sparkles, Rocket, Lock, DollarSign, ArrowUp, ArrowLeft, Eye, Zap, Shield, MessageCircle
 } from 'lucide-react';
-import AnimatedLogoIcon from '../../components/AnimatedLogoIcon';
+import AnimatedLogoIcon from '../components/AnimatedLogoIcon';
 
-export default function UltraPlusSetupPage() {
-  const planKey = 'ultra-plus';
+export default function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
-  const [isYearly, setIsYearly] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -618,7 +616,7 @@ export default function UltraPlusSetupPage() {
             </div>
           </div>
 
-          <Link href="/teams/setup" style={{
+          <Link href="/pro-plus/setup" style={{
             width: '100%',
             padding: '0.75rem',
             background: 'transparent',
@@ -641,7 +639,7 @@ export default function UltraPlusSetupPage() {
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             <Sparkles size={14} color="currentColor" style={{ animation: 'upgradeButtonColor 2s ease-in-out infinite' }} />
-            Upgrade to Teams
+            Upgrade to Vibe AI Pro+
           </Link>
 
           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: 'none' }}>
@@ -667,464 +665,136 @@ export default function UltraPlusSetupPage() {
       }}
       className="hide-scrollbar"
       >
-        {/* Content will go here - Pricing Plans */}
+        {/* Main Content Area */}
         <div style={{
-          maxWidth: '900px',
+          maxWidth: '1000px',
           margin: '0 auto',
-          padding: '2rem',
+          padding: '3rem 2rem',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          minHeight: '100vh'
         }}>
-          {/* Back Button */}
-          <Link href="/pricing" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            alignSelf: 'flex-start',
-            marginBottom: '1.5rem',
-            color: '#999',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-            transition: 'color 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = '#ececec'}
-          onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
-          >
-            <ArrowLeft size={18} />
-            Back to Pricing
-          </Link>
           <h1 style={{
-            fontSize: '1.75rem',
+            fontSize: '2.5rem',
             fontWeight: '700',
             color: '#ececec',
-            marginBottom: '0.5rem',
+            marginBottom: '1rem',
             textAlign: 'center'
           }}>
-            Compare VibeAI plans
+            Welcome to Vibe AI
           </h1>
           <p style={{
-            fontSize: '0.9rem',
+            fontSize: '1.1rem',
             color: '#999',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
+            marginBottom: '3rem',
+            textAlign: 'center',
+            maxWidth: '600px'
           }}>
-            Autonomy for all. Choose the best plan for you.
+            What will you build today?
           </p>
 
-          {/* Plan Selector Tabs */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            marginBottom: '2rem'
-          }}>
-            <button
-              onClick={() => setIsYearly(false)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'transparent',
-                color: !isYearly ? '#ececec' : '#999',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsYearly(true)}
-              style={{
-                padding: '0.5rem 1rem',
-                background: 'transparent',
-                color: isYearly ? '#ececec' : '#999',
-                border: '1px solid #4a4a4a',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Yearly
-            </button>
-            {isYearly && (
-              <span style={{
-                fontSize: '0.75rem',
-                color: '#3b82f6',
-                fontWeight: '600'
-              }}>
-                Up to 20% off
-              </span>
-            )}
-          </div>
-
-          {/* Pricing Cards */}
+          {/* Quick Actions */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '1.25rem',
-            marginBottom: '2rem',
+            gap: '1.5rem',
             width: '100%',
             maxWidth: '900px'
           }}>
-            {/* Starter Plan */}
-            <div style={{
+            <Link href="/builder" style={{
               background: '#2a2a2a',
               borderRadius: '12px',
-              padding: '1.25rem',
+              padding: '2rem',
               border: '1px solid #2f2f2f',
               display: 'flex',
               flexDirection: 'column',
-              transition: 'transform 0.2s ease',
+              alignItems: 'center',
+              gap: '1rem',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
               cursor: 'pointer',
-              height: '100%'
+              textDecoration: 'none'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <h3 style={{
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Starter
-              </h3>
-              <div style={{
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Free
-              </div>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Limited Vibe AI Agent access</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Eye size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>10 public apps</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Zap size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Basic AI features</span>
-                </div>
-              </div>
-              <button style={{
-                marginTop: 'auto',
-                width: '100%',
-                padding: '0.75rem',
-                background: '#3a3a3a',
-                color: '#ececec',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              >
-                Your current plan
-              </button>
-            </div>
-
-            {/* Vibe AI Ultra+ Plan - Highlighted */}
-            <div style={{
-              background: '#1e3a5f',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              border: '2px solid #3b82f6',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer',
-              height: '100%'
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.borderColor = '#3b82f6';
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = '#2f2f2f';
+            }}
             >
-              {isYearly && (
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: '600'
-                }}>
-                  20% off
-                </div>
-              )}
-              <h3 style={{
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Vibe AI Ultra+
+              <Code size={32} color="#3b82f6" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
+                App Builder
               </h3>
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-                marginBottom: '0.25rem'
-              }}>
-                <span style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  color: '#ececec'
-                }}>
-                  {isYearly ? '63,99' : '79,99'}
-                </span>
-                <span style={{
-                  fontSize: '0.85rem',
-                  color: '#999'
-                }}>
-                  €
-                </span>
-              </div>
-              <div style={{
-                fontSize: '0.75rem',
-                color: '#999',
-                marginBottom: '0.25rem'
-              }}>
-                per month
-              </div>
-              <div style={{
-                fontSize: '0.65rem',
-                color: '#999',
-                marginBottom: '0.5rem'
-              }}>
-                {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
-              <p style={{
-                fontSize: '0.8rem',
-                color: '#999',
-                marginBottom: '0.75rem'
-              }}>
-                Complete development suite with app store publishing.
+              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
+                Create full-stack apps with AI
               </p>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Everything in Ultra</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Rocket size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Unlimited APK generation</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Lock size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>App Store publishing</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <DollarSign size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>75€ monthly credits</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ArrowUp size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Dedicated account manager</span>
-                </div>
-              </div>
-              <Link href={`/pricing/ultra-plus/checkout?yearly=${isYearly}`} style={{
-                marginTop: 'auto',
-                width: '100%',
-                padding: '0.875rem',
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'opacity 0.2s',
-                textDecoration: 'none'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-              >
-                Continue with Ultra+
-                <ArrowRight size={18} />
-              </Link>
-            </div>
+            </Link>
 
-            {/* Teams Plan */}
-            <div style={{
+            <Link href="/chatgpt" style={{
               background: '#2a2a2a',
               borderRadius: '12px',
-              padding: '1.5rem',
+              padding: '2rem',
               border: '1px solid #2f2f2f',
               display: 'flex',
               flexDirection: 'column',
-              position: 'relative',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer'
+              alignItems: 'center',
+              gap: '1rem',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              cursor: 'pointer',
+              textDecoration: 'none'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.borderColor = '#3b82f6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = '#2f2f2f';
+            }}
             >
-              {isYearly && (
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  fontWeight: '600'
-                }}>
-                  13% off
-                </div>
-              )}
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: '#ececec',
-                marginBottom: '0.5rem'
-              }}>
-                Teams
+              <MessageCircle size={32} color="#3b82f6" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
+                AI Chat
               </h3>
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-                marginBottom: '0.25rem'
-              }}>
-                <span style={{
-                  fontSize: '1.75rem',
-                  fontWeight: '700',
-                  color: '#ececec'
-                }}>
-                  {isYearly ? '79,99' : '99,99'}
-                </span>
-                <span style={{
-                  fontSize: '0.9rem',
-                  color: '#999'
-                }}>
-                  €
-                </span>
-              </div>
-              <div style={{
-                fontSize: '0.8rem',
-                color: '#999',
-                marginBottom: '0.25rem'
-              }}>
-                per user
-              </div>
-              <div style={{
-                fontSize: '0.7rem',
-                color: '#999',
-                marginBottom: '0.75rem'
-              }}>
-                {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
-              <p style={{
-                fontSize: '0.85rem',
-                color: '#999',
-                marginBottom: '1rem'
-              }}>
-                Bring Vibe AI to your entire team.
+              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
+                Chat with multi-model AI
               </p>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-                flex: 1
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ArrowLeft size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Everything in Core</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileCode size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Centralized billing</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Role-based access control</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <DollarSign size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>100€ monthly credits</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Shield size={16} color="#999" />
-                  <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Private deployments</span>
-                </div>
-              </div>
-              <Link href="/teams/setup" style={{
-                marginTop: 'auto',
-                width: '100%',
-                padding: '0.75rem',
-                background: '#3a3a3a',
-                color: '#ececec',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'background 0.2s',
-                textDecoration: 'none'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#3a3a3a'}
-              >
-                Continue with Teams
-                <ArrowRight size={16} />
-              </Link>
-            </div>
+            </Link>
+
+            <Link href="/studio" style={{
+              background: '#2a2a2a',
+              borderRadius: '12px',
+              padding: '2rem',
+              border: '1px solid #2f2f2f',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              cursor: 'pointer',
+              textDecoration: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.borderColor = '#3b82f6';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = '#2f2f2f';
+            }}
+            >
+              <Terminal size={32} color="#3b82f6" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
+                Code Studio
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
+                Professional code editor
+              </p>
+            </Link>
           </div>
-
-          {/* Disclaimer */}
-          <p style={{
-            fontSize: '0.75rem',
-            color: '#999',
-            lineHeight: '1.5',
-            maxWidth: '750px',
-            textAlign: 'center'
-          }}>
-            *Prices are subject to tax depending on your location. Vibe AI Agent is powered by large language models. While it can produce powerful results, its behavior is probabilistic—meaning it may occasionally make mistakes.
-          </p>
         </div>
       </div>
     </div>

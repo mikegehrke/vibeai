@@ -64,19 +64,47 @@ function AnimatedLogoIcon() {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams?.get('redirect') || '/';
+  const redirect = searchParams?.get('redirect') || '/home';
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   useEffect(() => {
+    // Prüfe ob Token vorhanden UND gültig ist
     const token = localStorage.getItem('token');
-    if (token) {
-      router.push(redirect);
+    if (!token) {
+      setCheckingAuth(false);
+      return;
     }
+
+    // Validiere Token mit Backend
+    fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      if (res.ok) {
+        // Token ist gültig, weiterleiten
+        router.push('/home');
+      } else {
+        // Token ist ungültig, entfernen
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setCheckingAuth(false);
+      }
+    })
+    .catch(() => {
+      // Fehler bei Validierung, Token entfernen
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setCheckingAuth(false);
+    });
   }, [router, redirect]);
 
   const handleEmailLogin = async (e) => {
@@ -104,7 +132,12 @@ function LoginPageContent() {
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
-        router.push(redirect);
+        // Zeige Erfolgs-Overlay
+        setShowSuccessOverlay(true);
+        // Nach 2 Sekunden zur Home-Seite weiterleiten
+        setTimeout(() => {
+          router.push('/home');
+        }, 2000);
       } else {
         throw new Error('Kein Token erhalten');
       }
@@ -139,14 +172,97 @@ function LoginPageContent() {
       // In Production: Hier würde die echte OAuth-Integration sein
       console.log(`${provider} login - Mock implementation`);
       
-      router.push(redirect);
+      // Zeige Erfolgs-Overlay
+      setShowSuccessOverlay(true);
+      // Nach 2 Sekunden zur Home-Seite weiterleiten
+      setTimeout(() => {
+        router.push('/home');
+      }, 2000);
     } catch (err) {
       setError(`${provider} login fehlgeschlagen`);
       setLoading(false);
     }
   };
 
+  // Zeige Loading während Token-Validierung
+  if (checkingAuth) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div style={{ color: 'white', fontSize: '1.2rem' }}>Loading...</div>
+      </div>
+    );
+  }
+
   return (
+    <>
+      {/* Erfolgs-Overlay */}
+      {showSuccessOverlay && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          animation: 'fadeIn 0.3s ease-in'
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '3rem 4rem',
+            borderRadius: '16px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            textAlign: 'center',
+            maxWidth: '400px',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
+            <div style={{
+              fontSize: '4rem',
+              marginBottom: '1rem'
+            }}>✅</div>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              color: '#000000',
+              marginBottom: '0.5rem'
+            }}>
+              Du bist eingeloggt!
+            </h2>
+            <p style={{
+              fontSize: '1rem',
+              color: '#666666',
+              marginTop: '0.5rem'
+            }}>
+              Weiterleitung zur Home-Seite...
+            </p>
+          </div>
+        </div>
+      )}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -162,11 +278,12 @@ function LoginPageContent() {
         overflowY: 'auto'
       }}>
         {/* Logo */}
-        <div style={{
+        <Link href="/" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          marginBottom: '3rem'
+          marginBottom: '3rem',
+          textDecoration: 'none'
         }}>
           <AnimatedLogoIcon />
           <div style={{
@@ -177,7 +294,7 @@ function LoginPageContent() {
           }}>
             Vibe AI go
           </div>
-        </div>
+        </Link>
 
         {/* Title */}
         <h1 style={{
@@ -602,6 +719,7 @@ function LoginPageContent() {
         </h2>
       </div>
     </div>
+    </>
   );
 }
 

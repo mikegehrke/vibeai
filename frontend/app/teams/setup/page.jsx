@@ -437,7 +437,7 @@ export default function TeamsSetupPage() {
 
         {/* Navigation */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '0', marginTop: '0.5rem' }}>
-          <Link href="#" style={{
+          <Link href="/home" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',

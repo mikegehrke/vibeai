@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Box, Pencil, ArrowUp, Paperclip, Menu, Plus, Globe, Search, Grid3x3, Mic, Circle, CheckCircle, RefreshCw, MessageCircle, CheckSquare, ArrowDown, Play } from 'lucide-react';
 
 // Animiertes Logo-Icon Komponente - Striche bewegen sich rechts/links, orange/schwarz leuchten
@@ -161,11 +162,25 @@ function AnimatedAgentIcon({ isActive }) {
 }
 
 export default function CopilotPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('app');
   const [prompt, setPrompt] = useState('');
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Handler für "Start building" Button
+  const handleStartBuilding = () => {
+    // Prüfe ob User eingeloggt ist
+    const token = localStorage.getItem('token');
+    if (token) {
+      // User ist eingeloggt, direkt zu /home
+      router.push('/home');
+    } else {
+      // User ist nicht eingeloggt, zu /login mit redirect
+      router.push('/login?redirect=/home');
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [currentResponse, setCurrentResponse] = useState(''); // Aktuelle Streaming-Antwort
@@ -681,8 +696,9 @@ export default function CopilotPage() {
         {/* Right Side - Log in & Start building */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <Link href="/login" style={{ color: '#000000', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '400' }}>Log in</Link>
-          <Link href="/register" style={{ textDecoration: 'none' }}>
-            <button style={{
+          <button 
+            onClick={handleStartBuilding}
+            style={{
               background: '#ff8c42',
               color: 'white',
               padding: '0.625rem 1.25rem',
@@ -695,10 +711,9 @@ export default function CopilotPage() {
             }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              Start building
-            </button>
-          </Link>
+          >
+            Start building
+          </button>
         </div>
       </header>
 
