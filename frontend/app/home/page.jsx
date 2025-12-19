@@ -6,14 +6,59 @@ import {
   Search, Plus, Home, Code, Globe, ChevronDown, 
   CheckCircle, ArrowRight, ExternalLink, FileCode,
   User, Bell, Users, Terminal, Palette, Sun, Moon, HelpCircle, LogOut, ChevronRight, Download,
-  Cloud, Star, Smartphone, Sparkles, Rocket, Lock, DollarSign, ArrowUp, ArrowLeft, Eye, Zap, Shield, MessageCircle
+  Cloud, Star, Smartphone, Sparkles, Rocket, Lock, DollarSign, ArrowUp, ArrowLeft, Eye, Zap, Shield, MessageCircle,
+  Box, Pencil, Paperclip, Circle
 } from 'lucide-react';
 import AnimatedLogoIcon from '../components/AnimatedLogoIcon';
 
 export default function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [activeTab, setActiveTab] = useState('app');
+  const [prompt, setPrompt] = useState('');
+  const [placeholderText, setPlaceholderText] = useState('');
+  const [isHoveringChat, setIsHoveringChat] = useState(false);
+  const [hoveringTab, setHoveringTab] = useState(null);
   const dropdownRef = useRef(null);
+
+  // Typewriter Effect - stabil ohne Blinken
+  useEffect(() => {
+    const fullText = activeTab === 'app' 
+      ? "Describe your idea, '/' for integrations..."
+      : "Describe the idea you want to design...";
+    
+    let currentIndex = 0;
+    let typeInterval = null;
+    
+    setPlaceholderText('');
+
+    typeInterval = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setPlaceholderText(fullText.substring(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typeInterval);
+        // Warte 3 Sekunden, dann starte neu
+        setTimeout(() => {
+          currentIndex = 0;
+          setPlaceholderText('');
+          // Neustart mit neuem Interval
+          typeInterval = setInterval(() => {
+            if (currentIndex <= fullText.length) {
+              setPlaceholderText(fullText.substring(0, currentIndex));
+              currentIndex++;
+            }
+          }, 300);
+        }, 3000);
+      }
+    }, 300); // 300ms pro Buchstabe - konstant
+
+    return () => {
+      if (typeInterval) {
+        clearInterval(typeInterval);
+      }
+    };
+  }, [activeTab]);
 
   useEffect(() => {
     // Add CSS animations for progress bars and upgrade button
@@ -665,135 +710,255 @@ export default function HomePage() {
       }}
       className="hide-scrollbar"
       >
-        {/* Main Content Area */}
+        {/* Main Content Area - Chat Interface */}
         <div style={{
-          maxWidth: '1000px',
+          maxWidth: '900px',
           margin: '0 auto',
-          padding: '3rem 2rem',
+          padding: '4rem 2rem',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           minHeight: '100vh'
         }}>
+          {/* Headline */}
           <h1 style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            color: '#ececec',
-            marginBottom: '1rem',
-            textAlign: 'center'
-          }}>
-            Welcome to Vibe AI
-          </h1>
-          <p style={{
-            fontSize: '1.1rem',
-            color: '#999',
+            fontSize: '3rem',
+            fontWeight: '400',
+            color: '#ffffff',
             marginBottom: '3rem',
             textAlign: 'center',
-            maxWidth: '600px'
+            letterSpacing: '-0.02em'
           }}>
-            What will you build today?
-          </p>
+            Hi mike, what do you want to make?
+          </h1>
 
-          {/* Quick Actions */}
+          {/* Tab Navigation + Chat Container */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '1.5rem',
             width: '100%',
-            maxWidth: '900px'
+            maxWidth: '900px',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <Link href="/builder" style={{
-              background: '#2a2a2a',
-              borderRadius: '12px',
-              padding: '2rem',
-              border: '1px solid #2f2f2f',
+            {/* Tabs - mit Abstand links UND rechts */}
+            <div style={{
               display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.borderColor = '#3b82f6';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#2f2f2f';
-            }}
-            >
-              <Code size={32} color="#3b82f6" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
-                App Builder
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
-                Create full-stack apps with AI
-              </p>
-            </Link>
+              gap: '0',
+              marginBottom: '-1px',
+              paddingLeft: '30px',
+              paddingRight: '30px'
+            }}>
+              <button
+                onClick={() => setActiveTab('app')}
+                onMouseEnter={() => setHoveringTab('app')}
+                onMouseLeave={() => setHoveringTab(null)}
+                style={{
+                  flex: 1,
+                  padding: '1rem 2rem',
+                  background: activeTab === 'app' ? 'transparent' : '#2a2a2a',
+                  border: activeTab === 'app' 
+                    ? `1px solid #3b82f6` 
+                    : 'none',
+                  borderBottom: activeTab === 'app' ? `1px solid #1a1a1a` : `1px solid #3b82f6`,
+                  borderTopLeftRadius: '12px',
+                  borderTopRightRadius: '12px',
+                  borderBottomLeftRadius: '0',
+                  borderBottomRightRadius: '0',
+                  color: '#9ca3af',
+                  fontSize: '0.95rem',
+                  fontWeight: '400',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                  zIndex: activeTab === 'app' ? 2 : 1
+                }}
+              >
+                <Box size={18} />
+                App
+              </button>
+              <button
+                onClick={() => setActiveTab('design')}
+                onMouseEnter={() => setHoveringTab('design')}
+                onMouseLeave={() => setHoveringTab(null)}
+                style={{
+                  flex: 1,
+                  padding: '1rem 2rem',
+                  background: activeTab === 'design' ? 'transparent' : '#2a2a2a',
+                  border: activeTab === 'design' 
+                    ? `1px solid #3b82f6` 
+                    : 'none',
+                  borderBottom: activeTab === 'design' ? `1px solid #1a1a1a` : `1px solid #3b82f6`,
+                  borderTopLeftRadius: '12px',
+                  borderTopRightRadius: '12px',
+                  borderBottomLeftRadius: '0',
+                  borderBottomRightRadius: '0',
+                  color: '#9ca3af',
+                  fontSize: '0.95rem',
+                  fontWeight: '400',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                  zIndex: activeTab === 'design' ? 2 : 1
+                }}
+              >
+                <Pencil size={18} />
+                Design
+              </button>
+            </div>
 
-            <Link href="/chatgpt" style={{
-              background: '#2a2a2a',
-              borderRadius: '12px',
-              padding: '2rem',
-              border: '1px solid #2f2f2f',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.borderColor = '#3b82f6';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#2f2f2f';
-            }}
+            {/* Chat Container - ALLE 4 Ecken gerundet */}
+            <div 
+              onMouseEnter={() => setIsHoveringChat(true)}
+              onMouseLeave={() => setIsHoveringChat(false)}
+              style={{
+                background: '#1a1a1a',
+                border: `1px solid #3b82f6`,
+                borderTopLeftRadius: '12px',
+                borderTopRightRadius: '12px',
+                borderBottomLeftRadius: '12px',
+                borderBottomRightRadius: '12px',
+                padding: '2rem',
+                minHeight: '200px',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'border-color 0.2s',
+                position: 'relative',
+                zIndex: 1
+              }}
             >
-              <MessageCircle size={32} color="#3b82f6" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
-                AI Chat
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
-                Chat with multi-model AI
-              </p>
-            </Link>
+              {/* Input Area */}
+              <div style={{
+                flex: 1,
+                marginBottom: '2rem'
+              }}>
+                {prompt === '' && (
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '0.95rem',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    lineHeight: '1.6'
+                  }}>
+                    {placeholderText}
+                  </div>
+                )}
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  style={{
+                    width: '100%',
+                    minHeight: '100px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    resize: 'none',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    lineHeight: '1.6',
+                    display: prompt === '' ? 'none' : 'block'
+                  }}
+                />
+              </div>
 
-            <Link href="/studio" style={{
-              background: '#2a2a2a',
-              borderRadius: '12px',
-              padding: '2rem',
-              border: '1px solid #2f2f2f',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.borderColor = '#3b82f6';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#2f2f2f';
-            }}
-            >
-              <Terminal size={32} color="#3b82f6" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ececec', margin: 0 }}>
-                Code Studio
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', margin: 0 }}>
-                Professional code editor
-              </p>
-            </Link>
+              {/* Bottom Bar */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                {/* Left Side */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {activeTab === 'app' && (
+                    <button style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#9ca3af',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0'
+                    }}>
+                      <Box size={18} />
+                      Build
+                      <ChevronDown size={16} />
+                    </button>
+                  )}
+                  <button style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#9ca3af',
+                    cursor: 'pointer',
+                    padding: '0.5rem'
+                  }}>
+                    <Paperclip size={20} />
+                  </button>
+                </div>
+
+                {/* Right Side */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {activeTab === 'app' && (
+                    <div style={{
+                      background: '#9b8b5e',
+                      borderRadius: '8px',
+                      padding: '0.7rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                        <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <span style={{
+                    color: '#9ca3af',
+                    fontSize: '0.95rem',
+                    fontWeight: '400',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    Start
+                    <ArrowRight size={16} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Web App Dropdown */}
+          <div style={{
+            marginTop: '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Globe size={16} color="#999" />
+            <span style={{ fontSize: '0.9rem', color: '#999' }}>Web app</span>
+            <ChevronDown size={14} color="#999" />
+          </div>
+
+          {/* Fast Mode Info */}
+          <div style={{
+            marginTop: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.85rem',
+            color: '#666'
+          }}>
+            <Circle size={12} color="#666" />
+            <span>Fast mode - create a quick version of your app with key features.</span>
           </div>
         </div>
       </div>
