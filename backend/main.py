@@ -1429,6 +1429,17 @@ except ImportError:
 except Exception as e:
     print(f"⚠️  Pricing Router failed to load: {e}")
 
+# TEAMS SETUP
+# -------------------------------------------------------------
+try:
+    from teams_setup_routes import router as teams_setup_router
+    app.include_router(teams_setup_router)
+    print("✅ Teams Setup Router loaded")
+except ImportError:
+    print("⚠️  Teams setup routes not available")
+except Exception as e:
+    print(f"⚠️  Teams Setup Router failed to load: {e}")
+
 # AUDIO TRANSCRIPTION (Whisper)
 # -------------------------------------------------------------
 import io
