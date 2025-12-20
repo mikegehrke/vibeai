@@ -735,18 +735,28 @@ async def build_app_with_agent(agent: str, description: str, user_id: str):
 @router.get("/models")
 async def get_available_models():
     """Get list of available models"""
+    # Convert dict to list with id field
+    models_list = [
+        {"id": model_id, **model_data}
+        for model_id, model_data in AVAILABLE_MODELS.items()
+    ]
     return {
         "success": True,
-        "models": AVAILABLE_MODELS
+        "models": models_list
     }
 
 
 @router.get("/agents")
 async def get_available_agents():
     """Get list of available agents"""
+    # Convert dict to list with id field
+    agents_list = [
+        {"id": agent_id, **agent_data}
+        for agent_id, agent_data in AVAILABLE_AGENTS.items()
+    ]
     return {
         "success": True,
-        "agents": AVAILABLE_AGENTS
+        "agents": agents_list
     }
 
 

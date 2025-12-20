@@ -23,11 +23,16 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentModel, setCurrentModel] = useState('gpt-5');
   const [currentAgent, setCurrentAgent] = useState('smart_agent');
-  const [typingMessageIndex, setTypingMessageIndex] = useState(null);
-  const [displayedText, setDisplayedText] = useState('');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showAgentDropdown, setShowAgentDropdown] = useState(false);
+  const [availableModels, setAvailableModels] = useState([]);
+  const [availableAgents, setAvailableAgents] = useState([]);
   const dropdownRef = useRef(null);
   const wsRef = useRef(null);
-  const typingIntervalRef = useRef(null);
+  const modelDropdownRef = useRef(null);
+  const agentDropdownRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Typewriter Effect - stabil ohne Blinken
   useEffect(() => {
@@ -67,6 +72,54 @@ export default function HomePage() {
       }
     };
   }, [activeTab]);
+
+  // Load available models and agents
+  useEffect(() => {
+    const loadModelsAndAgents = async () => {
+      try {
+        const [modelsRes, agentsRes] = await Promise.all([
+          fetch('http://localhost:8000/api/home/models'),
+          fetch('http://localhost:8000/api/home/agents')
+        ]);
+        
+        if (modelsRes.ok) {
+          const modelsData = await modelsRes.json();
+          setAvailableModels(modelsData.models || []);
+        }
+        
+        if (agentsRes.ok) {
+          const agentsData = await agentsRes.json();
+          setAvailableAgents(agentsData.agents || []);
+        }
+      } catch (error) {
+        console.error('Error loading models/agents:', error);
+      }
+    };
+    
+    loadModelsAndAgents();
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target)) {
+        setShowModelDropdown(false);
+      }
+      if (agentDropdownRef.current && !agentDropdownRef.current.contains(event.target)) {
+        setShowAgentDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // WebSocket Connection
   useEffect(() => {
@@ -171,11 +224,11 @@ export default function HomePage() {
           message: currentPrompt,
           model: currentModel,
           agent: currentAgent,
-          conversation_history: messages.map(m => ({
+          conversation_history: messages.filter(m => !m.isThinking && m.role !== 'system').map(m => ({
             role: m.role,
             content: m.content
           })),
-          stream: true,
+          stream: false,
           build_app: activeTab === 'app' && (
             currentPrompt.toLowerCase().includes('build') ||
             currentPrompt.toLowerCase().includes('create') ||
@@ -189,19 +242,22 @@ export default function HomePage() {
       }
 
       const data = await response.json();
+      console.log('📩 Response received:', data);
       
       if (data.success) {
         // Remove thinking message and add real response
         setMessages(prev => {
           const filtered = prev.filter(m => !m.isThinking);
-          return [...filtered, {
+          const newMessage = {
             role: 'assistant',
             content: data.response,
             model_used: data.model_used,
             agent_used: data.agent_used,
             isThinking: false,
             timestamp: new Date()
-          }];
+          };
+          console.log('✅ Adding new message:', newMessage);
+          return [...filtered, newMessage];
         });
       }
     } catch (error) {
@@ -228,50 +284,7 @@ export default function HomePage() {
     }
   };
 
-  // Typewriter Effect for Agent Messages
-  useEffect(() => {
-    // Find the last assistant message that needs typing
-    const lastAssistantIdx = messages.findLastIndex(m => m.role === 'assistant' && !m.isThinking && !m.typingComplete);
-    
-    if (lastAssistantIdx !== -1 && lastAssistantIdx !== typingMessageIndex) {
-      const message = messages[lastAssistantIdx];
-      
-      // Clear previous interval
-      if (typingIntervalRef.current) {
-        clearInterval(typingIntervalRef.current);
-      }
-      
-      setTypingMessageIndex(lastAssistantIdx);
-      setDisplayedText('');
-      
-      let charIndex = 0;
-      const fullText = message.content;
-      
-      typingIntervalRef.current = setInterval(() => {
-        if (charIndex < fullText.length) {
-          setDisplayedText(fullText.substring(0, charIndex + 1));
-          charIndex++;
-        } else {
-          clearInterval(typingIntervalRef.current);
-          // Mark message as typing complete
-          setMessages(prev => {
-            const updated = [...prev];
-            if (updated[lastAssistantIdx]) {
-              updated[lastAssistantIdx].typingComplete = true;
-            }
-            return updated;
-          });
-          setTypingMessageIndex(null);
-        }
-      }, 15); // 15ms per character = schnellere, natürliche Geschwindigkeit
-      
-      return () => {
-        if (typingIntervalRef.current) {
-          clearInterval(typingIntervalRef.current);
-        }
-      };
-    }
-  }, [messages, typingMessageIndex]);
+  // Kein Typewriter - Nachrichten erscheinen sofort vollständig
 
   useEffect(() => {
     // Add CSS animations for progress bars and upgrade button
@@ -312,7 +325,7 @@ export default function HomePage() {
           text-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
         }
       }
-      /* Hide scrollbars but keep scrolling */
+      /* Hide scrollbars but keep scrolling */}
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -326,6 +339,20 @@ export default function HomePage() {
       textarea {
         -ms-overflow-style: none;
         scrollbar-width: none;
+      }
+      /* Custom scrollbar for chat */
+      div::-webkit-scrollbar {
+        width: 6px;
+      }
+      div::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      div::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+      div::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.1);
       }
     `;
     document.head.appendChild(style);
@@ -1033,162 +1060,290 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Chat Container - ALLE 4 Ecken gerundet */}
+            {/* Chat Container - FESTE GRÖSSE */}
             <div 
               onMouseEnter={() => setIsHoveringChat(true)}
               onMouseLeave={() => setIsHoveringChat(false)}
               style={{
                 background: '#1a1a1a',
                 border: `1px solid #3b82f6`,
-                borderTopLeftRadius: '12px',
-                borderTopRightRadius: '12px',
-                borderBottomLeftRadius: '12px',
-                borderBottomRightRadius: '12px',
-                padding: '2rem',
-                minHeight: '200px',
+                borderRadius: '12px',
+                height: '300px',
+                minHeight: '300px',
+                maxHeight: '300px',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'border-color 0.2s',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                overflow: 'hidden'
               }}
             >
-              {/* Messages Display */}
-              {messages.length > 0 && (
-                <div style={{
-                  marginBottom: '1.5rem',
-                  maxHeight: '400px',
+              {/* Scrollable Chat + Input Area */}
+              <div 
+                ref={messagesContainerRef}
+                style={{
+                  flex: 1,
                   overflowY: 'auto',
+                  padding: '1.5rem',
+                  paddingBottom: '80px', // Space for fixed buttons
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '1.5rem',
-                  paddingRight: '0.5rem'
+                  gap: '1rem',
+                  scrollbarColor: 'rgba(255, 255, 255, 0.05) transparent',
+                  scrollbarWidth: 'thin'
                 }}
-                className="hide-scrollbar">
-                  {messages.map((msg, idx) => (
-                    <div key={idx} style={{
+              >
+                {/* Messages */}
+                {messages.map((msg, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                    gap: '1rem',
+                    alignItems: 'flex-start'
+                  }}>
+                    {/* Avatar */}
+                    <div style={{
+                      minWidth: '32px',
+                      height: '32px',
                       display: 'flex',
-                      gap: '1rem',
-                      alignItems: 'flex-start'
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
-                      {/* Icon */}
-                      <div style={{
-                        minWidth: '32px',
-                        height: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {msg.role === 'user' ? (
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: '#3b82f6',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '600',
-                            fontSize: '0.85rem'
-                          }}>
-                            MG
-                          </div>
-                        ) : (
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            opacity: (msg.isThinking || idx === typingMessageIndex) ? 1 : 0.6
-                          }}>
-                            <AnimatedLogoIcon 
-                              size={32} 
-                              color={(msg.isThinking || idx === typingMessageIndex) ? undefined : '#3b82f6'}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Content */}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ 
-                          fontWeight: '600', 
-                          marginBottom: '0.5rem', 
-                          color: '#9ca3af',
+                      {msg.role === 'user' ? (
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: '#3b82f6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: '600',
                           fontSize: '0.85rem'
                         }}>
-                          {msg.role === 'user' ? 'You' : (msg.agent_used || 'Smart Agent')}
+                          MG
                         </div>
-                        <div style={{ 
-                          whiteSpace: 'pre-wrap',
-                          color: '#e5e5e5',
-                          fontSize: '0.95rem',
-                          lineHeight: '1.6'
+                      ) : (
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          opacity: msg.isThinking ? 1 : 0.6
                         }}>
-                          {msg.role === 'assistant' && idx === typingMessageIndex && !msg.typingComplete
-                            ? displayedText + '▋' 
-                            : msg.content
-                          }
+                          <AnimatedLogoIcon 
+                            size={32} 
+                            color={msg.isThinking ? undefined : '#3b82f6'}
+                          />
                         </div>
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div style={{ 
+                      flex: 1,
+                      textAlign: msg.role === 'user' ? 'right' : 'left'
+                    }}>
+                      <div style={{ 
+                        fontWeight: '600', 
+                        marginBottom: '0.5rem', 
+                        color: '#9ca3af',
+                        fontSize: '0.85rem'
+                      }}>
+                        {msg.role === 'user' ? 'You' : (msg.agent_used || 'Smart Agent')}
+                      </div>
+                      <div style={{ 
+                        whiteSpace: 'pre-wrap',
+                        color: '#e5e5e5',
+                        fontSize: '0.95rem',
+                        lineHeight: '1.6'
+                      }}>
+                        {msg.content}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Input Area */}
-              <div style={{
-                marginBottom: '2rem',
-                position: 'relative'
-              }}>
-                {prompt === '' && messages.length === 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    color: '#6b7280',
-                    fontSize: '0.95rem',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    lineHeight: '1.6',
-                    pointerEvents: 'none'
-                  }}>
-                    {placeholderText}
                   </div>
-                )}
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading}
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    height: messages.length > 0 ? '60px' : '100px',
-                    maxHeight: messages.length > 0 ? '60px' : '100px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    resize: 'none',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    lineHeight: '1.6',
-                    opacity: isLoading ? 0.5 : 1,
-                    overflowY: 'auto',
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none'
-                  }}
-                  placeholder={messages.length > 0 ? "Type your message..." : ""}
-                />
+                ))}
+                
+                {/* Input Area - appears where user types */}
+                <div style={{ position: 'relative', minHeight: '40px' }}>
+                  {prompt === '' && messages.length === 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      color: '#6b7280',
+                      fontSize: '0.95rem',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.6',
+                      pointerEvents: 'none'
+                    }}>
+                      {placeholderText}
+                    </div>
+                  )}
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      minHeight: '40px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.95rem',
+                      outline: 'none',
+                      resize: 'none',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.6',
+                      overflowY: 'hidden',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}
+                    placeholder=""
+                  />
+                </div>
+                <div ref={messagesEndRef} />
               </div>
 
-              {/* Bottom Bar */}
+              {/* Fixed Bottom Bar */}
               <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: '#1a1a1a',
+                borderTop: 'none',
+                padding: '1rem 1.5rem',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                zIndex: 10
               }}>
                 {/* Left Side */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {/* Model Dropdown */}
+                  <div ref={modelDropdownRef} style={{ position: 'relative' }}>
+                    <button 
+                      onClick={() => setShowModelDropdown(!showModelDropdown)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#9ca3af',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0'
+                      }}>
+                      {currentModel}
+                      <ChevronDown size={16} />
+                    </button>
+                    {showModelDropdown && Array.isArray(availableModels) && availableModels.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '100%',
+                        left: 0,
+                        marginBottom: '0.5rem',
+                        background: '#2a2a2a',
+                        border: '1px solid #3b82f6',
+                        borderRadius: '8px',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        minWidth: '200px',
+                        zIndex: 1000
+                      }}>
+                        {availableModels.map((model, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setCurrentModel(model.id);
+                              setShowModelDropdown(false);
+                            }}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              cursor: 'pointer',
+                              color: currentModel === model.id ? '#3b82f6' : '#e5e5e5',
+                              fontSize: '0.9rem',
+                              borderBottom: idx < availableModels.length - 1 ? '1px solid #3a3a3a' : 'none'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#333'}
+                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                          >
+                            <div style={{ fontWeight: '600' }}>{model.name}</div>
+                            {model.description && (
+                              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                                {model.description}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Agent Dropdown */}
+                  <div ref={agentDropdownRef} style={{ position: 'relative' }}>
+                    <button 
+                      onClick={() => setShowAgentDropdown(!showAgentDropdown)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#9ca3af',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0'
+                      }}>
+                      {Array.isArray(availableAgents) ? (availableAgents.find(a => a.id === currentAgent)?.name || currentAgent) : currentAgent}
+                      <ChevronDown size={16} />
+                    </button>
+                    {showAgentDropdown && Array.isArray(availableAgents) && availableAgents.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '100%',
+                        left: 0,
+                        marginBottom: '0.5rem',
+                        background: '#2a2a2a',
+                        border: '1px solid #3b82f6',
+                        borderRadius: '8px',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        minWidth: '200px',
+                        zIndex: 1000
+                      }}>
+                        {availableAgents.map((agent, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setCurrentAgent(agent.id);
+                              setShowAgentDropdown(false);
+                            }}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              cursor: 'pointer',
+                              color: currentAgent === agent.id ? '#3b82f6' : '#e5e5e5',
+                              fontSize: '0.9rem',
+                              borderBottom: idx < availableAgents.length - 1 ? '1px solid #3a3a3a' : 'none'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#333'}
+                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                          >
+                            <div style={{ fontWeight: '600' }}>{agent.name}</div>
+                            {agent.description && (
+                              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                                {agent.description}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {activeTab === 'app' && (
                     <button style={{
                       background: 'transparent',
