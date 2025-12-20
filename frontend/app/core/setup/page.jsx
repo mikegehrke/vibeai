@@ -188,20 +188,22 @@ export default function CoreSetupPage() {
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Account</span>
               </div>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 padding: '0.75rem 1rem',
                 cursor: 'pointer',
-                transition: 'background 0.2s'
+                transition: 'background 0.2s',
+                textDecoration: 'none',
+                color: '#ececec'
               }}
               onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <User size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Profile</span>
-              </div>
+              </Link>
 
               <div style={{
                 display: 'flex',

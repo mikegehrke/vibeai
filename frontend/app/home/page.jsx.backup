@@ -1,19 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
 import { 
-  Search, Plus, Home, Code, Globe, ChevronDown, 
-  CheckCircle, ArrowRight, ExternalLink, FileCode,
-  User, Bell, Users, Terminal, Palette, Sun, Moon, HelpCircle, LogOut, ChevronRight, Download,
-  Cloud, Star, Smartphone, Sparkles, Rocket, Lock, DollarSign, ArrowUp, ArrowLeft, Eye, Zap, Shield, MessageCircle,
+  ChevronDown, ArrowRight,
   Box, Pencil, Paperclip, Circle
 } from 'lucide-react';
-import AnimatedLogoIcon from '../components/AnimatedLogoIcon';
+import Sidebar from '../components/Sidebar';
 
 export default function HomePage() {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [theme, setTheme] = useState('light');
   const [activeTab, setActiveTab] = useState('app');
   const [prompt, setPrompt] = useState('');
   const [placeholderText, setPlaceholderText] = useState('');
@@ -27,6 +21,7 @@ export default function HomePage() {
   const [showAgentDropdown, setShowAgentDropdown] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
   const [availableAgents, setAvailableAgents] = useState([]);
+  const [userName, setUserName] = useState('there');
   const dropdownRef = useRef(null);
   const wsRef = useRef(null);
   const modelDropdownRef = useRef(null);
@@ -72,6 +67,48 @@ export default function HomePage() {
       }
     };
   }, [activeTab]);
+
+  // Load user name from API or localStorage
+  useEffect(() => {
+    const loadUserData = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        try {
+          // Try to fetch from API
+          const response = await fetch('http://localhost:8000/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            const name = userData.name || userData.username || userData.email?.split('@')[0] || 'there';
+            setUserName(name);
+            // Save to localStorage for offline access
+            localStorage.setItem('user', JSON.stringify(userData));
+            return;
+          }
+        } catch (error) {
+          console.log('Could not fetch user from API, trying localStorage');
+        }
+      }
+      
+      // Fallback: try localStorage
+      const userDataStr = localStorage.getItem('user');
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          setUserName(userData.name || userData.username || userData.email?.split('@')[0] || 'there');
+        } catch (e) {
+          console.log('Could not parse user data');
+        }
+      }
+    };
+    
+    loadUserData();
+  }, []);
 
   // Load available models and agents
   useEffect(() => {
@@ -478,21 +515,20 @@ export default function HomePage() {
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Account</span>
               </div>
 
-              <Link href="/profile" style={{
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 padding: '0.75rem 1rem',
                 cursor: 'pointer',
-                transition: 'background 0.2s',
-                textDecoration: 'none'
+                transition: 'background 0.2s'
               }}
               onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <User size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Profile</span>
-              </Link>
+              </div>
 
               <div style={{
                 display: 'flex',
@@ -719,6 +755,24 @@ export default function HomePage() {
           >
             <Home size={18} color="#ececec" />
             Home
+          </Link>
+          <Link href="/profile" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem',
+            borderRadius: '0',
+            color: '#ececec',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            transition: 'background 0.2s',
+            marginBottom: '0'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <User size={18} color="#ececec" />
+            Profile
           </Link>
           <Link href="#" style={{
             display: 'flex',
@@ -977,7 +1031,7 @@ export default function HomePage() {
             textAlign: 'center',
             letterSpacing: '-0.02em'
           }}>
-            Hi mike, what do you want to make?
+            Hi {userName.charAt(0).toUpperCase() + userName.slice(1)}, what do you want to make?
           </h1>
 
           {/* Tab Navigation + Chat Container */}

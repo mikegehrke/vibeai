@@ -378,6 +378,33 @@ async def register(user_data: UserCreate):
     
     users_db[user_id] = user
     
+    # ✅ AUTOMATICALLY CREATE PROFILE for new user
+    try:
+        from profile.profile_routes import profiles_db
+        
+        # Extract first/last name from full_name
+        name_parts = user_data.full_name.split(" ", 1) if user_data.full_name else ["", ""]
+        first_name = name_parts[0] if len(name_parts) > 0 else ""
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+        
+        # Create default profile
+        profiles_db[user_id] = {
+            "firstName": first_name,
+            "lastName": last_name,
+            "username": user_data.username,
+            "bio": "",
+            "location": "",
+            "xUsername": "",
+            "githubUsername": "",
+            "linkedinUsername": "",
+            "discordUsername": "",
+            "youtubeChannel": "",
+            "website": ""
+        }
+        print(f"✅ Profile auto-created for user {user_id}")
+    except Exception as e:
+        print(f"⚠️  Could not auto-create profile: {e}")
+    
     # Create access token
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     access_token = create_access_token(
@@ -1383,6 +1410,30 @@ try:
     print("   Endpoints: /api/home/chat, /api/home/ws, /api/home/models, /api/home/agents")
 except Exception as e:
     print(f"⚠️  Home Chat Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# PROFILE MANAGEMENT
+# -------------------------------------------------------------
+try:
+    from profile.profile_routes import router as profile_router
+    app.include_router(profile_router, tags=["Profile"])
+    print("✅ Profile Router loaded")
+    print("   Endpoints: /api/profile/me, /api/profile/create, /api/profile/{username}")
+except Exception as e:
+    print(f"⚠️  Profile Router failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# MEDIA PROCESSING (VIDEO & IMAGE)
+# -------------------------------------------------------------
+try:
+    from media.media_routes import router as media_router
+    app.include_router(media_router, prefix="/api/media", tags=["Media"])
+    print("✅ Media Router loaded")
+    print("   Endpoints: /api/media/create-video, /api/media/image/filter, /api/media/image/text")
+except Exception as e:
+    print(f"⚠️  Media Router failed to load: {e}")
     import traceback
     traceback.print_exc()
 

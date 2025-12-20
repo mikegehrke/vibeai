@@ -94,7 +94,7 @@ export default function PricingPlanPage() {
   }, [showDropdown]);
 
   return (
-    <div style={{
+    <Link href="/profile" style={{
       display: 'flex',
       minHeight: '100vh',
       background: '#1a1a1a',
@@ -102,7 +102,7 @@ export default function PricingPlanPage() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
       {/* Left Sidebar - Same as Teams Setup */}
-      <div style={{
+      <Link href="/profile" style={{
         width: '280px',
         background: '#1f1f1f',
         borderRight: 'none',
@@ -116,11 +116,11 @@ export default function PricingPlanPage() {
         top: 0
       }}>
         {/* Top Content - No Scroll */}
-        <div style={{
+        <Link href="/profile" style={{
           flexShrink: 0
         }}>
         {/* Top Bar - Logo Icon only, Search-Icon rechts */}
-        <div style={{
+        <Link href="/profile" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -149,7 +149,7 @@ export default function PricingPlanPage() {
 
           {/* Dropdown Menu */}
           {showDropdown && (
-            <div style={{
+            <Link href="/profile" style={{
               position: 'absolute',
               top: '100%',
               left: 0,
@@ -162,7 +162,7 @@ export default function PricingPlanPage() {
               zIndex: 1000,
               overflow: 'hidden'
             }}>
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
@@ -173,7 +173,7 @@ export default function PricingPlanPage() {
               onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <div style={{
+                <Link href="/profile" style={{
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
@@ -186,11 +186,11 @@ export default function PricingPlanPage() {
                   fontSize: '0.85rem'
                 }}>
                   MG
-                </div>
+                </Link>
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Account</span>
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
@@ -201,11 +201,11 @@ export default function PricingPlanPage() {
               onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <User size={18} color="#ececec" />
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', transition: 'background 0.2s', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.background = '#333'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>\n                <User size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Profile</span>
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
@@ -219,9 +219,9 @@ export default function PricingPlanPage() {
               >
                 <Bell size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Notifications</span>
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
@@ -234,9 +234,9 @@ export default function PricingPlanPage() {
               >
                 <Users size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Create Team</span>
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
@@ -249,9 +249,9 @@ export default function PricingPlanPage() {
               >
                 <Terminal size={18} color="#ececec" />
                 <span style={{ fontSize: '0.9rem', color: '#ececec' }}>CLUI</span>
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -265,7 +265,7 @@ export default function PricingPlanPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Palette size={18} color="#ececec" />
                   <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Theme</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div
                     onClick={(e) => {
@@ -280,7 +280,7 @@ export default function PricingPlanPage() {
                     }}
                   >
                     <Moon size={16} color={theme === 'dark' ? '#ececec' : '#999'} />
-                  </div>
+                  </Link>
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
@@ -294,11 +294,11 @@ export default function PricingPlanPage() {
                     }}
                   >
                     <Sun size={16} color={theme === 'light' ? '#ececec' : '#999'} />
-                  </div>
-                </div>
-              </div>
+                  </Link>
+                </Link>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -312,16 +312,16 @@ export default function PricingPlanPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <HelpCircle size={18} color="#ececec" />
                   <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Help</span>
-                </div>
+                </Link>
                 <ChevronRight size={16} color="#999" />
-              </div>
+              </Link>
 
-              <div style={{
+              <Link href="/profile" style={{
                 borderTop: '1px solid #2f2f2f',
                 marginTop: '0.5rem',
                 paddingTop: '0.5rem'
               }}>
-                <div style={{
+                <Link href="/profile" style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
@@ -334,11 +334,11 @@ export default function PricingPlanPage() {
                 >
                   <LogOut size={18} color="#ececec" />
                   <span style={{ fontSize: '0.9rem', color: '#ececec' }}>Log out</span>
-                </div>
-              </div>
-            </div>
+                </Link>
+              </Link>
+            </Link>
           )}
-          </div>
+          </Link>
 
           {/* Search Icon - Rechts */}
           <button style={{
@@ -357,7 +357,7 @@ export default function PricingPlanPage() {
           >
             <Search size={18} color="#ececec" />
           </button>
-        </div>
+        </Link>
 
         {/* Create App Button */}
         <button style={{
@@ -491,7 +491,7 @@ export default function PricingPlanPage() {
         <div style={{ marginBottom: '0', paddingTop: '0.5rem', marginTop: '0.5rem', borderTop: 'none' }}>
           <div style={{ fontSize: '0.75rem', color: '#999', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Learn
-          </div>
+          </Link>
           <Link href="#" style={{
             display: 'block',
             padding: '0.5rem 0.75rem',
@@ -518,11 +518,11 @@ export default function PricingPlanPage() {
           >
             Documentation
           </Link>
-        </div>
-        </div>
+        </Link>
+        </Link>
 
         {/* Starter Plan Section - Fixed at bottom */}
-        <div style={{
+        <Link href="/profile" style={{
           background: '#1f1f1f',
           borderRadius: '0',
           padding: '1rem',
@@ -531,9 +531,9 @@ export default function PricingPlanPage() {
         }}>
           <div style={{ fontSize: '0.75rem', color: '#999', fontWeight: '600', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Your Starter Plan
-          </div>
+          </Link>
           
-          <div style={{
+          <Link href="/profile" style={{
             background: '#fef3c7',
             color: '#92400e',
             padding: '0.5rem',
@@ -543,35 +543,35 @@ export default function PricingPlanPage() {
             fontWeight: '500'
           }}>
             Approaching plan limit for Public Apps.
-          </div>
+          </Link>
 
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <Code size={14} color="#999" />
               <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Free Apps: 7/10 created</span>
-            </div>
-            <div style={{
+            </Link>
+            <Link href="/profile" style={{
               width: '100%',
               height: '6px',
               background: '#1a1a1a',
               borderRadius: '3px',
               overflow: 'hidden'
             }}>
-              <div style={{
+              <Link href="/profile" style={{
                 width: '70%',
                 height: '100%',
                 background: '#60a5fa',
                 borderRadius: '3px'
               }} />
-            </div>
-          </div>
+            </Link>
+          </Link>
 
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <AnimatedLogoIcon size={14} />
               <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Agent credits: 70% used</span>
-            </div>
-            <div style={{
+            </Link>
+            <Link href="/profile" style={{
               width: '100%',
               height: '6px',
               background: '#1a1a1a',
@@ -590,15 +590,15 @@ export default function PricingPlanPage() {
                   boxShadow: '0 0 10px rgba(96, 165, 250, 0.5)'
                 }} 
               />
-            </div>
-          </div>
+            </Link>
+          </Link>
 
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <Cloud size={14} color="#999" />
               <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Cloud credits: 0% used</span>
-            </div>
-            <div style={{
+            </Link>
+            <Link href="/profile" style={{
               width: '100%',
               height: '6px',
               background: '#1a1a1a',
@@ -617,8 +617,8 @@ export default function PricingPlanPage() {
                   boxShadow: '0 0 10px rgba(96, 165, 250, 0.5)'
                 }} 
               />
-            </div>
-          </div>
+            </Link>
+          </Link>
 
           {(() => {
             const upgradeMap = {
@@ -670,13 +670,13 @@ export default function PricingPlanPage() {
                 Install Vibe AI on
               </span>
               <Smartphone size={16} color="#999" />
-            </div>
-          </div>
-        </div>
-      </div>
+            </Link>
+          </Link>
+        </Link>
+      </Link>
 
       {/* Central Content Area - Pricing Plans */}
-      <div style={{
+      <Link href="/profile" style={{
         flex: 1,
         padding: '0',
         overflowY: 'auto',
@@ -688,7 +688,7 @@ export default function PricingPlanPage() {
       className="hide-scrollbar"
       >
         {/* Content will go here - Pricing Plans */}
-        <div style={{
+        <Link href="/profile" style={{
           maxWidth: '900px',
           margin: '0 auto',
           padding: '2rem',
@@ -733,7 +733,7 @@ export default function PricingPlanPage() {
           </p>
 
           {/* Plan Selector Tabs */}
-          <div style={{
+          <Link href="/profile" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -785,10 +785,10 @@ export default function PricingPlanPage() {
                 Up to 20% off
               </span>
             )}
-          </div>
+          </Link>
 
           {/* Pricing Cards */}
-          <div style={{
+          <Link href="/profile" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '1.25rem',
@@ -797,7 +797,7 @@ export default function PricingPlanPage() {
             maxWidth: '900px'
           }}>
             {/* Starter Plan */}
-            <div style={{
+            <Link href="/profile" style={{
               background: '#2a2a2a',
               borderRadius: '12px',
               padding: '1.25rem',
@@ -819,15 +819,15 @@ export default function PricingPlanPage() {
               }}>
                 Starter
               </h3>
-              <div style={{
+              <Link href="/profile" style={{
                 fontSize: '1.75rem',
                 fontWeight: '700',
                 color: '#ececec',
                 marginBottom: '0.5rem'
               }}>
                 Free
-              </div>
-              <div style={{
+              </Link>
+              <Link href="/profile" style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.5rem',
@@ -837,16 +837,16 @@ export default function PricingPlanPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Sparkles size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Limited Vibe AI Agent access</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Eye size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>10 public apps</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Zap size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Basic AI features</span>
-                </div>
-              </div>
+                </Link>
+              </Link>
               <button style={{
                 marginTop: 'auto',
                 width: '100%',
@@ -865,10 +865,10 @@ export default function PricingPlanPage() {
               >
                 Your current plan
               </button>
-            </div>
+            </Link>
 
             {/* Vibe AI Core Plan - Highlighted */}
-            <div style={{
+            <Link href="/profile" style={{
               background: '#1e3a5f',
               borderRadius: '12px',
               padding: '1.25rem',
@@ -884,7 +884,7 @@ export default function PricingPlanPage() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {isYearly && (
-                <div style={{
+                <Link href="/profile" style={{
                   position: 'absolute',
                   top: '1rem',
                   right: '1rem',
@@ -896,7 +896,7 @@ export default function PricingPlanPage() {
                   fontWeight: '600'
                 }}>
                   20% off
-                </div>
+                </Link>
               )}
               <h3 style={{
                 fontSize: '1.1rem',
@@ -906,7 +906,7 @@ export default function PricingPlanPage() {
               }}>
                 Vibe AI Core
               </h3>
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'baseline',
                 gap: '0.25rem',
@@ -925,21 +925,21 @@ export default function PricingPlanPage() {
                 }}>
                   €
                 </span>
-              </div>
-              <div style={{
+              </Link>
+              <Link href="/profile" style={{
                 fontSize: '0.75rem',
                 color: '#999',
                 marginBottom: '0.25rem'
               }}>
                 per month
-              </div>
-              <div style={{
+              </Link>
+              <Link href="/profile" style={{
                 fontSize: '0.65rem',
                 color: '#999',
                 marginBottom: '0.5rem'
               }}>
                 {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
+              </Link>
               <p style={{
                 fontSize: '0.8rem',
                 color: '#999',
@@ -947,7 +947,7 @@ export default function PricingPlanPage() {
               }}>
                 Create, launch, and share your apps.
               </p>
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.5rem',
@@ -957,24 +957,24 @@ export default function PricingPlanPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Sparkles size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Vibe AI Agent</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Rocket size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Publish and host live apps</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Lock size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Unlimited private apps</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <DollarSign size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>30€ monthly credits</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ArrowUp size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Pay-as-you-go for usage</span>
-                </div>
-              </div>
+                </Link>
+              </Link>
               <Link href={`/pricing/core/checkout?yearly=${isYearly}`} style={{
                 marginTop: 'auto',
                 width: '100%',
@@ -999,10 +999,10 @@ export default function PricingPlanPage() {
                 Continue with Core
                 <ArrowRight size={18} />
               </Link>
-            </div>
+            </Link>
 
             {/* Teams Plan */}
-            <div style={{
+            <Link href="/profile" style={{
               background: '#2a2a2a',
               borderRadius: '12px',
               padding: '1.5rem',
@@ -1017,7 +1017,7 @@ export default function PricingPlanPage() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {isYearly && (
-                <div style={{
+                <Link href="/profile" style={{
                   position: 'absolute',
                   top: '1rem',
                   right: '1rem',
@@ -1029,7 +1029,7 @@ export default function PricingPlanPage() {
                   fontWeight: '600'
                 }}>
                   13% off
-                </div>
+                </Link>
               )}
               <h3 style={{
                 fontSize: '1.25rem',
@@ -1039,7 +1039,7 @@ export default function PricingPlanPage() {
               }}>
                 Teams
               </h3>
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 alignItems: 'baseline',
                 gap: '0.25rem',
@@ -1058,21 +1058,21 @@ export default function PricingPlanPage() {
                 }}>
                   €
                 </span>
-              </div>
-              <div style={{
+              </Link>
+              <Link href="/profile" style={{
                 fontSize: '0.8rem',
                 color: '#999',
                 marginBottom: '0.25rem'
               }}>
                 per user
-              </div>
-              <div style={{
+              </Link>
+              <Link href="/profile" style={{
                 fontSize: '0.7rem',
                 color: '#999',
                 marginBottom: '0.75rem'
               }}>
                 {isYearly ? 'billed annually' : 'billed monthly'}
-              </div>
+              </Link>
               <p style={{
                 fontSize: '0.85rem',
                 color: '#999',
@@ -1080,7 +1080,7 @@ export default function PricingPlanPage() {
               }}>
                 Bring Vibe AI to your entire team.
               </p>
-              <div style={{
+              <Link href="/profile" style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.5rem',
@@ -1090,24 +1090,24 @@ export default function PricingPlanPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ArrowLeft size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Everything in Core</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FileCode size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Centralized billing</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <CheckCircle size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Role-based access control</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <DollarSign size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>100€ monthly credits</span>
-                </div>
+                </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Shield size={16} color="#999" />
                   <span style={{ fontSize: '0.85rem', color: '#ececec' }}>Private deployments</span>
-                </div>
-              </div>
+                </Link>
+              </Link>
               <Link href="/teams/setup" style={{
                 marginTop: 'auto',
                 width: '100%',
@@ -1132,8 +1132,8 @@ export default function PricingPlanPage() {
                 Continue with Teams
                 <ArrowRight size={16} />
               </Link>
-            </div>
-          </div>
+            </Link>
+          </Link>
 
           {/* Disclaimer */}
           <p style={{
@@ -1145,8 +1145,8 @@ export default function PricingPlanPage() {
           }}>
             *Prices are subject to tax depending on your location. Vibe AI Agent is powered by large language models. While it can produce powerful results, its behavior is probabilistic—meaning it may occasionally make mistakes.
           </p>
-        </div>
-      </div>
-    </div>
+        </Link>
+      </Link>
+    </Link>
   );
 }
