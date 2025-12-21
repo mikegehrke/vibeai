@@ -17,6 +17,7 @@ export default function VideoEditor({
 }) {
   if (!isOpen) return null;
   const [activeTab, setActiveTab] = useState('trim'); // trim, text, music, filters, effects, stickers
+  const [activeStickerCategory, setActiveStickerCategory] = useState('marketingSpecials'); // Start with marketing specials!
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30);
@@ -331,9 +332,110 @@ export default function VideoEditor({
   ];
 
   // Stickers/Emojis
+  // ✅ PROFESSIONAL STICKER LIBRARY for Business & Marketing Videos
+  const stickerCategories = {
+    // Keep existing popular ones
+    popular: ['🔥', '✨', '⭐', '❤️', '👍', '🎉', '💯', '🚀', '💪', '🌟', '💫', '⚡'],
+    
+    // ✨ MARKETING SPECIALS (NEW!) - Rabatt, Sale, Discount, Prozent
+    marketingSpecials: [
+      // Prozent & Rabatt
+      '💰', '💸', '💵', '💴', '💶', '💷', '🤑', 
+      // Tags & Labels
+      '🏷️', '🔖', '📛', '📌', '📍',
+      // Shopping
+      '🛒', '🛍️', '🎁', '🎀', '📦', '📮', '📫', '💳',
+      // Attention Grabbers
+      '🔥', '⚡', '💥', '✨', '🌟', '⭐', '💫', '🎯', '🎪', '🎰',
+      // Call to Action
+      '👆', '👇', '👈', '👉', '☝️', '👍', '🤝', 
+      // Status/Urgency
+      '⏰', '⏱️', '⚠️', '🔔', '📢', '📣', '❗', '‼️', '⁉️',
+      // Success/Check
+      '✅', '✔️', '💯', '🎊', '🎉', '🎈',
+      // Numbers for prices
+      '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '💯',
+      // Arrows for direction
+      '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '🔄'
+    ],
+    
+    // Business & Finance
+    business: ['💼', '💰', '💵', '💴', '💶', '💷', '📊', '📈', '📉', '💹', '🏆', '🎯', '📌', '📍', '🔔', '⏰', '⏱️', '⌚'],
+    
+    // Technology & Development
+    tech: ['💻', '🖥️', '⌨️', '🖱️', '🖨️', '📱', '📲', '☎️', '📞', '📟', '📠', '🔌', '🔋', '💡', '🔦', '💾', '💿', '📀', '🖲️'],
+    
+    // Marketing & Social Media
+    marketing: ['📢', '📣', '📡', '📺', '📻', '📸', '📹', '🎥', '🎬', '🎭', '🎪', '🎨', '🖼️', '🎯', '🎰', '🎲', '🎮', '🕹️'],
+    
+    // Communication & Collaboration
+    communication: ['💬', '💭', '🗨️', '🗯️', '💡', '📝', '📄', '📃', '📋', '📊', '📈', '📉', '🗂️', '📁', '📂', '🗃️', '🗄️', '📅', '📆'],
+    
+    // Arrows & Directions (Essential for marketing!)
+    arrows: ['➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '⤴️', '⤵️', '🔄', '🔃', '🔂', '🔁', '↩️', '↪️', '⏪', '⏩', '⏫', '⏬'],
+    
+    // Status & Indicators
+    status: ['✅', '✔️', '❌', '❎', '⭕', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔘', '🔲', '🔳', '⬛', '⬜', '▪️', '▫️'],
+    
+    // Numbers & Badges
+    numbers: ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '💯', '🔢', '#️⃣', '*️⃣'],
+    
+    // Symbols & Signs
+    symbols: ['©️', '®️', '™️', '🔒', '🔓', '🔐', '🔑', '🗝️', '⚠️', '🚫', '🛑', '⛔', '📛', '🚷', '🚯', '🚱', '🚳', '🚭', '❗', '❓'],
+    
+    // Web & UI Elements
+    web: ['🌐', '🌍', '🌎', '🌏', '🔗', '⛓️', '📎', '🖇️', '📌', '📍', '🔖', '🏷️', '💼', '📂', '🗂️', '📁'],
+    
+    // Time & Schedule
+    time: ['⏰', '⏱️', '⏲️', '⌚', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '⏳', '⌛'],
+    
+    // Professional Icons
+    professional: ['🎓', '📚', '📖', '📕', '📗', '📘', '📙', '📔', '📒', '📓', '📜', '📃', '📄', '📰', '🗞️', '📑', '🔖', '🏷️'],
+    
+    // Growth & Success
+    growth: ['📈', '📊', '💹', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅', '🎯', '🎪', '⚡', '💥', '✨', '🌟', '⭐'],
+    
+    // Shopping & E-commerce
+    ecommerce: ['🛒', '🛍️', '💳', '💰', '💵', '💴', '💶', '💷', '🏪', '🏬', '🏢', '🏛️', '🏦', '🏭', '🏗️'],
+    
+    // Tools & Settings
+    tools: ['🔧', '🔨', '⚒️', '🛠️', '⚙️', '🔩', '⚡', '🔌', '💡', '🔦', '🔭', '🔬', '🧪', '🧬', '🩺', '💊'],
+    
+    // Education & Learning
+    education: ['🎓', '📚', '📖', '✏️', '✒️', '🖊️', '🖋️', '📝', '📐', '📏', '📌', '📍', '🖍️', '🖌️', '🖍️'],
+    
+    // Global & Location
+    global: ['🌐', '🌍', '🌎', '🌏', '🗺️', '🧭', '📍', '📌', '🚩', '🏁', '🏳️', '🏴', '🏴‍☠️'],
+    
+    // Shapes & Geometric
+    shapes: ['⭐', '🌟', '💫', '✨', '⚡', '🔥', '💥', '💢', '💨', '🕳️', '💬', '🗨️', '🗯️', '💭'],
+    
+    // Hand Gestures (Professional)
+    gestures: ['👆', '👇', '👈', '👉', '👍', '👎', '✊', '👊', '🤝', '👏', '🙌', '👐', '🤲', '🤞', '✌️', '🤟', '🤘', '👌', '✋', '🖐️']
+  };
+
+  // Flatten all stickers into one array
   const stickers = [
-    '🔥', '✨', '⭐', '❤️', '👍', '🎉', '💯', '🚀', 
-    '💪', '🌟', '😍', '🤩', '🎊', '🎈', '💫', '⚡'
+    ...stickerCategories.popular,
+    ...stickerCategories.marketingSpecials, // NEW!
+    ...stickerCategories.business,
+    ...stickerCategories.tech,
+    ...stickerCategories.marketing,
+    ...stickerCategories.communication,
+    ...stickerCategories.arrows,
+    ...stickerCategories.status,
+    ...stickerCategories.numbers,
+    ...stickerCategories.symbols,
+    ...stickerCategories.web,
+    ...stickerCategories.time,
+    ...stickerCategories.professional,
+    ...stickerCategories.growth,
+    ...stickerCategories.ecommerce,
+    ...stickerCategories.tools,
+    ...stickerCategories.education,
+    ...stickerCategories.global,
+    ...stickerCategories.shapes,
+    ...stickerCategories.gestures
   ];
 
   // Text Animation Presets (Marketing Focus!)
@@ -3547,17 +3649,72 @@ Video Editor - {appName}
 
             {activeTab === 'stickers' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ color: '#fff', margin: 0 }}>Add Stickers</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ color: '#fff', margin: 0 }}>Professional Stickers</h3>
+                  <span style={{ 
+                    color: '#3b82f6', 
+                    fontSize: '0.85rem',
+                    padding: '0.4rem 0.8rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '6px'
+                  }}>
+                    {stickers.length}+ Stickers
+                  </span>
+                </div>
                 <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>
-                  Click to add stickers • Drag them on video to reposition
+                  Click to add • Drag on video to reposition • Professional & marketing icons
                 </p>
                 
+                {/* Category Tabs */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap',
+                  paddingBottom: '1rem',
+                  borderBottom: '1px solid #3a3a3a'
+                }}>
+                  {Object.keys(stickerCategories).map(category => (
+                    <button
+                      key={category}
+                      onClick={() => setActiveStickerCategory(category)}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: activeStickerCategory === category ? '#3b82f6' : '#2a2a2a',
+                        border: activeStickerCategory === category ? '2px solid #60a5fa' : '2px solid transparent',
+                        borderRadius: '6px',
+                        color: '#ececec',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: activeStickerCategory === category ? 'bold' : 'normal',
+                        transition: 'all 0.2s ease',
+                        textTransform: 'capitalize'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeStickerCategory !== category) {
+                          e.currentTarget.style.background = '#3a3a3a';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeStickerCategory !== category) {
+                          e.currentTarget.style.background = '#2a2a2a';
+                        }
+                      }}
+                    >
+                      {category} ({stickerCategories[category].length})
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Stickers Grid */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '0.5rem'
+                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gap: '0.5rem',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
                 }}>
-                  {stickers.map((sticker, index) => (
+                  {stickerCategories[activeStickerCategory].map((sticker, index) => (
                     <button
                       key={index}
                       onClick={() => {
@@ -3568,24 +3725,51 @@ Video Editor - {appName}
                           y: 30 + (textOverlays.length * 10),
                           color: '#ffffff',
                           fontSize: 50,
-                          time: currentTime
+                          time: currentTime,
+                          startTime: currentTime,
+                          endTime: currentTime + 5
                         }]);
+                        console.log(`✨ Sticker added: ${sticker} from category "${activeStickerCategory}"`);
                       }}
                       style={{
                         padding: '1rem',
                         background: '#2a2a2a',
-                        border: 'none',
+                        border: '2px solid transparent',
                         borderRadius: '8px',
                         fontSize: '2rem',
                         cursor: 'pointer',
-                        transition: 'background 0.2s'
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#3b82f6';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.borderColor = '#60a5fa';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#2a2a2a';
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
                     >
                       {sticker}
                     </button>
                   ))}
+                </div>
+                
+                {/* Category Info */}
+                <div style={{
+                  padding: '1rem',
+                  background: '#2a2a2a',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  color: '#999'
+                }}>
+                  <strong style={{ color: '#ececec' }}>Current: {activeStickerCategory.toUpperCase()}</strong>
+                  <br />
+                  {stickerCategories[activeStickerCategory].length} professional stickers available
                 </div>
               </div>
             )}
