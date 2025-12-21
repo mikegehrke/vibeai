@@ -1888,7 +1888,7 @@ Video Editor - {appName}
                   }}
                 />
                 
-                {/* ✅ PLAY/PAUSE BUTTON - IM VIDEO CENTER - HELLER */}
+                {/* ✅ PLAY/PAUSE BUTTON - IM VIDEO CENTER - TRANSPARENT */}
                 <button
                   onClick={togglePlay}
                   style={{
@@ -1899,8 +1899,8 @@ Video Editor - {appName}
                     width: '80px',
                     height: '80px',
                     borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    border: '3px solid rgba(59, 130, 246, 0.8)',
+                    background: 'transparent',
+                    border: '3px solid rgba(255, 255, 255, 0.9)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -1908,23 +1908,23 @@ Video Editor - {appName}
                     transition: 'all 0.3s ease',
                     zIndex: 100,
                     backdropFilter: 'blur(10px)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)';
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.95)';
+                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.8)';
                     e.currentTarget.style.borderColor = '#fff';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.8)';
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
                   }}
                 >
                   {isPlaying ? (
-                    <Pause size={36} color="#3b82f6" />
+                    <Pause size={36} color="#ffffff" />
                   ) : (
-                    <Play size={36} color="#3b82f6" style={{ marginLeft: '4px' }} />
+                    <Play size={36} color="#ffffff" style={{ marginLeft: '4px' }} />
                   )}
                 </button>
               </>
