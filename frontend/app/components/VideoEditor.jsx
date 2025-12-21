@@ -86,13 +86,158 @@ export default function VideoEditor({
   const canvasRef = useRef(null);
 
   // Available filters
+  // ✅ REAL WORKING FILTERS with CSS filter values
   const filters = [
-    { id: 'none', name: 'Original', icon: '🎨' },
-    { id: 'vintage', name: 'Vintage', icon: '📸' },
-    { id: 'blackwhite', name: 'B&W', icon: '⚫' },
-    { id: 'neon', name: 'Neon', icon: '🌈' },
-    { id: 'cinematic', name: 'Cinematic', icon: '🎬' },
-    { id: 'warm', name: 'Warm', icon: '🔥' }
+    { 
+      id: 'none', 
+      name: 'Original', 
+      icon: '🎨',
+      css: 'none'
+    },
+    { 
+      id: 'vintage', 
+      name: 'Vintage', 
+      icon: '📸',
+      css: 'sepia(50%) contrast(110%) brightness(105%) saturate(120%)'
+    },
+    { 
+      id: 'blackwhite', 
+      name: 'B&W', 
+      icon: '⚫',
+      css: 'grayscale(100%) contrast(120%)'
+    },
+    { 
+      id: 'neon', 
+      name: 'Neon', 
+      icon: '🌈',
+      css: 'saturate(200%) brightness(110%) contrast(130%) hue-rotate(15deg)'
+    },
+    { 
+      id: 'cinematic', 
+      name: 'Cinematic', 
+      icon: '🎬',
+      css: 'contrast(115%) brightness(95%) saturate(90%) sepia(10%)'
+    },
+    { 
+      id: 'warm', 
+      name: 'Warm', 
+      icon: '🔥',
+      css: 'sepia(30%) saturate(140%) brightness(105%) hue-rotate(-10deg)'
+    },
+    { 
+      id: 'cool', 
+      name: 'Cool', 
+      icon: '❄️',
+      css: 'saturate(120%) brightness(105%) hue-rotate(180deg)'
+    },
+    { 
+      id: 'dramatic', 
+      name: 'Dramatic', 
+      icon: '⚡',
+      css: 'contrast(150%) brightness(90%) saturate(110%)'
+    },
+    { 
+      id: 'soft', 
+      name: 'Soft', 
+      icon: '☁️',
+      css: 'brightness(110%) contrast(90%) saturate(80%) blur(0.5px)'
+    },
+    { 
+      id: 'sharp', 
+      name: 'Sharp', 
+      icon: '🔪',
+      css: 'contrast(140%) brightness(95%) saturate(115%)'
+    },
+    { 
+      id: 'fade', 
+      name: 'Fade', 
+      icon: '🌫️',
+      css: 'brightness(115%) contrast(85%) saturate(70%) opacity(0.95)'
+    },
+    { 
+      id: 'glow', 
+      name: 'Glow', 
+      icon: '✨',
+      css: 'brightness(115%) saturate(150%) contrast(105%) blur(0.3px)'
+    },
+    { 
+      id: 'retro', 
+      name: 'Retro', 
+      icon: '📺',
+      css: 'sepia(40%) contrast(120%) brightness(100%) saturate(90%) hue-rotate(-5deg)'
+    },
+    { 
+      id: 'sunset', 
+      name: 'Sunset', 
+      icon: '🌅',
+      css: 'sepia(20%) saturate(150%) brightness(105%) hue-rotate(-20deg) contrast(110%)'
+    },
+    { 
+      id: 'midnight', 
+      name: 'Midnight', 
+      icon: '🌙',
+      css: 'brightness(70%) contrast(120%) saturate(80%) hue-rotate(200deg)'
+    },
+    { 
+      id: 'dawn', 
+      name: 'Dawn', 
+      icon: '🌄',
+      css: 'brightness(110%) saturate(110%) hue-rotate(-10deg) contrast(105%)'
+    },
+    { 
+      id: 'arctic', 
+      name: 'Arctic', 
+      icon: '🧊',
+      css: 'brightness(115%) saturate(120%) hue-rotate(180deg) contrast(110%)'
+    },
+    { 
+      id: 'desert', 
+      name: 'Desert', 
+      icon: '🏜️',
+      css: 'sepia(25%) saturate(130%) brightness(110%) contrast(115%) hue-rotate(-15deg)'
+    },
+    { 
+      id: 'forest', 
+      name: 'Forest', 
+      icon: '🌲',
+      css: 'saturate(130%) brightness(95%) hue-rotate(80deg) contrast(110%)'
+    },
+    { 
+      id: 'ocean', 
+      name: 'Ocean', 
+      icon: '🌊',
+      css: 'saturate(140%) brightness(100%) hue-rotate(160deg) contrast(115%)'
+    },
+    { 
+      id: 'psychedelic', 
+      name: 'Psychedelic', 
+      icon: '🎆',
+      css: 'saturate(300%) brightness(110%) contrast(130%) hue-rotate(90deg)'
+    },
+    { 
+      id: 'noir', 
+      name: 'Film Noir', 
+      icon: '🎭',
+      css: 'grayscale(100%) contrast(150%) brightness(90%)'
+    },
+    { 
+      id: 'pastel', 
+      name: 'Pastel', 
+      icon: '🍬',
+      css: 'brightness(115%) saturate(60%) contrast(90%)'
+    },
+    { 
+      id: 'vibrant', 
+      name: 'Vibrant', 
+      icon: '💥',
+      css: 'saturate(180%) brightness(105%) contrast(125%)'
+    },
+    { 
+      id: 'classic', 
+      name: 'Classic', 
+      icon: '🎞️',
+      css: 'sepia(60%) contrast(110%) brightness(100%) saturate(80%)'
+    }
   ];
 
   // Text background options (Presets + Custom)
@@ -591,6 +736,17 @@ export default function VideoEditor({
       video.removeEventListener('timeupdate', handleTimeUpdate);
     };
   }, [startTime, endTime]);
+
+  // ✅ FILTER FUNCTIONALITY - Apply filter to video in real-time
+  useEffect(() => {
+    if (videoRef.current && selectedFilter) {
+      const filter = filters.find(f => f.id === selectedFilter);
+      if (filter) {
+        videoRef.current.style.filter = filter.css;
+        console.log(`🎨 Filter "${filter.name}" applied - CSS: ${filter.css}`);
+      }
+    }
+  }, [selectedFilter]);
 
   // Search music (YouTube or TikTok)
   const searchMusic = async () => {
@@ -1479,7 +1635,10 @@ Video Editor - {appName}
                   objectFit: 'cover',
                   position: 'absolute',
                   top: 0,
-                  left: 0
+                  left: 0,
+                  // ✅ APPLY REAL CSS FILTER!
+                  filter: filters.find(f => f.id === selectedFilter)?.css || 'none',
+                  transition: 'filter 0.3s ease'
                 }}
                 onLoadedMetadata={() => {
                   if (videoRef.current) {
@@ -3135,21 +3294,63 @@ Video Editor - {appName}
 
             {activeTab === 'filters' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ color: '#fff', margin: 0 }}>Video Filters</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ color: '#fff', margin: 0 }}>Video Filters</h3>
+                  <span style={{ 
+                    color: '#3b82f6', 
+                    fontSize: '0.85rem',
+                    padding: '0.4rem 0.8rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '6px'
+                  }}>
+                    {filters.length} Filters
+                  </span>
+                </div>
+                <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>
+                  Professional filters with real-time preview ✨
+                </p>
+                
+                {/* Current Filter Info */}
+                {selectedFilter !== 'none' && (
+                  <div style={{
+                    padding: '1rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid #3b82f6'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>
+                        {filters.find(f => f.id === selectedFilter)?.icon}
+                      </span>
+                      <span style={{ color: '#ececec', fontWeight: 'bold' }}>
+                        {filters.find(f => f.id === selectedFilter)?.name}
+                      </span>
+                    </div>
+                    <p style={{ color: '#999', fontSize: '0.8rem', margin: 0 }}>
+                      Active filter applied • Click another to change
+                    </p>
+                  </div>
+                )}
                 
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '0.75rem'
+                  gap: '0.75rem',
+                  maxHeight: '500px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
                 }}>
                   {filters.map(filter => (
                     <button
                       key={filter.id}
-                      onClick={() => setSelectedFilter(filter.id)}
+                      onClick={() => {
+                        setSelectedFilter(filter.id);
+                        console.log(`🎨 Filter applied: ${filter.name} - CSS: ${filter.css}`);
+                      }}
                       style={{
                         padding: '1rem',
                         background: selectedFilter === filter.id ? '#3b82f6' : '#2a2a2a',
-                        border: 'none',
+                        border: selectedFilter === filter.id ? '2px solid #60a5fa' : '2px solid transparent',
                         borderRadius: '8px',
                         color: '#ececec',
                         cursor: 'pointer',
@@ -3157,11 +3358,31 @@ Video Editor - {appName}
                         flexDirection: 'column',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        fontSize: '0.85rem'
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s ease',
+                        transform: selectedFilter === filter.id ? 'scale(1.05)' : 'scale(1)',
+                        boxShadow: selectedFilter === filter.id ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedFilter !== filter.id) {
+                          e.currentTarget.style.background = '#3a3a3a';
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedFilter !== filter.id) {
+                          e.currentTarget.style.background = '#2a2a2a';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
                       }}
                     >
                       <span style={{ fontSize: '2rem' }}>{filter.icon}</span>
-                      {filter.name}
+                      <span style={{ fontWeight: selectedFilter === filter.id ? 'bold' : 'normal' }}>
+                        {filter.name}
+                      </span>
+                      {selectedFilter === filter.id && (
+                        <span style={{ fontSize: '0.7rem', color: '#60a5fa' }}>✓ Active</span>
+                      )}
                     </button>
                   ))}
                 </div>
