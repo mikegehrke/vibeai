@@ -1087,19 +1087,22 @@ export default function VideoEditor({
       const data = await response.json();
       console.log(`📦 Response data:`, data);
       
-      if (data.success) {
+      if (data.success && data.result) {
         // ✅ DOWNLOAD SUCCESSFUL!
+        console.log('📦 Backend response result:', data.result);
+        
+        const result = data.result;
         const downloadedMusic = {
           id: loadingMusic.id,
-          title: data.result.title,
-          artist: data.result.artist || (musicSource === 'youtube' ? 'YouTube' : 'TikTok'),
-          duration: data.result.duration ? `${Math.floor(data.result.duration / 60)}:${(data.result.duration % 60).toString().padStart(2, '0')}` : 'Unknown',
+          title: result.title || songTitle || 'Unknown Song',
+          artist: result.artist || (musicSource === 'youtube' ? 'YouTube' : 'TikTok'),
+          duration: result.duration ? `${Math.floor(result.duration / 60)}:${(result.duration % 60).toString().padStart(2, '0')}` : 'Unknown',
           source: musicSource,
           url: currentBrowserUrl,
-          filename: data.result.filename,
+          filename: result.filename || `${musicSource}-${Date.now()}.mp3`,
           // ✅ REAL AUDIO URL FROM BACKEND!
-          audioUrl: `http://localhost:8000/api/media/music/audio/${data.result.filename}`,
-          thumbnail: data.result.thumbnail,
+          audioUrl: `http://localhost:8000/api/media/music/audio/${result.filename}`,
+          thumbnail: result.thumbnail || '',
           addedAt: new Date().toISOString(),
           cloned: true,
           autoCloned: auto || !clonedSongName.trim(),
@@ -1153,17 +1156,28 @@ export default function VideoEditor({
           }, 3000);
         }, 100);
         
+      } else if (data.success && !data.result) {
+        // Backend says success but no result data
+        console.error('❌ Backend returned success but no result data!');
+        console.error('Full response:', data);
+        throw new Error('Backend returned success but missing result data. Check backend logs!');
       } else {
-        throw new Error(data.error || 'Download failed');
+        throw new Error(data.error || data.detail || 'Download failed');
       }
     } catch (error) {
       console.error('❌ Download error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        data: error.data,
+        response: error.response
+      });
       
       // Remove loading entry
       setMusicLibrary(prev => prev.filter(m => m.id !== loadingMusic.id));
       
-      // Show error
-      alert(`❌ Download failed!\n\n${error.message}\n\nMake sure:\n1. yt-dlp is installed (pip install yt-dlp)\n2. FFmpeg is installed\n3. Backend server is running\n4. URL is valid\n\nInstall: pip install yt-dlp`);
+      // Show error with more details
+      const errorMsg = error.message || 'Unknown error';
+      alert(`❌ Download failed!\n\n${errorMsg}\n\nMake sure:\n1. yt-dlp is installed (pip install yt-dlp)\n2. FFmpeg is installed\n3. Backend server is running\n4. URL is valid\n5. Try a different video!\n\nCheck Console (F12) for details!`);
     }
   };
 

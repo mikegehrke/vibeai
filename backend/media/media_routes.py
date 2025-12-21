@@ -238,9 +238,10 @@ async def download_music(request: MusicDownloadRequest):
         if not result.get("success"):
             raise HTTPException(status_code=500, detail=result.get("error", "Download failed"))
         
+        # ✅ Return proper format for frontend
         return {
             "success": True,
-            "music": result
+            "result": result  # Frontend expects 'result', not 'music'!
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
