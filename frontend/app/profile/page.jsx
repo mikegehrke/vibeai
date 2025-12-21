@@ -2260,10 +2260,11 @@ export default function ProfilePage() {
         {/* Professional Video Editor (TikTok-style) */}
         {showVideoEditor && selectedApp && (
           <VideoEditor
+            isOpen={true}
             appName={selectedApp.name}
             appData={selectedApp}
             onSave={handleVideoSave}
-            onCancel={() => {
+            onClose={() => {
               setShowVideoEditor(false);
               setSelectedApp(null);
             }}

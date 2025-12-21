@@ -8,14 +8,11 @@ import {
 } from 'lucide-react';
 
 export default function VideoEditor({ 
-  isOpen = true,
   appName,
   appData,
   onSave, 
-  onClose,
   onCancel 
 }) {
-  if (!isOpen) return null;
   const [activeTab, setActiveTab] = useState('trim'); // trim, text, music, filters, effects, stickers
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -58,10 +55,12 @@ export default function VideoEditor({
   const [textMenuPosition, setTextMenuPosition] = useState({ x: 0, y: 0 }); // Menu position
   
   // Video handling
-  const demoVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-  const [uploadedVideo, setUploadedVideo] = useState(demoVideoUrl); // Auto-load demo video
+  const [uploadedVideo, setUploadedVideo] = useState(null); // Uploaded video URL
   const [showShareDialog, setShowShareDialog] = useState(false); // Share dialog
   const fileInputRef = useRef(null);
+  
+  // Demo video - use a sample video for testing
+  const demoVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
   
   // Filters
   const [selectedFilter, setSelectedFilter] = useState('none');
@@ -781,7 +780,7 @@ Video Editor - {appName}
           </button>
 
           <button
-            onClick={onClose || onCancel}
+            onClick={onCancel}
             style={{
               padding: '0.5rem 1rem',
               background: 'transparent',
@@ -1225,6 +1224,30 @@ Video Editor - {appName}
               )}
             </div>
 
+            {/* Play Button Overlay */}
+            <button
+              onClick={togglePlay}
+              style={{
+                position: 'absolute',
+                bottom: '1rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: 'rgba(59, 130, 246, 0.9)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'transform 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1)'}
+            >
+              {isPlaying ? <Pause size={28} color="#fff" /> : <Play size={28} color="#fff" />}
+            </button>
           </div>
 
           {/* Timeline - Directly under iPhone Video */}
@@ -1271,19 +1294,15 @@ Video Editor - {appName}
           </div>
         </div>
 
-        {/* Tools Panel - FIXED RECHTS */}
+        {/* Tools Panel - Right Side */}
         <div style={{
-          position: 'fixed',
-          top: '80px',
-          right: 0,
-          bottom: 0,
           width: '400px',
           background: '#1a1a1a',
           borderLeft: '1px solid #2a2a2a',
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
-          zIndex: 1000
+          flexShrink: 0
         }}>
           {/* Tool Tabs */}
           <div style={{
@@ -2711,41 +2730,6 @@ Video Editor - {appName}
         </div>
       </div>
       )}
-
-      {/* PLAY BUTTON - MITTIG LINKS VOM TOOLS PANEL */}
-      <button
-        onClick={togglePlay}
-        style={{
-          position: 'fixed',
-          bottom: '15%',
-          left: 'calc((100vw - 400px) / 2 + 20px)',
-          transform: 'translateX(-50%)',
-          width: '70px',
-          height: '70px',
-          borderRadius: '50%',
-          background: 'transparent',
-          border: '2px solid rgba(255, 255, 255, 0.4)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          zIndex: 10000,
-          pointerEvents: 'auto'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateX(-50%) scale(1.15)';
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.8)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-        }}
-      >
-        {isPlaying ? <Pause size={30} color="rgba(255, 255, 255, 0.8)" /> : <Play size={30} color="rgba(255, 255, 255, 0.8)" />}
-      </button>
     </>
   );
 }
