@@ -892,23 +892,35 @@ export default function VideoEditor({
     }, 1000);
   };
 
-  // ✅ CLONE MUSIC FUNCTION
-  const cloneMusicFromBrowser = () => {
-    if (!clonedSongName.trim()) {
-      alert('⚠️ Please enter a song name!');
-      return;
+  // ✅ CLONE MUSIC FUNCTION - AUTOMATIC OR MANUAL
+  const cloneMusicFromBrowser = (auto = false) => {
+    let songTitle;
+    
+    if (auto || !clonedSongName.trim()) {
+      // AUTO CLONE: Generate automatic name
+      const timestamp = new Date().toLocaleString('de-DE', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      songTitle = `${musicSource === 'youtube' ? 'YouTube' : 'TikTok'} Song ${timestamp}`;
+      console.log(`🤖 Auto-generated song name: ${songTitle}`);
+    } else {
+      songTitle = clonedSongName.trim();
     }
     
     const newMusic = {
       id: Date.now(),
-      title: clonedSongName.trim(),
+      title: songTitle,
       artist: musicSource === 'youtube' ? 'YouTube' : 'TikTok',
       duration: 'Unknown',
       source: musicSource,
       url: currentBrowserUrl,
       filename: `${musicSource}-${Date.now()}`,
       addedAt: new Date().toISOString(),
-      cloned: true
+      cloned: true,
+      autoCloned: auto || !clonedSongName.trim()
     };
     
     setMusicLibrary([...musicLibrary, newMusic]);
@@ -916,8 +928,8 @@ export default function VideoEditor({
     setShowMusicCloneDialog(false);
     setClonedSongName('');
     
-    console.log(`✅ Cloned music: ${clonedSongName.trim()} from ${musicSource}`);
-    alert(`✅ Music Cloned!\n\n"${clonedSongName.trim()}"\n\nAdded to your library and set as background music!`);
+    console.log(`✅ ${auto ? 'Auto-cloned' : 'Cloned'} music: ${songTitle} from ${musicSource}`);
+    alert(`✅ Music ${auto ? 'Auto-Cloned' : 'Cloned'}!\n\n"${songTitle}"\n\nAdded to your library and set as background music!`);
   };
 
 
@@ -3954,97 +3966,130 @@ Video Editor - {appName}
               </ol>
             </div>
 
-            {/* Input */}
-            <div style={{ marginBottom: '2rem' }}>
-              <label style={{
-                display: 'block',
-                color: '#ececec',
-                marginBottom: '0.75rem',
-                fontWeight: '600',
-                fontSize: '0.95rem'
-              }}>
-                🎼 Song Name:
-              </label>
-              <input
-                type="text"
-                value={clonedSongName}
-                onChange={(e) => setClonedSongName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && cloneMusicFromBrowser()}
-                placeholder="Enter the song name..."
-                autoFocus
+            {/* Quick Clone Button - HAUPTAKTION */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <button
+                onClick={() => cloneMusicFromBrowser(true)}
                 style={{
                   width: '100%',
-                  padding: '1rem',
-                  background: '#1a1a1a',
-                  border: '2px solid #3a3a3a',
-                  borderRadius: '10px',
-                  color: '#ececec',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  transition: 'border-color 0.3s'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                onBlur={(e) => e.target.style.borderColor = '#3a3a3a'}
-              />
-            </div>
-
-            {/* Buttons */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1rem'
-            }}>
-              <button
-                onClick={() => {
-                  setShowMusicCloneDialog(false);
-                  setClonedSongName('');
-                }}
-                style={{
-                  padding: '1rem',
-                  background: '#3a3a3a',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: '#ececec',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#4a4a4a';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#3a3a3a';
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={cloneMusicFromBrowser}
-                style={{
-                  padding: '1rem',
+                  padding: '1.5rem',
                   background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   border: 'none',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   color: '#fff',
                   fontWeight: '700',
                   cursor: 'pointer',
-                  fontSize: '1rem',
+                  fontSize: '1.2rem',
                   transition: 'all 0.2s',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
+                  boxShadow: '0 6px 20px rgba(16, 185, 129, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.6)';
+                  e.currentTarget.style.transform = 'scale(1.03)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(16, 185, 129, 0.7)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
                 }}
               >
-                ✨ Clone to Library
+                <span style={{ fontSize: '1.5rem' }}>⚡</span>
+                Quick Clone (Auto Name)
               </button>
             </div>
+
+            {/* Optional: Manual Name Input */}
+            <details style={{ marginBottom: '1.5rem' }}>
+              <summary style={{
+                color: '#999',
+                cursor: 'pointer',
+                textAlign: 'center',
+                fontSize: '0.9rem',
+                padding: '0.5rem',
+                userSelect: 'none'
+              }}>
+                Or enter custom name (optional)
+              </summary>
+              <div style={{ marginTop: '1rem' }}>
+                <input
+                  type="text"
+                  value={clonedSongName}
+                  onChange={(e) => setClonedSongName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && cloneMusicFromBrowser(false)}
+                  placeholder="Enter custom song name..."
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: '#1a1a1a',
+                    border: '2px solid #3a3a3a',
+                    borderRadius: '10px',
+                    color: '#ececec',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    transition: 'border-color 0.3s',
+                    marginBottom: '0.75rem'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                  onBlur={(e) => e.target.style.borderColor = '#3a3a3a'}
+                />
+                <button
+                  onClick={() => cloneMusicFromBrowser(false)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#3a3a3a',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#ececec',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#4a4a4a';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#3a3a3a';
+                  }}
+                >
+                  Clone with Custom Name
+                </button>
+              </div>
+            </details>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => {
+                setShowMusicCloneDialog(false);
+                setClonedSongName('');
+              }}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: 'transparent',
+                border: '1px solid #3a3a3a',
+                borderRadius: '8px',
+                color: '#999',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#666';
+                e.currentTarget.style.color = '#ececec';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#3a3a3a';
+                e.currentTarget.style.color = '#999';
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
