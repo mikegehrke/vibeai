@@ -253,6 +253,11 @@ export default function VideoEditor({
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        // If video is at or past endTime, reset to startTime before playing
+        if (videoRef.current.currentTime >= endTime || videoRef.current.currentTime < startTime) {
+          videoRef.current.currentTime = startTime;
+          console.log(`🔄 Resetting video to startTime: ${startTime}s`);
+        }
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
@@ -546,6 +551,46 @@ export default function VideoEditor({
     
     loadMusicLibrary();
   }, []);
+
+  // ✅ TRIM FUNCTIONALITY - Set video to start at trimmed position
+  useEffect(() => {
+    if (videoRef.current && uploadedVideo) {
+      // When video loads or startTime changes, set video to startTime
+      videoRef.current.currentTime = startTime;
+      console.log(`🎬 Video trimmed: ${startTime}s - ${endTime}s`);
+    }
+  }, [startTime, uploadedVideo]);
+
+  // ✅ TRIM FUNCTIONALITY - Stop video at endTime
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      const currentTime = video.currentTime;
+      
+      // If video reaches endTime, pause and reset to startTime
+      if (currentTime >= endTime) {
+        video.pause();
+        video.currentTime = startTime;
+        setIsPlaying(false);
+        console.log(`⏹️ Video stopped at endTime: ${endTime}s`);
+      }
+      
+      // If video somehow goes below startTime, reset to startTime
+      if (currentTime < startTime) {
+        video.currentTime = startTime;
+      }
+      
+      setCurrentTime(currentTime);
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [startTime, endTime]);
 
   // Search music (YouTube or TikTok)
   const searchMusic = async () => {
@@ -1436,12 +1481,14 @@ Video Editor - {appName}
                   top: 0,
                   left: 0
                 }}
-                onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
                 onLoadedMetadata={() => {
                   if (videoRef.current) {
                     setDuration(videoRef.current.duration);
                     setEndTime(videoRef.current.duration);
                     setTextEndTime(videoRef.current.duration);
+                    // Set initial position to startTime
+                    videoRef.current.currentTime = startTime;
+                    console.log(`📹 Video loaded. Duration: ${videoRef.current.duration}s`);
                   }
                 }}
               />
