@@ -1087,11 +1087,16 @@ export default function VideoEditor({
       const data = await response.json();
       console.log(`📦 Response data:`, data);
       
-      if (data.success && data.result) {
+      if (data.success) {
         // ✅ DOWNLOAD SUCCESSFUL!
-        console.log('📦 Backend response result:', data.result);
+        const result = data.result || data; // Fallback if result is missing
+        console.log('📦 Backend response result:', result);
         
-        const result = data.result;
+        // Validate that we have the essential data
+        if (!result.filename) {
+          throw new Error('Backend response missing filename');
+        }
+        
         const downloadedMusic = {
           id: loadingMusic.id,
           title: result.title || songTitle || 'Unknown Song',
@@ -1099,7 +1104,7 @@ export default function VideoEditor({
           duration: result.duration ? `${Math.floor(result.duration / 60)}:${(result.duration % 60).toString().padStart(2, '0')}` : 'Unknown',
           source: musicSource,
           url: currentBrowserUrl,
-          filename: result.filename || `${musicSource}-${Date.now()}.mp3`,
+          filename: result.filename,
           // ✅ REAL AUDIO URL FROM BACKEND!
           audioUrl: `http://localhost:8000/api/media/music/audio/${result.filename}`,
           thumbnail: result.thumbnail || '',
