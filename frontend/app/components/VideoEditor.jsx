@@ -1855,33 +1855,74 @@ Video Editor - {appName}
           }}>
             {/* Video Element or Placeholder */}
             {uploadedVideo ? (
-              <video
-                ref={videoRef}
-                src={uploadedVideo}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  // ✅ APPLY REAL CSS FILTER!
-                  filter: filters.find(f => f.id === selectedFilter)?.css || 'none',
-                  transition: 'filter 0.3s ease'
-                }}
-                onLoadedMetadata={() => {
-                  if (videoRef.current) {
-                    setDuration(videoRef.current.duration);
-                    setEndTime(videoRef.current.duration);
-                    setTextEndTime(videoRef.current.duration);
-                    // Set initial position to startTime
-                    videoRef.current.currentTime = startTime;
-                    // Set initial playback speed
-                    videoRef.current.playbackRate = videoSpeed;
-                    console.log(`📹 Video loaded. Duration: ${videoRef.current.duration}s, Speed: ${videoSpeed}x`);
-                  }
-                }}
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  src={uploadedVideo}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    // ✅ APPLY REAL CSS FILTER!
+                    filter: filters.find(f => f.id === selectedFilter)?.css || 'none',
+                    transition: 'filter 0.3s ease'
+                  }}
+                  onLoadedMetadata={() => {
+                    if (videoRef.current) {
+                      setDuration(videoRef.current.duration);
+                      setEndTime(videoRef.current.duration);
+                      setTextEndTime(videoRef.current.duration);
+                      // Set initial position to startTime
+                      videoRef.current.currentTime = startTime;
+                      // Set initial playback speed
+                      videoRef.current.playbackRate = videoSpeed;
+                      console.log(`📹 Video loaded. Duration: ${videoRef.current.duration}s, Speed: ${videoSpeed}x`);
+                    }
+                  }}
+                />
+                
+                {/* ✅ PLAY/PAUSE BUTTON - IM VIDEO CENTER */}
+                <button
+                  onClick={togglePlay}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    border: '3px solid rgba(255, 255, 255, 0.8)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    zIndex: 100,
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.8)';
+                    e.currentTarget.style.borderColor = '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)';
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+                  }}
+                >
+                  {isPlaying ? (
+                    <Pause size={36} color="#fff" />
+                  ) : (
+                    <Play size={36} color="#fff" style={{ marginLeft: '4px' }} />
+                  )}
+                </button>
+              </>
             ) : (
               <div style={{
                 width: '100%',
