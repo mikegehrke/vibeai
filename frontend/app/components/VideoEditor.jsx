@@ -871,46 +871,51 @@ export default function VideoEditor({
   }, [videoSpeed]);
 
   // Search music (YouTube or TikTok)
-  // ✅ OPEN EMBEDDED MUSIC BROWSER
+  // ✅ OPEN MUSIC BROWSER IN NEW WINDOW (iframe blocked by TikTok/YouTube)
   const openMusicBrowser = (source) => {
     setMusicSource(source);
     const initialUrl = source === 'youtube' 
-      ? 'https://www.youtube.com/results?search_query=music+background'
+      ? 'https://www.youtube.com/results?search_query=background+music+no+copyright'
       : 'https://www.tiktok.com/search?q=music';
-    setCurrentBrowserUrl(initialUrl);
-    setShowMusicBrowser(true);
-    console.log(`🌐 Opening embedded ${source} browser: ${initialUrl}`);
+    
+    // Open in new window
+    const musicWindow = window.open(initialUrl, '_blank', 'width=1200,height=800');
+    
+    console.log(`🌐 Opened ${source} in new window: ${initialUrl}`);
+    
+    // Show clone dialog
+    setTimeout(() => {
+      const songTitle = prompt(
+        `🎵 CLONE MUSIC FROM ${source.toUpperCase()}\n\n` +
+        `STEPS:\n` +
+        `1. Find your song in the opened ${source} window\n` +
+        `2. Remember or copy the song name\n` +
+        `3. Come back here and enter the song name\n\n` +
+        `Enter song name to clone:`
+      );
+      
+      if (songTitle && songTitle.trim()) {
+        const newMusic = {
+          id: Date.now(),
+          title: songTitle.trim(),
+          artist: source === 'youtube' ? 'YouTube' : 'TikTok',
+          duration: 'Unknown',
+          source: source,
+          url: initialUrl,
+          filename: `${source}-${Date.now()}`,
+          addedAt: new Date().toISOString(),
+          cloned: true
+        };
+        
+        setMusicLibrary([...musicLibrary, newMusic]);
+        setBackgroundMusic(newMusic.filename);
+        
+        console.log(`✅ Cloned music: ${songTitle} from ${source}`);
+        alert(`✅ Music Cloned!\n\n"${songTitle}"\n\nAdded to your library and set as background music!`);
+      }
+    }, 2000); // Wait 2 seconds for user to see the window
   };
 
-  // ✅ CLONE MUSIC FROM BROWSER
-  const cloneMusicFromBrowser = () => {
-    const songTitle = prompt(
-      `🎵 CLONE MUSIC\n\n` +
-      `You're cloning music from ${musicSource.toUpperCase()}!\n\n` +
-      `Enter a name for this song:`
-    );
-    
-    if (!songTitle) return;
-    
-    const newMusic = {
-      id: Date.now(),
-      title: songTitle,
-      artist: musicSource === 'youtube' ? 'YouTube' : 'TikTok',
-      duration: 'Unknown',
-      source: musicSource,
-      url: currentBrowserUrl,
-      filename: currentBrowserUrl, // URL as filename for reference
-      addedAt: new Date().toISOString(),
-      cloned: true
-    };
-    
-    setMusicLibrary([...musicLibrary, newMusic]);
-    setBackgroundMusic(currentBrowserUrl);
-    setShowMusicBrowser(false);
-    
-    console.log(`✅ Cloned music: ${songTitle} from ${currentBrowserUrl}`);
-    alert(`✅ Music Cloned!\n\n"${songTitle}"\n\nAdded to your library and set as background music.\n\n💡 Note: The URL is saved as reference. For actual playback, you may need to upload the audio file.`);
-  };
 
   // ✅ HYBRID MUSIC SEARCH - Try backend first, fallback to mock/browser
   const searchMusic = async () => {
@@ -3377,120 +3382,6 @@ Video Editor - {appName}
                   </div>
                 )}
 
-                {/* ✅ EMBEDDED MUSIC BROWSER - YouTube/TikTok directly in editor */}
-                {showMusicBrowser && (
-                  <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.98)',
-                    zIndex: 10001,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '2rem'
-                  }}>
-                    {/* Header with Close & Clone Buttons */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '1.5rem',
-                      padding: '1rem',
-                      background: '#1a1a1a',
-                      borderRadius: '12px'
-                    }}>
-                      <div>
-                        <h2 style={{ color: '#fff', margin: 0, fontSize: '1.5rem' }}>
-                          🎵 {musicSource === 'youtube' ? 'YouTube' : 'TikTok'} Music Browser
-                        </h2>
-                        <p style={{ color: '#999', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-                          Search & find music, then click "Clone This Song" when you find the right one!
-                        </p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button
-                          onClick={cloneMusicFromBrowser}
-                          style={{
-                            padding: '0.75rem 2rem',
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.6)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
-                          }}
-                        >
-                          ✨ Clone This Song
-                        </button>
-                        <button
-                          onClick={() => setShowMusicBrowser(false)}
-                          style={{
-                            padding: '0.75rem 1.5rem',
-                            background: '#ef4444',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            fontSize: '1rem'
-                          }}
-                        >
-                          ✕ Close
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Embedded Browser iframe */}
-                    <div style={{
-                      flex: 1,
-                      background: '#000',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      position: 'relative'
-                    }}>
-                      <iframe
-                        src={currentBrowserUrl}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          border: 'none',
-                          borderRadius: '12px'
-                        }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                      
-                      {/* Loading overlay hint */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '1rem',
-                        left: '1rem',
-                        right: '1rem',
-                        padding: '1rem',
-                        background: 'rgba(0, 0, 0, 0.8)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '0.9rem',
-                        pointerEvents: 'none'
-                      }}>
-                        💡 <strong>HOW TO USE:</strong> Search for music → When you find a song you like → Click "Clone This Song" button above
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -4218,40 +4109,6 @@ Video Editor - {appName}
       </div>
       )}
 
-      {/* PLAY BUTTON - MITTIG LINKS VOM TOOLS PANEL */}
-      <button
-        onClick={togglePlay}
-        style={{
-          position: 'fixed',
-          bottom: '15%',
-          left: 'calc((100vw - 400px) / 2 + 20px)',
-          transform: 'translateX(-50%)',
-          width: '70px',
-          height: '70px',
-          borderRadius: '50%',
-          background: 'transparent',
-          border: '2px solid rgba(255, 255, 255, 0.4)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          zIndex: 10000,
-          pointerEvents: 'auto'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateX(-50%) scale(1.15)';
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.8)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-        }}
-      >
-        {isPlaying ? <Pause size={30} color="rgba(255, 255, 255, 0.8)" /> : <Play size={30} color="rgba(255, 255, 255, 0.8)" />}
-      </button>
     </>
   );
 }
