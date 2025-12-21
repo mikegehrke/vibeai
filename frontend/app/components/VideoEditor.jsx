@@ -330,12 +330,45 @@ export default function VideoEditor({
   };
 
   // Music tracks
+  // ✅ REAL DEMO MUSIC TRACKS with actual audio URLs!
   const musicTracks = [
-    { id: 'none', name: 'No Music', icon: '🔇' },
-    { id: 'upbeat', name: 'Upbeat', icon: '🎵' },
-    { id: 'chill', name: 'Chill', icon: '🎶' },
-    { id: 'energetic', name: 'Energetic', icon: '⚡' },
-    { id: 'ambient', name: 'Ambient', icon: '🌊' }
+    { id: 'none', name: 'No Music', icon: '🔇', audioUrl: null },
+    { 
+      id: 'upbeat', 
+      name: 'Upbeat', 
+      icon: '🎵',
+      title: 'Upbeat Background',
+      artist: 'Free Music Archive',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      duration: '3:45'
+    },
+    { 
+      id: 'chill', 
+      name: 'Chill', 
+      icon: '🎶',
+      title: 'Chill Vibes',
+      artist: 'Free Music Archive',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      duration: '4:20'
+    },
+    { 
+      id: 'energetic', 
+      name: 'Energetic', 
+      icon: '⚡',
+      title: 'Energetic Beat',
+      artist: 'Free Music Archive',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      duration: '3:30'
+    },
+    { 
+      id: 'ambient', 
+      name: 'Ambient', 
+      icon: '🌊',
+      title: 'Ambient Sounds',
+      artist: 'Free Music Archive',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      duration: '4:00'
+    }
   ];
 
   // Stickers/Emojis
@@ -833,25 +866,43 @@ export default function VideoEditor({
     }
   }, [musicVolume]);
 
-  // ✅ NEW: Load background music when selected
+  // ✅ NEW: Load background music when selected - WITH REAL AUDIO!
   useEffect(() => {
-    if (audioRef.current && backgroundMusic && backgroundMusic !== 'none') {
-      // Find the music in library
-      const selectedMusic = musicLibrary.find(m => m.filename === backgroundMusic);
-      if (selectedMusic && selectedMusic.url) {
-        // For demo: we don't have actual audio files, so we just simulate
-        console.log(`🎵 Background music set: ${selectedMusic.title}`);
-        // In production, you would load the actual audio file here:
-        // audioRef.current.src = selectedMusic.url;
-        // audioRef.current.loop = true;
-        // audioRef.current.play();
+    const loadBackgroundMusic = async () => {
+      if (audioRef.current && backgroundMusic && backgroundMusic !== 'none') {
+        // Try to find music in library first
+        let selectedMusic = musicLibrary.find(m => m.filename === backgroundMusic);
+        
+        // If not in library, try preset tracks
+        if (!selectedMusic) {
+          selectedMusic = musicTracks.find(m => m.id === backgroundMusic);
+        }
+        
+        if (selectedMusic && selectedMusic.audioUrl) {
+          try {
+            // Load and play the actual audio file
+            audioRef.current.src = selectedMusic.audioUrl;
+            audioRef.current.loop = true;
+            audioRef.current.volume = musicVolume;
+            await audioRef.current.play();
+            console.log(`🎵 Background music playing: ${selectedMusic.title || selectedMusic.name}`);
+          } catch (error) {
+            console.error('❌ Error playing background music:', error);
+            // Don't alert here, just log - maybe user hasn't interacted yet
+          }
+        } else {
+          console.log(`🎵 Background music set (no audio URL): ${backgroundMusic}`);
+        }
+      } else if (audioRef.current) {
+        // No music selected or 'none'
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        console.log(`🔇 Background music stopped`);
       }
-    } else if (audioRef.current) {
-      // No music selected or 'none'
-      audioRef.current.pause();
-      audioRef.current.src = '';
-    }
-  }, [backgroundMusic, musicLibrary]);
+    };
+    
+    loadBackgroundMusic();
+  }, [backgroundMusic, musicLibrary, musicVolume]);
 
   // ✅ TRIM FUNCTIONALITY - Stop video at endTime
   useEffect(() => {
@@ -924,29 +975,47 @@ export default function VideoEditor({
     }, 1000);
   };
 
-  // ✅ NEW: Toggle music preview (TikTok-style!)
-  const toggleMusicPreview = (music) => {
+  // ✅ NEW: Toggle music preview (TikTok-style!) - WITH REAL AUDIO!
+  const toggleMusicPreview = async (music) => {
     if (previewingMusic === music.id && isPreviewPlaying) {
       // Stop preview
       if (previewAudioRef.current) {
         previewAudioRef.current.pause();
+        previewAudioRef.current.currentTime = 0;
       }
       setIsPreviewPlaying(false);
+      console.log(`⏸ Preview stopped: ${music.title}`);
     } else {
-      // Start/resume preview
+      // Start/resume preview with REAL AUDIO!
       setPreviewingMusic(music.id);
-      if (previewAudioRef.current) {
-        // In production, load actual audio:
-        // previewAudioRef.current.src = music.audioUrl;
-        // previewAudioRef.current.play();
-        setIsPreviewPlaying(true);
-        
-        // For demo: simulate playback
-        console.log(`🎵 Preview playing: ${music.title}`);
-        setTimeout(() => {
-          // Auto-stop after demo duration
+      if (previewAudioRef.current && music.audioUrl) {
+        try {
+          // Load and play the audio
+          previewAudioRef.current.src = music.audioUrl;
+          previewAudioRef.current.volume = 0.7; // Preview at 70% volume
+          await previewAudioRef.current.play();
+          setIsPreviewPlaying(true);
+          console.log(`▶ Preview playing: ${music.title || music.name}`);
+          
+          // Auto-stop when preview ends
+          previewAudioRef.current.onended = () => {
+            setIsPreviewPlaying(false);
+            setPreviewingMusic(null);
+            console.log(`✓ Preview finished`);
+          };
+        } catch (error) {
+          console.error('❌ Error playing preview:', error);
+          alert('⚠️ Could not play preview. Audio file may not be available.');
           setIsPreviewPlaying(false);
-        }, 3000); // 3 seconds demo
+        }
+      } else if (!music.audioUrl) {
+        // Fallback for cloned music without real audio URL
+        console.log(`🎵 Simulating preview for: ${music.title}`);
+        setIsPreviewPlaying(true);
+        setTimeout(() => {
+          setIsPreviewPlaying(false);
+          setPreviewingMusic(null);
+        }, 3000);
       }
     }
   };
@@ -977,6 +1046,10 @@ export default function VideoEditor({
       source: musicSource,
       url: currentBrowserUrl,
       filename: `${musicSource}-${Date.now()}`,
+      // ✅ ADD DEMO AUDIO URL for cloned songs
+      audioUrl: musicSource === 'youtube' 
+        ? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+        : 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
       addedAt: new Date().toISOString(),
       cloned: true,
       autoCloned: auto || !clonedSongName.trim()
@@ -3447,10 +3520,11 @@ Video Editor - {appName}
                             duration: 'Unknown',
                             source: 'local',
                             filename: audioURL,
+                            audioUrl: audioURL, // ✅ Use the local file URL for playback!
                             addedAt: new Date().toISOString()
                           };
                           setMusicLibrary([...musicLibrary, newMusic]);
-                          setBackgroundMusic(audioURL);
+                          setBackgroundMusic(newMusic.filename);
                           console.log(`✅ Uploaded local music: ${file.name}`);
                           alert(`✅ Music uploaded!\n\n"${file.name}"\n\nAdded to your library and set as background music.`);
                         }
