@@ -928,8 +928,48 @@ export default function VideoEditor({
     setShowMusicCloneDialog(false);
     setClonedSongName('');
     
+    // ✅ SWITCH TO MUSIC TAB to show the new song!
+    setActiveTab('music');
+    
     console.log(`✅ ${auto ? 'Auto-cloned' : 'Cloned'} music: ${songTitle} from ${musicSource}`);
-    alert(`✅ Music ${auto ? 'Auto-Cloned' : 'Cloned'}!\n\n"${songTitle}"\n\nAdded to your library and set as background music!`);
+    
+    // ✅ BETTER FEEDBACK with non-blocking notification
+    setTimeout(() => {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem 3rem;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(16, 185, 129, 0.6);
+        z-index: 999999;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        animation: scaleIn 0.3s ease-out;
+      `;
+      notification.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+        <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">
+          Music ${auto ? 'Auto-Cloned' : 'Cloned'}!
+        </div>
+        <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 0.5rem;">
+          "${songTitle}"
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.7;">
+          Added to library & set as background music
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'scaleOut 0.3s ease-in';
+        setTimeout(() => document.body.removeChild(notification), 300);
+      }, 2500);
+    }, 100);
   };
 
 
@@ -3349,42 +3389,141 @@ Video Editor - {appName}
                   </label>
                 </div>
 
-                {/* My Library */}
+                {/* My Library - ENHANCED */}
                 <div>
-                  <h4 style={{ color: '#ececec', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
-                    My Library ({musicLibrary.length})
+                  <h4 style={{ color: '#ececec', fontSize: '0.9rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>🎵 My Library ({musicLibrary.length})</span>
+                    {backgroundMusic && backgroundMusic !== 'none' && (
+                      <span style={{ fontSize: '0.75rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                        ✓ Playing
+                      </span>
+                    )}
                   </h4>
                   {musicLibrary.length > 0 ? (
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.5rem',
-                      maxHeight: '200px',
-                      overflowY: 'auto'
+                      gap: '0.75rem',
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      paddingRight: '0.5rem'
                     }}>
                       {musicLibrary.map((music, index) => (
-                        <button
+                        <div
                           key={index}
-                          onClick={() => setBackgroundMusic(music.filename)}
                           style={{
-                            padding: '0.75rem',
-                            background: backgroundMusic === music.filename ? '#3b82f6' : '#2a2a2a',
-                            border: 'none',
-                            borderRadius: '6px',
-                            color: '#ececec',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            fontSize: '0.85rem'
+                            padding: '1rem',
+                            background: backgroundMusic === music.filename ? 'rgba(59, 130, 246, 0.2)' : '#2a2a2a',
+                            border: backgroundMusic === music.filename ? '2px solid #3b82f6' : '2px solid transparent',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem'
                           }}
                         >
-                          🎵 {music.title}
-                        </button>
+                          {/* Song Info */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>
+                              {music.source === 'youtube' ? '📺' : music.source === 'tiktok' ? '🎵' : '🎼'}
+                            </span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ color: '#ececec', fontWeight: '600', fontSize: '0.9rem' }}>
+                                {music.title}
+                              </div>
+                              <div style={{ color: '#999', fontSize: '0.75rem' }}>
+                                {music.artist} • {music.source}
+                                {music.autoCloned && <span style={{ marginLeft: '0.5rem', color: '#10b981' }}>⚡ Auto</span>}
+                              </div>
+                            </div>
+                            {backgroundMusic === music.filename && (
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: '#10b981',
+                                boxShadow: '0 0 8px #10b981',
+                                animation: 'pulse 2s infinite'
+                              }} />
+                            )}
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem' }}>
+                            <button
+                              onClick={() => {
+                                setBackgroundMusic(music.filename);
+                                console.log(`🎵 Set as background: ${music.title}`);
+                              }}
+                              style={{
+                                padding: '0.6rem 1rem',
+                                background: backgroundMusic === music.filename 
+                                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                                  : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: '#fff',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                            >
+                              {backgroundMusic === music.filename ? '✓ Active' : '▶ Set as Background'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (music.url) {
+                                  window.open(music.url, '_blank');
+                                } else {
+                                  alert(`🎵 Preview not available\n\nSong: ${music.title}\n\nThis is a reference. The actual audio would play here in a full implementation.`);
+                                }
+                              }}
+                              style={{
+                                padding: '0.6rem',
+                                background: '#3a3a3a',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: '#ececec',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s',
+                                minWidth: '40px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#4a4a4a';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#3a3a3a';
+                              }}
+                              title="Preview Song"
+                            >
+                              🔊
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ color: '#999', fontSize: '0.85rem' }}>
-                      No music in library. Click "Browse" to add music.
-                    </p>
+                    <div style={{
+                      padding: '2rem 1rem',
+                      background: '#2a2a2a',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      border: '2px dashed #3a3a3a'
+                    }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎵</div>
+                      <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>
+                        No music in library yet.<br/>Click YouTube or TikTok to add songs!
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -3423,20 +3562,82 @@ Video Editor - {appName}
                   </div>
                 </div>
 
+                {/* Volume Control - ENHANCED */}
                 {backgroundMusic && backgroundMusic !== 'none' && (
-                  <div>
-                    <label style={{ color: '#ececec', fontSize: '0.9rem', display: 'block', marginBottom: '0.5rem' }}>
-                      Music Volume: {Math.round(musicVolume * 100)}%
+                  <div style={{
+                    padding: '1.5rem',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '2px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '12px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <label style={{ color: '#10b981', fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🎵</span>
+                        Background Music Active
+                      </label>
+                      <button
+                        onClick={() => {
+                          if (musicVolume > 0) {
+                            setMusicVolume(0);
+                          } else {
+                            setMusicVolume(0.5);
+                          }
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: musicVolume === 0 ? '#ef4444' : '#10b981',
+                          border: 'none',
+                          borderRadius: '6px',
+                          color: '#fff',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {musicVolume === 0 ? '🔇 Muted' : '🔊 Playing'}
+                      </button>
+                    </div>
+                    
+                    <label style={{ color: '#ececec', fontSize: '0.9rem', display: 'block', marginBottom: '0.75rem' }}>
+                      Volume: {Math.round(musicVolume * 100)}%
+                      {musicVolume === 0 && <span style={{ color: '#ef4444', marginLeft: '0.5rem' }}>(Muted)</span>}
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={musicVolume}
-                      onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.2rem', color: musicVolume === 0 ? '#666' : '#ececec' }}>
+                        {musicVolume === 0 ? '🔇' : musicVolume < 0.3 ? '🔈' : musicVolume < 0.7 ? '🔉' : '🔊'}
+                      </span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={musicVolume}
+                        onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                        style={{
+                          flex: 1,
+                          height: '6px',
+                          borderRadius: '3px',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <span style={{ color: '#999', fontSize: '0.85rem', minWidth: '40px', textAlign: 'right' }}>
+                        {Math.round(musicVolume * 100)}%
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      marginTop: '1rem',
+                      padding: '0.75rem',
+                      background: 'rgba(0, 0, 0, 0.2)',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      color: '#999',
+                      textAlign: 'center'
+                    }}>
+                      💡 Tip: Set to 0% to mute, or click Mute button
+                    </div>
                   </div>
                 )}
 
