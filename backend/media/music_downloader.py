@@ -197,24 +197,46 @@ class MusicDownloader:
             )
             
             if info:
-                # Find the actual MP3 file (yt-dlp creates it with .mp3 extension)
-                actual_filename = f"{source}_{safe_title}_{timestamp}.mp3"
-                actual_filepath = os.path.join(self.music_dir, actual_filename)
+                # ✅ FIX: Search for ANY file with our prefix (FFmpeg may change extension)
+                prefix = f"{source}_{safe_title}_{timestamp}"
+                print(f"🔍 Looking for files with prefix: {prefix}")
                 
-                if os.path.exists(actual_filepath):
-                    print(f"✅ Downloaded: {actual_filename}")
-                    return {
-                        "success": True,
-                        "title": info.get('title', title or 'Unknown'),
-                        "artist": info.get('uploader', 'Unknown Artist'),
-                        "duration": info.get('duration', 0),
-                        "filename": actual_filename,
-                        "filepath": actual_filepath,
-                        "source": source,
-                        "url": url,
-                        "size": os.path.getsize(actual_filepath),
-                        "thumbnail": info.get('thumbnail', '')
-                    }
+                # List all files in music directory
+                if os.path.exists(self.music_dir):
+                    all_files = os.listdir(self.music_dir)
+                    print(f"📂 Files in directory: {all_files}")
+                    
+                    # Find files that start with our prefix
+                    matching_files = [f for f in all_files if f.startswith(prefix)]
+                    print(f"✅ Matching files: {matching_files}")
+                    
+                    if matching_files:
+                        # Use the first matching file (should be the MP3)
+                        actual_filename = matching_files[0]
+                        actual_filepath = os.path.join(self.music_dir, actual_filename)
+                        
+                        print(f"✅ Downloaded: {actual_filename}")
+                        print(f"📁 Full path: {actual_filepath}")
+                        print(f"📊 File size: {os.path.getsize(actual_filepath)} bytes")
+                        
+                        return {
+                            "success": True,
+                            "title": info.get('title', title or 'Unknown'),
+                            "artist": info.get('uploader', 'Unknown Artist'),
+                            "duration": info.get('duration', 0),
+                            "filename": actual_filename,
+                            "filepath": actual_filepath,
+                            "source": source,
+                            "url": url,
+                            "size": os.path.getsize(actual_filepath),
+                            "thumbnail": info.get('thumbnail', '')
+                        }
+            
+            print(f"❌ No files found with prefix: {prefix}")
+            print(f"📂 Music directory: {self.music_dir}")
+            print(f"📂 Directory exists: {os.path.exists(self.music_dir)}")
+            if os.path.exists(self.music_dir):
+                print(f"📂 All files: {os.listdir(self.music_dir)}")
             
             return {
                 "success": False,
