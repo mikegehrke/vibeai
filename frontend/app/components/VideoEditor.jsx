@@ -4396,46 +4396,122 @@ Video Editor - {appName}
                 fontSize: '0.9rem',
                 lineHeight: '2'
               }}>
-                <li>A new {musicSource === 'youtube' ? 'YouTube' : 'TikTok'} window has opened</li>
-                <li>Search for your desired music (e.g., "rap beats")</li>
-                <li>Find the perfect song for your video</li>
-                <li>Come back here and enter the song name below</li>
-                <li>Click "Clone to Library"!</li>
+                <li>Ein neues {musicSource === 'youtube' ? 'YouTube' : 'TikTok'} Fenster hat sich geöffnet</li>
+                <li>Suche dort deinen Song (z.B. "rap beats")</li>
+                <li>Finde den perfekten Song</li>
+                <li><strong style={{color: '#10b981'}}>KOPIERE die URL</strong> aus der Adresszeile</li>
+                <li><strong style={{color: '#10b981'}}>FÜGE die URL unten ein</strong> 👇</li>
+                <li>Klick "Clone"!</li>
               </ol>
+            </div>
+
+            {/* URL INPUT FIELD - WICHTIG! */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                color: '#10b981',
+                marginBottom: '0.75rem',
+                fontWeight: '700',
+                fontSize: '1rem'
+              }}>
+                🔗 Song URL: <span style={{color: '#ef4444'}}>*</span>
+              </label>
+              <input
+                type="text"
+                value={currentBrowserUrl}
+                onChange={(e) => setCurrentBrowserUrl(e.target.value)}
+                placeholder={`z.B. https://${musicSource === 'youtube' ? 'youtube.com/watch?v=...' : 'tiktok.com/@user/video/...'}`}
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  background: '#1a1a1a',
+                  border: currentBrowserUrl ? '2px solid #10b981' : '2px solid #ef4444',
+                  borderRadius: '10px',
+                  color: '#ececec',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => {
+                  if (!currentBrowserUrl) e.target.style.borderColor = '#ef4444';
+                }}
+              />
+              {!currentBrowserUrl && (
+                <div style={{
+                  color: '#ef4444',
+                  fontSize: '0.85rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{fontSize: '1.2rem'}}>⚠️</span>
+                  <span>Bitte URL einfügen! (Rechtsklick im Browser-Fenster → Kopieren)</span>
+                </div>
+              )}
+              {currentBrowserUrl && (
+                <div style={{
+                  color: '#10b981',
+                  fontSize: '0.85rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{fontSize: '1.2rem'}}>✓</span>
+                  <span>URL erkannt! Jetzt kannst du clonen!</span>
+                </div>
+              )}
             </div>
 
             {/* Quick Clone Button - HAUPTAKTION */}
             <div style={{ marginBottom: '1.5rem' }}>
               <button
-                onClick={() => cloneMusicFromBrowser(true)}
+                onClick={() => {
+                  if (!currentBrowserUrl) {
+                    alert('⚠️ Bitte erst die URL einfügen!\n\n1. Gehe zum geöffneten Browser-Fenster\n2. Kopiere die URL aus der Adresszeile\n3. Füge sie oben ein (Cmd+V / Ctrl+V)');
+                    return;
+                  }
+                  cloneMusicFromBrowser(true);
+                }}
+                disabled={!currentBrowserUrl}
                 style={{
                   width: '100%',
                   padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  background: currentBrowserUrl 
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : 'linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%)',
                   border: 'none',
                   borderRadius: '12px',
-                  color: '#fff',
+                  color: currentBrowserUrl ? '#fff' : '#666',
                   fontWeight: '700',
-                  cursor: 'pointer',
+                  cursor: currentBrowserUrl ? 'pointer' : 'not-allowed',
                   fontSize: '1.2rem',
                   transition: 'all 0.2s',
-                  boxShadow: '0 6px 20px rgba(16, 185, 129, 0.5)',
+                  boxShadow: currentBrowserUrl ? '0 6px 20px rgba(16, 185, 129, 0.5)' : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.75rem'
+                  gap: '0.75rem',
+                  opacity: currentBrowserUrl ? 1 : 0.5
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.03)';
-                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(16, 185, 129, 0.7)';
+                  if (currentBrowserUrl) {
+                    e.currentTarget.style.transform = 'scale(1.03)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(16, 185, 129, 0.7)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
+                  if (currentBrowserUrl) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
+                  }
                 }}
               >
-                <span style={{ fontSize: '1.5rem' }}>⚡</span>
-                Quick Clone (Auto Name)
+                <span style={{ fontSize: '1.5rem' }}>{currentBrowserUrl ? '⚡' : '🔒'}</span>
+                {currentBrowserUrl ? 'Quick Clone (Auto Name)' : 'Bitte erst URL einfügen'}
               </button>
             </div>
 
