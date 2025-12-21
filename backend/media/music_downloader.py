@@ -191,6 +191,10 @@ class MusicDownloader:
             
             # Run yt-dlp in executor to avoid blocking
             loop = asyncio.get_event_loop()
+            
+            # ✅ Define prefix BEFORE using it (outside if block!)
+            prefix = f"{source}_{safe_title}_{timestamp}"
+            
             info = await loop.run_in_executor(
                 None,
                 lambda: self._download_with_ytdlp(url, ydl_opts)
@@ -198,7 +202,6 @@ class MusicDownloader:
             
             if info:
                 # ✅ FIX: Search for ANY file with our prefix (FFmpeg may change extension)
-                prefix = f"{source}_{safe_title}_{timestamp}"
                 print(f"🔍 Looking for files with prefix: {prefix}")
                 
                 # List all files in music directory
