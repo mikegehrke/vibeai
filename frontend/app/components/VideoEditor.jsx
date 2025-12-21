@@ -1062,6 +1062,7 @@ export default function VideoEditor({
     // ✅ DOWNLOAD FROM BACKEND!
     try {
       console.log(`🚀 Starting download from ${currentBrowserUrl}...`);
+      console.log(`📝 Payload:`, { url: currentBrowserUrl, source: musicSource, title: songTitle });
       
       const response = await fetch('http://localhost:8000/api/media/music/download', {
         method: 'POST',
@@ -1075,7 +1076,16 @@ export default function VideoEditor({
         })
       });
       
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Backend error response:`, errorText);
+        throw new Error(`Backend error (${response.status}): ${errorText}`);
+      }
+      
       const data = await response.json();
+      console.log(`📦 Response data:`, data);
       
       if (data.success) {
         // ✅ DOWNLOAD SUCCESSFUL!
