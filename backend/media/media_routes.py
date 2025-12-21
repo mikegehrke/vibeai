@@ -260,6 +260,28 @@ async def get_music_library():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/music/audio/{filename}")
+async def serve_audio_file(filename: str):
+    """
+    Serve downloaded audio files
+    
+    GET /api/media/music/audio/youtube_song_123.mp3
+    """
+    try:
+        filepath = os.path.join(music_downloader.music_dir, filename)
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        return FileResponse(
+            filepath,
+            media_type="audio/mpeg",
+            filename=filename
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Text Styles & Animations
 @router.get("/text/styles")
 async def get_text_styles():

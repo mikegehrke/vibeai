@@ -1020,8 +1020,8 @@ export default function VideoEditor({
     }
   };
 
-  // ✅ CLONE MUSIC FUNCTION - AUTOMATIC OR MANUAL
-  const cloneMusicFromBrowser = (auto = false) => {
+  // ✅ CLONE MUSIC FUNCTION - AUTOMATIC OR MANUAL - WITH REAL BACKEND DOWNLOAD!
+  const cloneMusicFromBrowser = async (auto = false) => {
     let songTitle;
     
     if (auto || !clonedSongName.trim()) {
@@ -1038,70 +1038,123 @@ export default function VideoEditor({
       songTitle = clonedSongName.trim();
     }
     
-    const newMusic = {
+    // ✅ SHOW LOADING STATE
+    const loadingMusic = {
       id: Date.now(),
-      title: songTitle,
-      artist: musicSource === 'youtube' ? 'YouTube' : 'TikTok',
-      duration: 'Unknown',
+      title: `⏳ Downloading: ${songTitle}...`,
+      artist: 'Please wait...',
+      duration: 'Downloading',
       source: musicSource,
       url: currentBrowserUrl,
       filename: `${musicSource}-${Date.now()}`,
-      // ✅ ADD DEMO AUDIO URL for cloned songs
-      audioUrl: musicSource === 'youtube' 
-        ? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-        : 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      audioUrl: null,
       addedAt: new Date().toISOString(),
       cloned: true,
-      autoCloned: auto || !clonedSongName.trim()
+      autoCloned: auto || !clonedSongName.trim(),
+      downloading: true
     };
     
-    setMusicLibrary([...musicLibrary, newMusic]);
-    setBackgroundMusic(newMusic.filename);
+    setMusicLibrary([...musicLibrary, loadingMusic]);
     setShowMusicCloneDialog(false);
     setClonedSongName('');
-    
-    // ✅ SWITCH TO MUSIC TAB to show the new song!
     setActiveTab('music');
     
-    console.log(`✅ ${auto ? 'Auto-cloned' : 'Cloned'} music: ${songTitle} from ${musicSource}`);
-    
-    // ✅ BETTER FEEDBACK with non-blocking notification
-    setTimeout(() => {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 2rem 3rem;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(16, 185, 129, 0.6);
-        z-index: 999999;
-        text-align: center;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        animation: scaleIn 0.3s ease-out;
-      `;
-      notification.innerHTML = `
-        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
-        <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">
-          Music ${auto ? 'Auto-Cloned' : 'Cloned'}!
-        </div>
-        <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 0.5rem;">
-          "${songTitle}"
-        </div>
-        <div style="font-size: 0.9rem; opacity: 0.7;">
-          Added to library & set as background music
-        </div>
-      `;
-      document.body.appendChild(notification);
+    // ✅ DOWNLOAD FROM BACKEND!
+    try {
+      console.log(`🚀 Starting download from ${currentBrowserUrl}...`);
       
-      setTimeout(() => {
-        notification.style.animation = 'scaleOut 0.3s ease-in';
-        setTimeout(() => document.body.removeChild(notification), 300);
-      }, 2500);
-    }, 100);
+      const response = await fetch('http://localhost:8000/api/media/music/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: currentBrowserUrl,
+          source: musicSource,
+          title: songTitle
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // ✅ DOWNLOAD SUCCESSFUL!
+        const downloadedMusic = {
+          id: loadingMusic.id,
+          title: data.result.title,
+          artist: data.result.artist || (musicSource === 'youtube' ? 'YouTube' : 'TikTok'),
+          duration: data.result.duration ? `${Math.floor(data.result.duration / 60)}:${(data.result.duration % 60).toString().padStart(2, '0')}` : 'Unknown',
+          source: musicSource,
+          url: currentBrowserUrl,
+          filename: data.result.filename,
+          // ✅ REAL AUDIO URL FROM BACKEND!
+          audioUrl: `http://localhost:8000/api/media/music/audio/${data.result.filename}`,
+          thumbnail: data.result.thumbnail,
+          addedAt: new Date().toISOString(),
+          cloned: true,
+          autoCloned: auto || !clonedSongName.trim(),
+          downloading: false
+        };
+        
+        // Replace loading entry with real data
+        setMusicLibrary(prev => prev.map(m => m.id === loadingMusic.id ? downloadedMusic : m));
+        setBackgroundMusic(downloadedMusic.filename);
+        
+        console.log(`✅ Download complete: ${downloadedMusic.title}`);
+        
+        // ✅ SHOW SUCCESS NOTIFICATION
+        setTimeout(() => {
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 2rem 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(16, 185, 129, 0.6);
+            z-index: 999999;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            animation: scaleIn 0.3s ease-out;
+          `;
+          notification.innerHTML = `
+            <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+            <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">
+              ECHTE Musik Heruntergeladen!
+            </div>
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 0.5rem;">
+              "${downloadedMusic.title}"
+            </div>
+            <div style="font-size: 0.85rem; opacity: 0.7;">
+              Von ${musicSource === 'youtube' ? 'YouTube' : 'TikTok'} • ${downloadedMusic.artist}
+            </div>
+            <div style="font-size: 0.8rem; opacity: 0.6; margin-top: 0.5rem;">
+              Jetzt kannst du den Song anhören! 🎵
+            </div>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.style.animation = 'scaleOut 0.3s ease-in';
+            setTimeout(() => document.body.removeChild(notification), 300);
+          }, 3000);
+        }, 100);
+        
+      } else {
+        throw new Error(data.error || 'Download failed');
+      }
+    } catch (error) {
+      console.error('❌ Download error:', error);
+      
+      // Remove loading entry
+      setMusicLibrary(prev => prev.filter(m => m.id !== loadingMusic.id));
+      
+      // Show error
+      alert(`❌ Download failed!\n\n${error.message}\n\nMake sure:\n1. yt-dlp is installed (pip install yt-dlp)\n2. FFmpeg is installed\n3. Backend server is running\n4. URL is valid\n\nInstall: pip install yt-dlp`);
+    }
   };
 
 
