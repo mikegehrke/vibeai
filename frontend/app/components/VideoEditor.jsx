@@ -385,11 +385,21 @@ export default function VideoEditor({
   ];
 
   // Speed options
+  // ✅ EXPANDED SPEED OPTIONS (13 speeds!)
   const speedOptions = [
-    { value: 0.5, label: '0.5x', icon: '🐌' },
-    { value: 1, label: '1x', icon: '▶️' },
-    { value: 1.5, label: '1.5x', icon: '⏩' },
-    { value: 2, label: '2x', icon: '⚡' }
+    { value: 0.25, label: '0.25x', icon: '🐢', name: 'Super Slow' },
+    { value: 0.5, label: '0.5x', icon: '🐌', name: 'Slow Motion' },
+    { value: 0.75, label: '0.75x', icon: '🚶', name: 'Slow' },
+    { value: 1, label: '1x', icon: '▶️', name: 'Normal', default: true },
+    { value: 1.25, label: '1.25x', icon: '🏃', name: 'Faster' },
+    { value: 1.5, label: '1.5x', icon: '⏩', name: 'Fast' },
+    { value: 1.75, label: '1.75x', icon: '🏃‍♂️', name: 'Very Fast' },
+    { value: 2, label: '2x', icon: '⚡', name: 'Super Fast' },
+    { value: 2.5, label: '2.5x', icon: '🚀', name: 'Hyper' },
+    { value: 3, label: '3x', icon: '💨', name: 'Ultra' },
+    { value: 4, label: '4x', icon: '⚡⚡', name: 'Extreme' },
+    { value: 5, label: '5x', icon: '🔥', name: 'Insane' },
+    { value: 10, label: '10x', icon: '💥', name: 'Time Warp' }
   ];
 
   // Toggle play/pause
@@ -494,7 +504,7 @@ export default function VideoEditor({
             console.log('🎯 Using Web Share API...');
             await navigator.share({
               title: `Share to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
-              text: `🎥 Video created with VibeAI!\n\n📊 Stats:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${playbackSpeed}x speed\n• ${(endTime - startTime).toFixed(1)}s duration`,
+              text: `🎥 Video created with VibeAI!\n\n📊 Stats:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${videoSpeed}x speed\n• ${(endTime - startTime).toFixed(1)}s duration`,
               files: [videoFile]
             });
             console.log(`✅ Shared to ${platform} via Web Share API!`);
@@ -748,6 +758,15 @@ export default function VideoEditor({
     }
   }, [selectedFilter]);
 
+  // ✅ SPEED FUNCTIONALITY - Apply playback rate to video in real-time
+  useEffect(() => {
+    if (videoRef.current && videoSpeed) {
+      videoRef.current.playbackRate = videoSpeed;
+      const speedOption = speedOptions.find(s => s.value === videoSpeed);
+      console.log(`⚡ Speed changed to ${videoSpeed}x (${speedOption?.name || 'Custom'})`);
+    }
+  }, [videoSpeed]);
+
   // Search music (YouTube or TikTok)
   const searchMusic = async () => {
     if (!musicSearchQuery.trim()) return;
@@ -887,7 +906,7 @@ export default function VideoEditor({
               if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
                 await navigator.share({
                   title: 'VibeAI Video Export',
-                  text: `🎥 Video Export\n\n📊 Details:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${playbackSpeed}x speed`,
+                  text: `🎥 Video Export\n\n📊 Details:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${videoSpeed}x speed`,
                   files: [videoFile]
                 });
                 console.log('✅ Shared via Web Share API');
@@ -1647,7 +1666,9 @@ Video Editor - {appName}
                     setTextEndTime(videoRef.current.duration);
                     // Set initial position to startTime
                     videoRef.current.currentTime = startTime;
-                    console.log(`📹 Video loaded. Duration: ${videoRef.current.duration}s`);
+                    // Set initial playback speed
+                    videoRef.current.playbackRate = videoSpeed;
+                    console.log(`📹 Video loaded. Duration: ${videoRef.current.duration}s, Speed: ${videoSpeed}x`);
                   }
                 }}
               />
@@ -3391,39 +3412,135 @@ Video Editor - {appName}
 
             {activeTab === 'speed' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ color: '#fff', margin: 0 }}>Video Speed</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ color: '#fff', margin: 0 }}>Video Speed</h3>
+                  <span style={{ 
+                    color: '#3b82f6', 
+                    fontSize: '0.85rem',
+                    padding: '0.4rem 0.8rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '6px'
+                  }}>
+                    {speedOptions.length} Speeds
+                  </span>
+                </div>
                 <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>
-                  Adjust playback speed
+                  From super slow motion to time warp speed ⚡
                 </p>
+                
+                {/* Current Speed Info */}
+                {videoSpeed !== 1 && (
+                  <div style={{
+                    padding: '1rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid #3b82f6'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>
+                        {speedOptions.find(s => s.value === videoSpeed)?.icon}
+                      </span>
+                      <span style={{ color: '#ececec', fontWeight: 'bold' }}>
+                        {videoSpeed}x - {speedOptions.find(s => s.value === videoSpeed)?.name}
+                      </span>
+                    </div>
+                    <p style={{ color: '#999', fontSize: '0.8rem', margin: 0 }}>
+                      {videoSpeed < 1 ? '🐌 Slow motion effect' : '⚡ Speed up effect'} • Click 1x to reset
+                    </p>
+                  </div>
+                )}
                 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '0.75rem'
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '0.75rem',
+                  maxHeight: '500px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
                 }}>
                   {speedOptions.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setVideoSpeed(option.value)}
+                      onClick={() => {
+                        setVideoSpeed(option.value);
+                        console.log(`⚡ Speed set to ${option.value}x (${option.name})`);
+                      }}
                       style={{
-                        padding: '1.5rem 1rem',
+                        padding: '1.2rem 0.8rem',
                         background: videoSpeed === option.value ? '#3b82f6' : '#2a2a2a',
-                        border: 'none',
+                        border: videoSpeed === option.value ? '2px solid #60a5fa' : '2px solid transparent',
                         borderRadius: '8px',
                         color: '#ececec',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '1rem',
-                        fontWeight: '600'
+                        gap: '0.4rem',
+                        fontSize: '0.85rem',
+                        fontWeight: videoSpeed === option.value ? 'bold' : '600',
+                        transition: 'all 0.2s ease',
+                        transform: videoSpeed === option.value ? 'scale(1.05)' : 'scale(1)',
+                        boxShadow: videoSpeed === option.value ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (videoSpeed !== option.value) {
+                          e.currentTarget.style.background = '#3a3a3a';
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (videoSpeed !== option.value) {
+                          e.currentTarget.style.background = '#2a2a2a';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
                       }}
                     >
                       <span style={{ fontSize: '2rem' }}>{option.icon}</span>
-                      {option.label}
+                      <span style={{ fontSize: '1rem', fontWeight: 'bold' }}>{option.label}</span>
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        color: videoSpeed === option.value ? '#60a5fa' : '#999',
+                        marginTop: '-0.2rem'
+                      }}>
+                        {option.name}
+                      </span>
+                      {videoSpeed === option.value && (
+                        <span style={{ fontSize: '0.7rem', color: '#60a5fa' }}>✓ Active</span>
+                      )}
+                      {option.default && (
+                        <span style={{ 
+                          fontSize: '0.65rem', 
+                          color: '#999',
+                          position: 'absolute',
+                          top: '0.5rem',
+                          right: '0.5rem'
+                        }}>
+                          Default
+                        </span>
+                      )}
                     </button>
                   ))}
+                </div>
+                
+                {/* Quick Speed Slider */}
+                <div style={{ marginTop: '1rem' }}>
+                  <label style={{ color: '#ececec', fontSize: '0.9rem', display: 'block', marginBottom: '0.5rem' }}>
+                    Custom Speed: {videoSpeed}x
+                  </label>
+                  <input
+                    type="range"
+                    min="0.25"
+                    max="5"
+                    step="0.25"
+                    value={videoSpeed}
+                    onChange={(e) => setVideoSpeed(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#999', marginTop: '0.3rem' }}>
+                    <span>0.25x</span>
+                    <span>1x</span>
+                    <span>5x</span>
+                  </div>
                 </div>
               </div>
             )}
