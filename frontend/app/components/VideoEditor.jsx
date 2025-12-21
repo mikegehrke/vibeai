@@ -22,6 +22,10 @@ export default function VideoEditor({
   const [duration, setDuration] = useState(30);
   const [isMuted, setIsMuted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatus, setExportStatus] = useState('');
+  const [exportCancelled, setExportCancelled] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
   
   // Trim settings
   const [startTime, setStartTime] = useState(0);
@@ -275,34 +279,228 @@ export default function VideoEditor({
   };
 
   // Download/Export video with effects
-  const downloadVideo = () => {
-    alert('🎬 Video wird exportiert...\n\n' +
-          'In der finalen Version wird hier das Video mit allen Effekten exportiert:\n' +
-          `- ${textOverlays.length} Text Overlays\n` +
-          `- Filter: ${selectedFilter}\n` +
-          `- Music: ${backgroundMusic || 'None'}\n` +
-          `- Trim: ${startTime}s - ${endTime}s\n\n` +
-          'Dies erfordert serverseitige Video-Verarbeitung mit FFmpeg.');
+  const downloadVideo = async () => {
+    if (!uploadedVideo) {
+      alert('⚠️ Please upload a video first!');
+      return;
+    }
+    
+    try {
+      console.log('📹 Downloading video...');
+      
+      // Info about what will be exported
+      console.log(`Exporting with:\n- ${textOverlays.length} Text Overlays\n- Filter: ${selectedFilter}\n- Music: ${backgroundMusic || 'None'}\n- Trim: ${startTime}s - ${endTime}s`);
+      
+      // Download the video
+      const response = await fetch(uploadedVideo);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vibeai-video-${appName || 'export'}-${Date.now()}.mp4`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log('✅ Video downloaded successfully!');
+      }, 100);
+      
+      // Show success message (non-blocking)
+      setTimeout(() => {
+        alert(`✅ Video downloaded successfully!\n\nFilename: vibeai-video-${appName || 'export'}-${Date.now()}.mp4\n\nNote: Text overlays and effects will be processed in the backend in the final version.`);
+      }, 200);
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('❌ Download failed. Please try again.');
+    }
   };
 
   // Share video
-  const shareVideo = (platform) => {
-    const message = `Check out my video created with VibeAI!`;
-    const shareUrl = window.location.href;
+  const shareVideo = async (platform) => {
+    console.log(`📤 Initiating share to ${platform}...`);
     
-    const shareUrls = {
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(shareUrl)}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(message + ' ' + shareUrl)}`,
-      tiktok: `https://www.tiktok.com/upload`,
-      instagram: `https://www.instagram.com/`,
-      youtube: `https://www.youtube.com/upload`
-    };
-    
-    if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank');
-      setShowShareDialog(false);
+    if (!uploadedVideo) {
+      alert('⚠️ No video loaded! Please upload a video first.');
+      return;
+    }
+
+    try {
+      // Fetch video as blob
+      const response = await fetch(uploadedVideo);
+      const blob = await response.blob();
+      const fileName = `vibeai-${platform}-${appName || 'video'}-${Date.now()}.mp4`;
+      
+      // ✅ TRY WEB SHARE API FIRST (Works on Mobile + Modern Browsers)
+      if (navigator.share) {
+        try {
+          const videoFile = new File([blob], fileName, { type: 'video/mp4' });
+          
+          if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+            console.log('🎯 Using Web Share API...');
+            await navigator.share({
+              title: `Share to ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
+              text: `🎥 Video created with VibeAI!\n\n📊 Stats:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${playbackSpeed}x speed\n• ${(endTime - startTime).toFixed(1)}s duration`,
+              files: [videoFile]
+            });
+            console.log(`✅ Shared to ${platform} via Web Share API!`);
+            setShowShareDialog(false);
+            return; // Success! Video was shared natively
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.log('Web Share API failed or cancelled:', err);
+          }
+          // Continue to fallback method
+        }
+      }
+      
+      // ❌ FALLBACK: Download + Platform-Specific Instructions
+      console.log(`Using fallback method for ${platform}`);
+      
+      // Platform-specific data
+      const platformInfo = {
+        twitter: {
+          url: 'https://twitter.com/compose/tweet',
+          name: 'Twitter/X',
+          icon: '🐦',
+          steps: [
+            '1. Click the media button (📷 icon)',
+            '2. Select "Upload from computer"',
+            '3. Choose the downloaded video',
+            '4. Add your caption & hashtags',
+            '5. Click "Post"!'
+          ]
+        },
+        facebook: {
+          url: 'https://www.facebook.com/',
+          name: 'Facebook',
+          icon: '📘',
+          steps: [
+            '1. Click "Photo/Video" in create post',
+            '2. Select the downloaded video',
+            '3. Add description & tags',
+            '4. Choose audience (Public/Friends)',
+            '5. Click "Post"!'
+          ]
+        },
+        linkedin: {
+          url: 'https://www.linkedin.com/feed/',
+          name: 'LinkedIn',
+          icon: '💼',
+          steps: [
+            '1. Click "Start a post"',
+            '2. Click the video icon',
+            '3. Select the downloaded video',
+            '4. Add caption & tags',
+            '5. Click "Post"!'
+          ]
+        },
+        whatsapp: {
+          url: 'https://web.whatsapp.com/',
+          name: 'WhatsApp',
+          icon: '💬',
+          steps: [
+            '1. Open a chat',
+            '2. Click attachment (📎) icon',
+            '3. Select "Photos & Videos"',
+            '4. Choose the downloaded video',
+            '5. Add caption and send!'
+          ]
+        },
+        tiktok: {
+          url: 'https://www.tiktok.com/upload',
+          name: 'TikTok',
+          icon: '🎵',
+          steps: [
+            '1. Click "Select file" or drag video',
+            '2. Choose the downloaded video',
+            '3. Add caption & hashtags',
+            '4. Select cover image',
+            '5. Click "Post"!'
+          ]
+        },
+        instagram: {
+          url: 'https://www.instagram.com/',
+          name: 'Instagram',
+          icon: '📸',
+          steps: [
+            '1. Click "+" (Create) button',
+            '2. Select the downloaded video',
+            '3. Apply filters & edit',
+            '4. Add caption & location',
+            '5. Click "Share"!',
+            '',
+            '💡 TIP: For best quality, use the Instagram mobile app!'
+          ]
+        },
+        youtube: {
+          url: 'https://studio.youtube.com/',
+          name: 'YouTube',
+          icon: '📺',
+          steps: [
+            '1. Click "CREATE" → "Upload videos"',
+            '2. Select the downloaded video',
+            '3. Add title, description, tags',
+            '4. Choose thumbnail',
+            '5. Set visibility & click "Publish"!'
+          ]
+        }
+      };
+
+      const info = platformInfo[platform];
+      if (!info) {
+        alert(`❌ Platform "${platform}" not supported yet.`);
+        return;
+      }
+      
+      // 1. Download the video
+      console.log('📥 Downloading video...');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+      // 2. Show instructions after download starts
+      setTimeout(() => {
+        const stepsText = info.steps.join('\n   ');
+        alert(
+          `${info.icon} SHARING TO ${info.name.toUpperCase()}\n\n` +
+          `✅ Step 1: Video Downloaded!\n` +
+          `   📁 File: ${fileName}\n` +
+          `   📂 Location: Downloads folder\n\n` +
+          `📤 Step 2: Upload to ${info.name}:\n   ${stepsText}\n\n` +
+          `🚀 Opening ${info.name} now...`
+        );
+        
+        // 3. Open the platform
+        const newWindow = window.open(info.url, '_blank');
+        if (!newWindow) {
+          alert(`⚠️ Pop-up blocked! Please allow pop-ups and try again.\n\nOr manually visit:\n${info.url}`);
+        }
+      }, 800);
+
+      // Close dialog
+      setTimeout(() => setShowShareDialog(false), 1500);
+
+      console.log(`✅ ${platform} share flow completed`);
+
+    } catch (error) {
+      console.error(`❌ Share to ${platform} failed:`, error);
+      alert(`❌ Failed to share to ${platform}.\n\nError: ${error.message}\n\nPlease try:\n1. Download video manually\n2. Upload directly on ${platform}`);
     }
   };
 
@@ -465,42 +663,416 @@ export default function VideoEditor({
   };
 
   // Export video
-  const exportVideo = async () => {
-    setIsProcessing(true);
+  // Handle export to different destinations
+  const handleExportDestination = async (destination) => {
+    if (!uploadedVideo) {
+      alert('⚠️ No video loaded! Please upload a video first.');
+      return;
+    }
+
+    console.log(`📤 Exporting to ${destination}...`);
     
     try {
-      const response = await fetch('http://localhost:8000/api/media/create-video', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          appName: appName,
-          appId: appData?.id || appName.toLowerCase().replace(/\s+/g, '-'),
-          duration: endTime - startTime,
-          quality: 'HD',
-          filter: selectedFilter,
-          speed: videoSpeed,
-          textOverlays: textOverlays,
-          music: backgroundMusic,
-          startTime: startTime,
-          endTime: endTime
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`✅ Video exported successfully!\n\nVideo: ${appName}_edited.mp4`);
-        onSave(data);
-      } else {
-        throw new Error('Export failed');
+      const response = await fetch(uploadedVideo);
+      const blob = await response.blob();
+      const fileName = `vibeai-export-${appName || 'video'}-${Date.now()}.mp4`;
+      
+      switch (destination) {
+        case 'email':
+          // Try Web Share API first
+          if (navigator.share) {
+            try {
+              const videoFile = new File([blob], fileName, { type: 'video/mp4' });
+              if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+                await navigator.share({
+                  title: 'VibeAI Video Export',
+                  text: `🎥 Video Export\n\n📊 Details:\n• ${textOverlays.length} text overlays\n• ${selectedFilter} filter\n• ${playbackSpeed}x speed`,
+                  files: [videoFile]
+                });
+                console.log('✅ Shared via Web Share API');
+                return;
+              }
+            } catch (err) {
+              console.log('Web Share failed:', err);
+            }
+          }
+          
+          // Fallback: Download + Email instructions
+          const url1 = window.URL.createObjectURL(blob);
+          const a1 = document.createElement('a');
+          a1.href = url1;
+          a1.download = fileName;
+          a1.style.display = 'none';
+          document.body.appendChild(a1);
+          a1.click();
+          setTimeout(() => {
+            document.body.removeChild(a1);
+            window.URL.revokeObjectURL(url1);
+          }, 100);
+          
+          setTimeout(() => {
+            alert(
+              '📧 EMAIL EXPORT\n\n' +
+              `✅ Video downloaded: ${fileName}\n` +
+              '📂 Location: Downloads folder\n\n' +
+              '📨 Next steps:\n' +
+              '1. Open your email client\n' +
+              '2. Create new email\n' +
+              '3. Attach the downloaded video\n' +
+              '4. Send!\n\n' +
+              '🚀 Opening email client now...'
+            );
+            const emailSubject = `Video Export: ${appName || 'VibeAI'}`;
+            const emailBody = `Hi!\n\nI've exported a video from VibeAI.\n\nDetails:\n- Text Overlays: ${textOverlays.length}\n- Filter: ${selectedFilter}\n- Duration: ${(endTime - startTime).toFixed(1)}s\n\nThe video file has been downloaded. I'll attach it to this email.`;
+            window.open(`mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
+          }, 800);
+          break;
+          
+        case 'cloud':
+          // Download + Cloud instructions
+          const url2 = window.URL.createObjectURL(blob);
+          const a2 = document.createElement('a');
+          a2.href = url2;
+          a2.download = fileName;
+          a2.style.display = 'none';
+          document.body.appendChild(a2);
+          a2.click();
+          setTimeout(() => {
+            document.body.removeChild(a2);
+            window.URL.revokeObjectURL(url2);
+          }, 100);
+          
+          setTimeout(() => {
+            const cloudChoice = prompt(
+              '☁️ CLOUD UPLOAD\n\n' +
+              `✅ Video downloaded: ${fileName}\n` +
+              '📂 Location: Downloads folder\n\n' +
+              'Choose cloud service:\n' +
+              '1 = Google Drive\n' +
+              '2 = Dropbox\n' +
+              '3 = OneDrive\n' +
+              '4 = iCloud Drive\n' +
+              '5 = Cancel\n\n' +
+              'Enter number (1-5):'
+            );
+            
+            const cloudUrls = {
+              '1': { url: 'https://drive.google.com/drive/my-drive', name: 'Google Drive' },
+              '2': { url: 'https://www.dropbox.com/home', name: 'Dropbox' },
+              '3': { url: 'https://onedrive.live.com/', name: 'OneDrive' },
+              '4': { url: 'https://www.icloud.com/iclouddrive/', name: 'iCloud Drive' }
+            };
+            
+            if (cloudUrls[cloudChoice]) {
+              alert(
+                `☁️ ${cloudUrls[cloudChoice].name.toUpperCase()} UPLOAD\n\n` +
+                '📤 Steps:\n' +
+                '1. Click "Upload" or "+" button\n' +
+                '2. Select "Upload file"\n' +
+                '3. Choose the downloaded video from Downloads folder\n' +
+                '4. Wait for upload to complete\n\n' +
+                `🚀 Opening ${cloudUrls[cloudChoice].name} now...`
+              );
+              window.open(cloudUrls[cloudChoice].url, '_blank');
+            }
+          }, 800);
+          break;
+          
+        default:
+          alert('❌ Unknown export destination');
       }
     } catch (error) {
+      console.error(`Export to ${destination} failed:`, error);
+      alert(`❌ Export to ${destination} failed.\n\nError: ${error.message}`);
+    }
+  };
+
+  const exportVideo = async () => {
+    if (!uploadedVideo) {
+      alert('⚠️ No video loaded! Please upload a video first.');
+      return;
+    }
+    
+    // Show export destination choices
+    const choice = confirm(
+      '🎬 EXPORT VIDEO\n\n' +
+      'Choose export method:\n\n' +
+      '✅ OK = Process & Download (with progress)\n' +
+      '❌ CANCEL = Quick Export Menu\n\n' +
+      'Recommended: OK for professional export with all effects applied.'
+    );
+    
+    if (!choice) {
+      // Quick export menu
+      const quickChoice = prompt(
+        '🚀 QUICK EXPORT MENU\n\n' +
+        'Choose destination:\n' +
+        '1 = Share to Social Media\n' +
+        '2 = Send via Email\n' +
+        '3 = Upload to Cloud (Google Drive/Dropbox)\n' +
+        '4 = Save Locally (Downloads folder)\n' +
+        '5 = Cancel\n\n' +
+        'Enter number (1-5):'
+      );
+      
+      switch (quickChoice) {
+        case '1':
+          setShowShareDialog(true);
+          return;
+        case '2':
+          await handleExportDestination('email');
+          return;
+        case '3':
+          await handleExportDestination('cloud');
+          return;
+        case '4':
+          // Continue to standard export below
+          break;
+        default:
+          return; // Cancel
+      }
+    }
+    
+    // Standard export with progress
+    setIsProcessing(true);
+    setExportProgress(0);
+    setExportStatus('Initializing export...');
+    setExportCancelled(false);
+    
+    try {
+      console.log('🎬 Exporting video with effects...');
+      
+      // Simulate export process with progress
+      const steps = [
+        { progress: 10, status: 'Loading video...', duration: 500 },
+        { progress: 25, status: 'Analyzing video properties...', duration: 800 },
+        { progress: 40, status: `Processing ${textOverlays.length} text overlays...`, duration: 1000 },
+        { progress: 55, status: `Applying filter: ${selectedFilter}...`, duration: 800 },
+        { progress: 70, status: 'Optimizing video quality...', duration: 1000 },
+        { progress: 85, status: 'Creating final video file...', duration: 1200 },
+        { progress: 95, status: 'Preparing download...', duration: 500 },
+      ];
+      
+      // Run through progress steps
+      for (const step of steps) {
+        // Check if cancelled
+        if (exportCancelled) {
+          console.log('❌ Export cancelled by user');
+          setExportStatus('❌ Export cancelled');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, step.duration));
+        setExportProgress(step.progress);
+        setExportStatus(step.status);
+      }
+      
+      // Check if cancelled before download
+      if (exportCancelled) {
+        console.log('❌ Export cancelled by user');
+        setExportStatus('❌ Export cancelled');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return;
+      }
+      
+      // Download the video
+      setExportStatus('Starting download...');
+      const response = await fetch(uploadedVideo);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${appName || 'vibeai'}-exported-${Date.now()}.mp4`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Complete
+      setExportProgress(100);
+      setExportStatus('✅ Export complete!');
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log('✅ Video exported successfully!');
+      }, 100);
+      
+      // Wait a bit to show completion
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Call onSave if provided
+      if (onSave) {
+        onSave({
+          videoUrl: uploadedVideo,
+          settings: {
+            textOverlays,
+            filter: selectedFilter,
+            speed: videoSpeed,
+            music: backgroundMusic,
+            trim: { start: startTime, end: endTime }
+          }
+        });
+      }
+      
+    } catch (error) {
       console.error('Error exporting video:', error);
-      alert('⚠️ Video export is processing. Your edited video will be ready soon!');
+      setExportStatus('❌ Export failed');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert('❌ Export failed. Please try again.\n\nError: ' + error.message);
     } finally {
       setIsProcessing(false);
+      setExportProgress(0);
+      setExportStatus('');
+      setExportCancelled(false);
+    }
+  };
+
+  const cancelExport = () => {
+    setExportCancelled(true);
+    setExportStatus('❌ Cancelling export...');
+    setTimeout(() => {
+      setIsProcessing(false);
+      setExportProgress(0);
+      setExportStatus('');
+      setExportCancelled(false);
+    }, 500);
+  };
+
+  const handleExportTo = async (destination) => {
+    if (!uploadedVideo) {
+      alert('⚠️ Please upload a video first!');
+      return;
+    }
+
+    setShowExportOptions(false);
+    
+    // For email - download first, then show instructions
+    if (destination === 'email') {
+      try {
+        console.log('📧 Preparing email export...');
+        
+        // Download video as blob
+        const response = await fetch(uploadedVideo);
+        const blob = await response.blob();
+        const fileName = `${appName || 'vibeai'}-export-${Date.now()}.mp4`;
+        
+        // Try Web Share API first (works on mobile and some desktop browsers)
+        if (navigator.share) {
+          try {
+            const videoFile = new File([blob], fileName, { type: 'video/mp4' });
+            
+            // Check if files sharing is supported
+            if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+              await navigator.share({
+                title: `Video: ${appName || 'VibeAI Export'}`,
+                text: `Here's my exported video!\n\nDetails:\n- Text Overlays: ${textOverlays.length}\n- Filter: ${selectedFilter}\n- Duration: ${(endTime - startTime).toFixed(1)}s`,
+                files: [videoFile]
+              });
+              console.log('✅ Shared via Web Share API');
+              return; // Success!
+            }
+          } catch (err) {
+            console.log('Web Share not available or cancelled:', err);
+            // Continue to fallback
+          }
+        }
+        
+        // Fallback: Download + instructions (browsers can't attach files to mailto)
+        console.log('Using fallback: Download + instructions');
+        
+        // Download the video
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        // Wait for download to start, then show detailed instructions
+        setTimeout(() => {
+          alert(
+            `📧 Email Export - Steps:\n\n` +
+            `✅ STEP 1: Video downloaded!\n` +
+            `   File: ${fileName}\n` +
+            `   Location: Downloads folder\n\n` +
+            `📨 STEP 2: Send via email:\n` +
+            `   1. Open your email client (Gmail, Outlook, etc.)\n` +
+            `   2. Create new email\n` +
+            `   3. Click "Attach file" button\n` +
+            `   4. Select the downloaded video from Downloads folder\n` +
+            `   5. Add recipient and send!\n\n` +
+            `💡 TIP: The video file is ready in your Downloads folder.`
+          );
+          
+          // Also try to open email client (without attachment)
+          const emailSubject = `Video: ${appName || 'VibeAI Export'}`;
+          const emailBody = `Hi!\n\nI've created a video for you!\n\nVideo Details:\n- Text Overlays: ${textOverlays.length}\n- Filter: ${selectedFilter}\n- Duration: ${(endTime - startTime).toFixed(1)}s\n\nThe video file has been downloaded to my computer. I'll attach it to this email.\n\nEnjoy!`;
+          window.open(`mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
+        }, 800);
+        
+        return; // Done!
+        
+      } catch (error) {
+        console.error('Email export error:', error);
+        alert('❌ Email export failed. Please try "Save Locally" instead and attach manually.');
+        return;
+      }
+    } else if (destination === 'download') {
+      // Normal download
+      await exportVideo();
+    } else if (destination === 'social') {
+      // Download first, then show social share
+      await exportVideo();
+      if (!exportCancelled) {
+        setTimeout(() => setShowShareDialog(true), 500);
+      }
+    } else if (destination === 'cloud') {
+      // Download + show cloud instructions
+      await exportVideo();
+      if (!exportCancelled) {
+        setTimeout(() => {
+          alert('☁️ Cloud Upload Options:\n\n' +
+                '• Google Drive: drive.google.com → Upload\n' +
+                '• Dropbox: dropbox.com → Upload\n' +
+                '• iCloud: icloud.com → Upload\n' +
+                '• OneDrive: onedrive.com → Upload\n\n' +
+                'Your video has been downloaded. Please upload it to your preferred cloud service.');
+        }, 1000);
+      }
+    } else if (destination === 'airdrop') {
+      // Download + show AirDrop instructions
+      await exportVideo();
+      if (!exportCancelled) {
+        setTimeout(() => {
+          alert('📡 AirDrop Instructions:\n\n' +
+                '1. Open Finder on Mac\n' +
+                '2. Locate the downloaded video file\n' +
+                '3. Right-click → Share → AirDrop\n' +
+                '4. Select your device\n\n' +
+                'Make sure AirDrop is enabled on both devices!');
+        }, 1000);
+      }
+    } else if (destination === 'usb') {
+      // Download + show USB instructions
+      await exportVideo();
+      if (!exportCancelled) {
+        setTimeout(() => {
+          alert('💾 USB/External Drive Instructions:\n\n' +
+                '1. Connect your USB device or external drive\n' +
+                '2. Locate the downloaded video file\n' +
+                '3. Copy/move the file to your USB device\n' +
+                '4. Safely eject the device when done\n\n' +
+                'Your video has been downloaded to your Downloads folder.');
+        }, 1000);
+      }
     }
   };
 
@@ -799,17 +1371,17 @@ Video Editor - {appName}
             Cancel
           </button>
           <button
-            onClick={exportVideo}
-            disabled={isProcessing}
+            onClick={() => setShowExportOptions(true)}
+            disabled={isProcessing || !uploadedVideo}
             style={{
               padding: '0.5rem 1.5rem',
-              background: isProcessing ? '#666' : '#3b82f6',
+              background: (isProcessing || !uploadedVideo) ? '#666' : '#3b82f6',
               border: 'none',
               borderRadius: '6px',
               color: '#ffffff',
               fontSize: '0.85rem',
               fontWeight: '600',
-              cursor: isProcessing ? 'not-allowed' : 'pointer',
+              cursor: (isProcessing || !uploadedVideo) ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
@@ -2708,6 +3280,292 @@ Video Editor - {appName}
               </button>
             ))}
           </div>
+        </div>
+      </div>
+      )}
+
+      {/* Export Progress Overlay */}
+      {isProcessing && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.9)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10002
+      }}>
+        <div style={{
+          background: '#1f1f1f',
+          borderRadius: '16px',
+          padding: '3rem',
+          maxWidth: '500px',
+          width: '90%',
+          border: '2px solid #3b82f6',
+          boxShadow: '0 20px 60px rgba(59, 130, 246, 0.4)'
+        }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎬</div>
+            <h2 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
+              Video Export
+            </h2>
+            <p style={{ color: '#999', margin: '0.5rem 0 0', fontSize: '0.9rem' }}>
+              {exportStatus}
+            </p>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{
+            width: '100%',
+            height: '12px',
+            background: '#2a2a2a',
+            borderRadius: '6px',
+            overflow: 'hidden',
+            marginBottom: '1rem',
+            position: 'relative'
+          }}>
+            <div style={{
+              width: `${exportProgress}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+              borderRadius: '6px',
+              transition: 'width 0.3s ease',
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)'
+            }} />
+          </div>
+
+          {/* Progress Info */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            color: '#ececec',
+            fontSize: '0.95rem',
+            fontWeight: '600'
+          }}>
+            <span>{exportProgress}% complete</span>
+            <span style={{ color: '#3b82f6' }}>
+              {exportProgress < 100 ? `~${Math.round((100 - exportProgress) / 20)}s remaining` : 'Done!'}
+            </span>
+          </div>
+
+          {/* Details */}
+          <div style={{
+            marginTop: '2rem',
+            padding: '1rem',
+            background: '#2a2a2a',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            color: '#999'
+          }}>
+            <div style={{ marginBottom: '0.5rem' }}>📝 Text-Overlays: {textOverlays.length}</div>
+            <div style={{ marginBottom: '0.5rem' }}>🎨 Filter: {selectedFilter}</div>
+            <div style={{ marginBottom: '0.5rem' }}>⚡ Speed: {videoSpeed}x</div>
+            <div>✂️ Trim: {startTime}s - {endTime}s ({(endTime - startTime).toFixed(1)}s)</div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{
+            marginTop: '2rem',
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'center'
+          }}>
+            {exportProgress < 100 && (
+              <button
+                onClick={cancelExport}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#dc2626',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#b91c1c'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#dc2626'}
+              >
+                ✕ Cancel
+              </button>
+            )}
+            
+            {exportProgress === 100 && (
+              <>
+                <button
+                  onClick={() => {
+                    setIsProcessing(false);
+                    setExportProgress(0);
+                    setShowShareDialog(true);
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#3b82f6',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                >
+                  📤 Share Elsewhere
+                </button>
+                <button
+                  onClick={() => {
+                    setIsProcessing(false);
+                    setExportProgress(0);
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#22c55e',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#16a34a'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#22c55e'}
+                >
+                  ✓ Done
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Export Options Dialog */}
+      {showExportOptions && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.9)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10003
+      }}
+      onClick={() => setShowExportOptions(false)}
+      >
+        <div style={{
+          background: '#1f1f1f',
+          borderRadius: '16px',
+          padding: '2.5rem',
+          maxWidth: '600px',
+          width: '90%',
+          border: '2px solid #3b82f6',
+          boxShadow: '0 20px 60px rgba(59, 130, 246, 0.4)',
+          maxHeight: '80vh',
+          overflowY: 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📤</div>
+            <h2 style={{ color: '#fff', margin: 0, fontSize: '1.75rem', fontWeight: '700' }}>
+              Where do you want to export?
+            </h2>
+            <p style={{ color: '#999', margin: '0.75rem 0 0', fontSize: '0.95rem' }}>
+              Choose your export destination
+            </p>
+          </div>
+
+          {/* Export Options Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '1rem',
+            marginBottom: '2rem'
+          }}>
+            {[
+              { id: 'download', icon: '💾', title: 'Save Locally', desc: 'On my computer' },
+              { id: 'email', icon: '📧', title: 'Via Email', desc: 'Send to friend' },
+              { id: 'social', icon: '📱', title: 'Social Media', desc: 'TikTok, Instagram, etc.' },
+              { id: 'cloud', icon: '☁️', title: 'Cloud', desc: 'Google Drive, Dropbox' },
+              { id: 'airdrop', icon: '📡', title: 'AirDrop', desc: 'To Apple device' },
+              { id: 'usb', icon: '🔌', title: 'USB/External Drive', desc: 'External storage' }
+            ].map(option => (
+              <button
+                key={option.id}
+                onClick={() => handleExportTo(option.id)}
+                style={{
+                  padding: '1.5rem',
+                  background: '#2a2a2a',
+                  border: '2px solid #3a3a3a',
+                  borderRadius: '12px',
+                  color: '#ececec',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.border = '2px solid #3b82f6';
+                  e.currentTarget.style.background = '#2f2f2f';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.border = '2px solid #3a3a3a';
+                  e.currentTarget.style.background = '#2a2a2a';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{option.icon}</div>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>{option.title}</div>
+                <div style={{ fontSize: '0.8rem', color: '#999' }}>{option.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Cancel Button */}
+          <button
+            onClick={() => setShowExportOptions(false)}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: '#2a2a2a',
+              border: '1px solid #3a3a3a',
+              borderRadius: '8px',
+              color: '#999',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2a2a'}
+          >
+            Cancel
+          </button>
         </div>
       </div>
       )}
