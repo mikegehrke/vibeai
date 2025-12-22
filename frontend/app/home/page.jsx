@@ -10,11 +10,13 @@ import {
   Box, Pencil, Paperclip, Circle
 } from 'lucide-react';
 import AnimatedLogoIcon from '../components/AnimatedLogoIcon';
+import AgentModeOverlay from '../components/AgentModeOverlay';
 
 export default function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState('light');
   const [activeTab, setActiveTab] = useState('app');
+  const [showAgentOverlay, setShowAgentOverlay] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [placeholderText, setPlaceholderText] = useState('');
   const [isHoveringChat, setIsHoveringChat] = useState(false);
@@ -26,7 +28,9 @@ export default function HomePage() {
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showAgentDropdown, setShowAgentDropdown] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
+  const [extendedModels, setExtendedModels] = useState([]); // Beta Models
   const [availableAgents, setAvailableAgents] = useState([]);
+  const lastUserPromptRef = useRef('');
   const dropdownRef = useRef(null);
   const wsRef = useRef(null);
   const modelDropdownRef = useRef(null);
@@ -73,18 +77,28 @@ export default function HomePage() {
     };
   }, [activeTab]);
 
-  // Load available models and agents
+  // Load available models and agents + Extended Models
   useEffect(() => {
     const loadModelsAndAgents = async () => {
       try {
-        const [modelsRes, agentsRes] = await Promise.all([
+        const [modelsRes, extendedRes, agentsRes] = await Promise.all([
           fetch('http://localhost:8000/api/home/models'),
+          fetch('http://localhost:8000/api/home/models/extended'),
           fetch('http://localhost:8000/api/home/agents')
         ]);
         
         if (modelsRes.ok) {
           const modelsData = await modelsRes.json();
           setAvailableModels(modelsData.models || []);
+        }
+        
+        if (extendedRes.ok) {
+          const extendedData = await extendedRes.json();
+          const models = extendedData.models || [];
+          setExtendedModels(models);
+          console.log(`✅ Loaded ${models.length} Extended Models:`, models);
+        } else {
+          console.error('❌ Failed to load extended models');
         }
         
         if (agentsRes.ok) {
@@ -114,6 +128,27 @@ export default function HomePage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Load messages from localStorage AFTER mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vibeai_chat_history');
+      if (saved) {
+        try {
+          setMessages(JSON.parse(saved));
+        } catch (e) {
+          console.error('Failed to load chat history:', e);
+        }
+      }
+    }
+  }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && messages.length > 0) {
+      localStorage.setItem('vibeai_chat_history', JSON.stringify(messages));
+    }
+  }, [messages]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -123,14 +158,12 @@ export default function HomePage() {
 
   // WebSocket Connection
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('⚠️  No token found - skipping WebSocket connection');
-      return;
-    }
-
     try {
-      const ws = new WebSocket(`ws://localhost:8000/api/home/ws?token=${token}`);
+      const token = localStorage.getItem('token');
+      const wsUrl = token 
+        ? `ws://localhost:8000/api/home/ws?token=${token}` 
+        : 'ws://localhost:8000/api/home/ws';
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
         console.log('✅ Connected to Home Chat WebSocket');
@@ -139,9 +172,40 @@ export default function HomePage() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('WebSocket message:', data);
+          console.log('📨 WebSocket message:', data);
 
-          if (data.event === 'chat.chunk') {
+          // Build Events
+          if (data.event === 'build.started') {
+            console.log('📦 Build started:', data);
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: data.message || '🚀 Starting app generation...',
+              timestamp: new Date(),
+              type: 'build_event'
+            }]);
+          }
+          else if (data.event === 'build.progress') {
+            console.log('⚙️ Build progress:', data);
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: data.message || '📝 Building...',
+              timestamp: new Date(),
+              type: 'build_event'
+            }]);
+          }
+          else if (data.event === 'build.complete') {
+            console.log('✅ Build complete:', data);
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: data.message || '✅ App generation complete!',
+              timestamp: new Date(),
+              type: 'build_event',
+              projectId: data.project_id,
+              showEditorButton: true
+            }]);
+          }
+          // Chat Events
+          else if (data.event === 'chat.chunk') {
             setMessages(prev => {
               const newMessages = [...prev];
               const lastMsg = newMessages[newMessages.length - 1];
@@ -190,29 +254,65 @@ export default function HomePage() {
   }, []);
 
   // Send Chat Message
-  const sendMessage = async () => {
-    if (!prompt.trim() || isLoading) return;
+  const sendMessage = async (forceBuild = false, overridePrompt = null) => {
+    if (isLoading) return;
+
+    // Bestimme den Prompt: Eingabe, Override oder letzter User-Prompt
+    let effectivePrompt = overridePrompt ?? prompt;
+    if (!effectivePrompt?.trim()) {
+      effectivePrompt = lastUserPromptRef.current;
+    }
+    if (!effectivePrompt?.trim()) {
+      const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      effectivePrompt = lastUserMessage?.content || '';
+    }
+    if (!effectivePrompt.trim()) return;
 
     const userMessage = {
       role: 'user',
-      content: prompt,
+      content: effectivePrompt,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentPrompt = prompt;
+    const currentPrompt = effectivePrompt;
+    lastUserPromptRef.current = currentPrompt;
     setPrompt('');
     setIsLoading(true);
 
     // Add "thinking" message with animated icon
+    const currentAgentName = availableAgents.find(a => a.id === currentAgent)?.name || currentAgent;
+    const currentModelName = [...availableModels, ...extendedModels].find(m => m.id === currentModel)?.name || currentModel;
+    
+    // Rebranding: GPT → Vibe
+    const displayModelName = currentModelName
+      .replace(/GPT-5/gi, 'Vibe 5')
+      .replace(/GPT-4/gi, 'Vibe 4')
+      .replace(/O3/gi, 'Vibe Reasoning 3')
+      .replace(/O1/gi, 'Vibe Reasoning 1')
+      .replace(/Gemini/gi, 'Vibe Ultra')
+      .replace(/Claude/gi, 'Vibe Advanced')
+      .replace(/Qwen/gi, 'VibeAI Go')
+      .replace(/Llama/gi, 'VibeAI Go');
+    
     const thinkingMessage = {
       role: 'assistant',
       content: '',
       isThinking: true,
-      agent_used: currentAgent === 'smart_agent' ? 'Smart Agent' : 'AI Assistant',
+      agent_used: currentAgentName,
+      model_used: displayModelName,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, thinkingMessage]);
+
+    // Detect if user wants to build
+    const shouldBuild = forceBuild || (activeTab === 'app' && (
+      currentPrompt.toLowerCase().includes('erstell') ||
+      currentPrompt.toLowerCase().includes('bau') ||
+      currentPrompt.toLowerCase().includes('create') ||
+      currentPrompt.toLowerCase().includes('build') ||
+      currentPrompt.toLowerCase().includes('make app')
+    ));
 
     try {
       const response = await fetch('http://localhost:8000/api/home/chat', {
@@ -224,16 +324,12 @@ export default function HomePage() {
           message: currentPrompt,
           model: currentModel,
           agent: currentAgent,
-          conversation_history: messages.filter(m => !m.isThinking && m.role !== 'system').map(m => ({
+          conversation_history: messages.filter(m => !m.isThinking && m.role !== 'system' && m.type !== 'build_event').map(m => ({
             role: m.role,
             content: m.content
           })),
           stream: false,
-          build_app: activeTab === 'app' && (
-            currentPrompt.toLowerCase().includes('build') ||
-            currentPrompt.toLowerCase().includes('create') ||
-            currentPrompt.toLowerCase().includes('make')
-          )
+          build_app: shouldBuild
         })
       });
 
@@ -245,18 +341,45 @@ export default function HomePage() {
       console.log('📩 Response received:', data);
       
       if (data.success) {
+        const projectIdFromResponse = data.metadata?.project_id;
+
         // Remove thinking message and add real response
         setMessages(prev => {
           const filtered = prev.filter(m => !m.isThinking);
+          
+          // Rebranding für Antwort
+          const displayModel = (data.model_used || '')
+            .replace(/gpt-5/gi, 'Vibe 5')
+            .replace(/gpt-4/gi, 'Vibe 4')
+            .replace(/o3/gi, 'Vibe Reasoning 3')
+            .replace(/o1/gi, 'Vibe Reasoning 1')
+            .replace(/gemini/gi, 'Vibe Ultra')
+            .replace(/claude/gi, 'Vibe Advanced')
+            .replace(/qwen/gi, 'VibeAI Go')
+            .replace(/llama/gi, 'VibeAI Go');
+          
           const newMessage = {
             role: 'assistant',
             content: data.response,
-            model_used: data.model_used,
+            model_used: displayModel,
             agent_used: data.agent_used,
             isThinking: false,
             timestamp: new Date()
           };
           console.log('✅ Adding new message:', newMessage);
+          
+          // Falls WS nicht greift, trotzdem Editor-Button anbieten
+          if (projectIdFromResponse) {
+            filtered.push({
+              role: 'system',
+              content: '✅ App generation started. Opening editor is available.',
+              timestamp: new Date(),
+              type: 'build_event',
+              projectId: projectIdFromResponse,
+              showEditorButton: true
+            });
+          }
+          
           return [...filtered, newMessage];
         });
       }
@@ -1151,16 +1274,58 @@ export default function HomePage() {
                         color: '#9ca3af',
                         fontSize: '0.85rem'
                       }}>
-                        {msg.role === 'user' ? 'You' : (msg.agent_used || 'Smart Agent')}
+                        {msg.role === 'user' ? 'You' : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div style={{ fontWeight: '600' }}>
+                              {msg.agent_used || currentAgent || 'AI'}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#666' }}>
+                              using {msg.model_used || currentModel || 'AI'}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div style={{ 
                         whiteSpace: 'pre-wrap',
-                        color: '#e5e5e5',
+                        color: msg.type === 'build_event' ? '#10b981' : '#e5e5e5',
                         fontSize: '0.95rem',
                         lineHeight: '1.6'
                       }}>
                         {msg.content}
                       </div>
+                      
+                      {/* Editor Button */}
+                      {/* TEST: Editor Button IMMER anzeigen bei System-Messages */}
+                      {msg.role === 'assistant' && msg.content?.includes('Starting app generation') && (
+                        <button
+                          onClick={() => {
+                            const testProjectId = `test_${Date.now()}`;
+                            console.log('🎯 Editor button clicked! Going to:', `/builder/${testProjectId}`);
+                            window.location.href = `/builder/${testProjectId}`;
+                          }}
+                          style={{
+                            marginTop: '1rem',
+                            padding: '0.75rem 1.5rem',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                            <path d="M2 2l7.586 7.586"/>
+                          </svg>
+                          Open in Editor
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1241,7 +1406,7 @@ export default function HomePage() {
                       {currentModel}
                       <ChevronDown size={16} />
                     </button>
-                    {showModelDropdown && Array.isArray(availableModels) && availableModels.length > 0 && (
+                    {showModelDropdown && (
                       <div style={{
                         position: 'absolute',
                         bottom: '100%',
@@ -1250,11 +1415,17 @@ export default function HomePage() {
                         background: '#2a2a2a',
                         border: '1px solid #3b82f6',
                         borderRadius: '8px',
-                        maxHeight: '300px',
+                        maxHeight: '400px',
                         overflowY: 'auto',
-                        minWidth: '200px',
+                        minWidth: '250px',
                         zIndex: 1000
                       }}>
+                        {/* Standard Models */}
+                        <div style={{ padding: '0.75rem 1rem', background: '#1a1a1a', borderBottom: '1px solid #3a3a3a' }}>
+                          <div style={{ color: '#3b82f6', fontWeight: '700', fontSize: '0.85rem' }}>
+                            ✅ Standard Models ({availableModels.length})
+                          </div>
+                        </div>
                         {availableModels.map((model, idx) => (
                           <div
                             key={idx}
@@ -1267,27 +1438,93 @@ export default function HomePage() {
                               cursor: 'pointer',
                               color: currentModel === model.id ? '#3b82f6' : '#e5e5e5',
                               fontSize: '0.9rem',
-                              borderBottom: idx < availableModels.length - 1 ? '1px solid #3a3a3a' : 'none'
+                              borderBottom: '1px solid #3a3a3a'
                             }}
                             onMouseEnter={(e) => e.target.style.background = '#333'}
                             onMouseLeave={(e) => e.target.style.background = 'transparent'}
                           >
-                            <div style={{ fontWeight: '600' }}>{model.name}</div>
-                            {model.description && (
-                              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                                {model.description}
-                              </div>
-                            )}
+                            <div style={{ fontWeight: '600' }}>{model.icon} {model.name}</div>
                           </div>
                         ))}
+                        
+                        {/* Extended Models - Nach Provider gruppiert */}
+                        {extendedModels.length > 0 && (
+                          <>
+                            <div style={{ padding: '0.75rem 1rem', background: '#1a1a1a', borderTop: '2px solid #3b82f6', borderBottom: '1px solid #3a3a3a' }}>
+                              <div style={{ color: '#10b981', fontWeight: '700', fontSize: '0.85rem' }}>
+                                🧪 Beta Models ({extendedModels.length}) - Zum Testen
+                              </div>
+                            </div>
+                            
+                            {/* OpenAI Extended */}
+                            {extendedModels.filter(m => m.provider === 'openai').length > 0 && (
+                              <>
+                                <div style={{ padding: '0.5rem 1rem', background: '#252525', fontSize: '0.75rem', color: '#999' }}>
+                                  OpenAI ({extendedModels.filter(m => m.provider === 'openai').length})
+                                </div>
+                                {extendedModels.filter(m => m.provider === 'openai').map((model, idx) => (
+                                  <div
+                                    key={`ext-${idx}`}
+                                    onClick={() => {
+                                      setCurrentModel(model.id);
+                                      setShowModelDropdown(false);
+                                    }}
+                                    style={{
+                                      padding: '0.75rem 1rem',
+                                      cursor: 'pointer',
+                                      color: currentModel === model.id ? '#10b981' : '#e5e5e5',
+                                      fontSize: '0.85rem',
+                                      borderBottom: '1px solid #3a3a3a',
+                                      paddingLeft: '1.5rem'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.background = '#333'}
+                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                  >
+                                    {model.icon} {model.name}
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                            
+                            {/* Gemini Extended */}
+                            {extendedModels.filter(m => m.provider === 'google').length > 0 && (
+                              <>
+                                <div style={{ padding: '0.5rem 1rem', background: '#252525', fontSize: '0.75rem', color: '#999' }}>
+                                  Gemini ({extendedModels.filter(m => m.provider === 'google').length})
+                                </div>
+                                {extendedModels.filter(m => m.provider === 'google').map((model, idx) => (
+                                  <div
+                                    key={`gem-${idx}`}
+                                    onClick={() => {
+                                      setCurrentModel(model.id);
+                                      setShowModelDropdown(false);
+                                    }}
+                                    style={{
+                                      padding: '0.75rem 1rem',
+                                      cursor: 'pointer',
+                                      color: currentModel === model.id ? '#10b981' : '#e5e5e5',
+                                      fontSize: '0.85rem',
+                                      borderBottom: '1px solid #3a3a3a',
+                                      paddingLeft: '1.5rem'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.background = '#333'}
+                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                  >
+                                    {model.icon} {model.name}
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
 
-                  {/* Agent Dropdown */}
-                  <div ref={agentDropdownRef} style={{ position: 'relative' }}>
+                  {/* Agent Button - Opens Overlay */}
+                  <div style={{ position: 'relative' }}>
                     <button 
-                      onClick={() => setShowAgentDropdown(!showAgentDropdown)}
+                      onClick={() => setShowAgentOverlay(true)}
                       style={{
                         background: 'transparent',
                         border: 'none',
@@ -1302,7 +1539,7 @@ export default function HomePage() {
                       {Array.isArray(availableAgents) ? (availableAgents.find(a => a.id === currentAgent)?.name || currentAgent) : currentAgent}
                       <ChevronDown size={16} />
                     </button>
-                    {showAgentDropdown && Array.isArray(availableAgents) && availableAgents.length > 0 && (
+                    {false && showAgentDropdown && Array.isArray(availableAgents) && availableAgents.length > 0 && (
                       <div style={{
                         position: 'absolute',
                         bottom: '100%',
@@ -1376,21 +1613,30 @@ export default function HomePage() {
                 {/* Right Side */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   {activeTab === 'app' && (
-                    <div style={{
-                      background: '#9b8b5e',
-                      borderRadius: '8px',
-                      padding: '0.7rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
+                    <button
+                      onClick={() => setShowAgentOverlay(true)}
+                      style={{
+                        background: '#9b8b5e',
+                        borderRadius: '8px',
+                        padding: '0.7rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      title="Agent Mode - Wähle deinen Agent"
+                    >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                         <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
                       </svg>
-                    </div>
+                    </button>
                   )}
                   <span 
-                    onClick={sendMessage}
+                    onClick={() => {
+                      console.log('🚀 START clicked!', { prompt, isLoading });
+                      sendMessage(true);
+                    }}
                     style={{
                       color: isLoading ? '#6b7280' : '#9ca3af',
                       fontSize: '0.95rem',
@@ -1435,6 +1681,17 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      
+      {/* Agent Mode Overlay */}
+      <AgentModeOverlay
+        isOpen={showAgentOverlay}
+        onClose={() => setShowAgentOverlay(false)}
+        onSelectAgent={(agentId) => setCurrentAgent(agentId)}
+        onSelectModel={(modelId) => setCurrentModel(modelId)}
+        currentAgent={currentAgent}
+        currentModel={currentModel}
+        extendedModels={extendedModels}
+      />
     </div>
   );
 }

@@ -15,6 +15,15 @@ from auth import get_current_user_v2
 from db import get_db
 from sqlalchemy.orm import Session
 
+# Import extended models
+try:
+    from chat.extended_models import get_extended_models
+    EXTENDED_MODELS_AVAILABLE = True
+except ImportError:
+    EXTENDED_MODELS_AVAILABLE = False
+    def get_extended_models():
+        return []
+
 # Import all agent systems - avoid circular imports
 try:
     from builder.smart_agent_generator import SmartAgentGenerator, SmartAgentRequest
@@ -671,20 +680,25 @@ async def call_ollama_model(model: str, messages: List[Dict], stream: bool = Tru
             yield chunk
 
 
-async def build_app_with_agent(agent: str, description: str, user_id: str):
+async def build_app_with_agent(agent: str, description: str, user_id: str, project_id: Optional[str] = None):
     """Build app using specified agent"""
     try:
+        if not project_id:
+            project_id = f"project_{int(datetime.now().timestamp())}"
+
         if agent == "smart_agent":
             # Use Smart Agent
             await broadcast_to_user(user_id, {
                 "event": "build.started",
                 "agent": "smart_agent",
+                "project_id": project_id,
                 "message": "🤖 Smart Agent starting app generation..."
             })
             
             # TODO: Implement full Smart Agent integration
             await broadcast_to_user(user_id, {
                 "event": "build.progress",
+                "project_id": project_id,
                 "message": "Analyzing requirements...",
                 "progress": 10
             })
@@ -693,6 +707,7 @@ async def build_app_with_agent(agent: str, description: str, user_id: str):
             
             await broadcast_to_user(user_id, {
                 "event": "build.progress",
+                "project_id": project_id,
                 "message": "Generating project structure...",
                 "progress": 30
             })
@@ -702,7 +717,7 @@ async def build_app_with_agent(agent: str, description: str, user_id: str):
             await broadcast_to_user(user_id, {
                 "event": "build.complete",
                 "message": "✅ App generated successfully!",
-                "project_id": f"project_{int(datetime.now().timestamp())}"
+                "project_id": project_id
             })
         
         elif agent == "super_agent":
@@ -710,6 +725,7 @@ async def build_app_with_agent(agent: str, description: str, user_id: str):
             await broadcast_to_user(user_id, {
                 "event": "build.started",
                 "agent": "super_agent",
+                "project_id": project_id,
                 "message": "⚡ Super Agent starting app generation..."
             })
             
@@ -719,7 +735,7 @@ async def build_app_with_agent(agent: str, description: str, user_id: str):
             await broadcast_to_user(user_id, {
                 "event": "build.complete",
                 "message": "✅ App generated with Super Agent!",
-                "project_id": f"project_{int(datetime.now().timestamp())}"
+                "project_id": project_id
             })
         
         else:
@@ -743,6 +759,16 @@ async def get_available_models():
     return {
         "success": True,
         "models": models_list
+    }
+
+
+@router.get("/models/extended")
+async def get_extended_models_route():
+    """Get additional beta/testing models (107+)"""
+    return {
+        "success": True,
+        "models": get_extended_models(),
+        "count": len(get_extended_models())
     }
 
 
@@ -776,10 +802,32 @@ async def home_chat(
         # Build conversation history
         messages = []
         
-        # Add system prompt - MULTILINGUAL
+        # Add system prompt - AGENT-SPECIFIC
+        agent_prompts = {
+            "aura": "You are Aura, a friendly and helpful AI assistant. You excel at general conversation, answering questions, and providing helpful information. Always respond in the user's language. Be warm, approachable, and natural in conversation.",
+            
+            "cora": "You are Cora, an expert code assistant and debugger. You specialize in programming, debugging, code review, and refactoring. You understand all programming languages and best practices. Always respond in the user's language. Be precise, technical, and helpful.",
+            
+            "lumi": "You are Lumi, a creative AI assistant specializing in design, writing, and creative ideas. You help with UI/UX design, creative writing, branding, and artistic concepts. Always respond in the user's language. Be imaginative, inspiring, and helpful.",
+            
+            "devra": "You are Devra, a deep reasoning and analysis specialist. You excel at complex problem-solving, logical analysis, research, and philosophical discussions. Always respond in the user's language. Be thorough, analytical, and insightful.",
+            
+            "smart_agent": "You are Smart Agent, an expert app builder. You create complete applications with best practices, proper architecture, and clean code. Always respond in the user's language. Be professional, thorough, and detail-oriented.",
+            
+            "super_agent": "You are Super Agent, the most powerful AI for complex projects. You handle enterprise-level applications, optimization, and deployment. Always respond in the user's language. Be professional, comprehensive, and expert-level.",
+            
+            "vibeai_agent": "You are VibeAI Agent, specializing in real-time full-stack project generation. You build complete applications with live streaming and comprehensive features. Always respond in the user's language. Be efficient, modern, and thorough.",
+        }
+        
+        system_prompt = agent_prompts.get(request.agent, "You are VibeAI, a powerful multilingual AI assistant. Always respond in the user's language. Be helpful, clear, and natural.")
+        
+        # DEBUG
+        print(f"🎭 Agent: {request.agent}")
+        print(f"📝 System Prompt: {system_prompt[:100]}...")
+        
         messages.append({
             "role": "system",
-            "content": "You are VibeAI, a powerful multilingual AI assistant. You can communicate in ANY language (English, German, Spanish, French, Arabic, Chinese, Japanese, etc.). Always respond in the SAME language the user writes in. You can help with coding, app building, general questions, and understand all programming languages. Be helpful, clear, and natural."
+            "content": system_prompt
         })
         
         # Add conversation history
@@ -793,9 +841,10 @@ async def home_chat(
         })
         
         # Check if user wants to build an app
-        if request.build_app or any(keyword in request.message.lower() for keyword in ["build app", "create app", "generate app", "make app", "erstelle", "baue"]):
-            # Start app building in background
-            asyncio.create_task(build_app_with_agent(request.agent, request.message, user_id))
+        if request.build_app:
+            project_id = f"project_{int(datetime.now().timestamp())}"
+            # User clicked START button - start building!
+            asyncio.create_task(build_app_with_agent(request.agent, request.message, user_id, project_id))
             
             return HomeChatResponse(
                 success=True,
@@ -803,7 +852,26 @@ async def home_chat(
                 model_used=request.model,
                 agent_used=request.agent,
                 timestamp=datetime.now(),
-                metadata={"building": True}
+                metadata={"building": True, "project_id": project_id}
+            )
+        
+        # Detect if user describes an app idea
+        if any(keyword in request.message.lower() for keyword in ["erstelle", "baue", "create app", "build app", "make app"]):
+            # Generate plan first, let user confirm with START button
+            plan_response = ""
+            async for chunk in call_model(request.model, messages + [
+                {"role": "system", "content": "Generate a brief project plan. End with: 'Ready to start? Click the START button!'"}
+            ], False):
+                if chunk["type"] == "done":
+                    plan_response = chunk["content"]
+            
+            return HomeChatResponse(
+                success=True,
+                response=plan_response,
+                model_used=request.model,
+                agent_used=request.agent,
+                timestamp=datetime.now(),
+                metadata={"ready_to_build": True, "requires_confirmation": True}
             )
         
         # Regular chat - call the actual AI model
@@ -845,8 +913,8 @@ async def websocket_home_chat(
     await websocket.accept()
     
     # TODO: Verify token and get user_id
-    # For now, use a temp user_id
-    user_id = "temp_user"
+    # For now, use a stable default user_id so broadcasts reach the client
+    user_id = "default_user"
     
     if user_id not in active_connections:
         active_connections[user_id] = []

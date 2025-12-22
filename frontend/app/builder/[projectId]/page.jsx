@@ -62,9 +62,9 @@ const AGENT_TYPES = {
 };
 
 export default function BuilderPage({ params, searchParams }) {
-  // ⚡ Next.js 16: params und searchParams sind jetzt Promises - müssen mit React.use() entpackt werden
-  const resolvedParams = use(params);
-  const resolvedSearchParams = use(searchParams);
+  // In Next.js 14 kommen params/searchParams bereits aufgelöst
+  const resolvedParams = params;
+  const resolvedSearchParams = searchParams;
   const { projectId } = resolvedParams;
   const router = useRouter();
   
@@ -3702,6 +3702,24 @@ Sei proaktiv, hilfreich und liefere vollständige, funktionierende Lösungen mit
             }}
           >
             Editor
+          </button>
+          <button
+            onClick={() => window.location.href = '/home'}
+            style={{
+              padding: '0 16px',
+              background: 'transparent',
+              border: 'none',
+              color: '#858585',
+              fontSize: '12px',
+              cursor: 'pointer',
+              height: '100%',
+              borderBottom: '2px solid transparent',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#cccccc'}
+            onMouseLeave={(e) => e.target.style.color = '#858585'}
+          >
+            Home
           </button>
         </div>
 
