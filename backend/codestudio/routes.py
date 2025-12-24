@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from auth import get_current_user_v2
-from billing.limiter import check_user_rate_limit
+from billing.limiter import limiter
 from codestudio.executor import execute_code
 from codestudio.file_manager import file_manager
 from codestudio.project_manager import project_manager
@@ -43,14 +43,13 @@ async def run_code(request: Request, user=Depends(get_current_user_v2), db: Sess
 
     # Rate & Cost Limit Check
     try:
-        check_user_rate_limit(
-            user=user,
-            tokens=2000,
-            provider="openai",
+        await limiter.enforce(
+            user=user.email,
+            tier=getattr(user, "tier", "free"),
             feature="code_studio",
+            tokens_expected=2000,
+            cost_estimate=0.01,
         )
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(429, f"Rate limit exceeded: {str(e)}")
 

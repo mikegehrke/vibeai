@@ -78,9 +78,3 @@ class TerminalController:
         })
 
 
-
-
-
-
-
-

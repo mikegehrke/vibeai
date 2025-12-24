@@ -127,8 +127,6 @@ class ChatRequest(BaseModel):
     conversation_history: Optional[List[Dict[str, Any]]] = []
     session_id: Optional[int] = None
     project_id: Optional[str] = None  # For code access
-    images: Optional[List[str]] = None  # Base64 encoded images
-    videos: Optional[List[str]] = None  # Base64 encoded videos
 
 class ModelInfo(BaseModel):
     id: str
@@ -377,33 +375,6 @@ async def register(user_data: UserCreate):
     }
     
     users_db[user_id] = user
-    
-    # ✅ AUTOMATICALLY CREATE PROFILE for new user
-    try:
-        from profile.profile_routes import profiles_db
-        
-        # Extract first/last name from full_name
-        name_parts = user_data.full_name.split(" ", 1) if user_data.full_name else ["", ""]
-        first_name = name_parts[0] if len(name_parts) > 0 else ""
-        last_name = name_parts[1] if len(name_parts) > 1 else ""
-        
-        # Create default profile
-        profiles_db[user_id] = {
-            "firstName": first_name,
-            "lastName": last_name,
-            "username": user_data.username,
-            "bio": "",
-            "location": "",
-            "xUsername": "",
-            "githubUsername": "",
-            "linkedinUsername": "",
-            "discordUsername": "",
-            "youtubeChannel": "",
-            "website": ""
-        }
-        print(f"✅ Profile auto-created for user {user_id}")
-    except Exception as e:
-        print(f"⚠️  Could not auto-create profile: {e}")
     
     # Create access token
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
@@ -926,9 +897,6 @@ async def stream_chat_response(request: ChatRequest, model_info: Dict):
     user_message_lower = request.prompt.lower()
     
     # ⚡ INTELLIGENTE SOFORT-ANTWORT: Erkenne Befehle sofort und antworte sofort!
-    # Image Generation vorerst deaktiviert für Stabilität
-    # TODO: Später wieder aktivieren mit besserer Fehlerbehandlung
-    
     if any(phrase in user_message_lower for phrase in ["starte die app", "kannst du die app starten", "app starten", "starte app", "run die app", "app run"]):
         # Flutter oder React/Next.js?
         if project_id:
@@ -1181,13 +1149,12 @@ CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: 
             if msg.get("role") in ["user", "assistant"]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
         
-        # Add current prompt to messages (images/videos support temporarily disabled for stability)
         if request.model in ["o1", "o1-mini"]:
             full_prompt = f"{request.system_prompt}\n\n{request.prompt}"
-            messages.append({"role": "user", "content": full_prompt})
         else:
-            # Normal text message - images/videos support will be added later
-            messages.append({"role": "user", "content": request.prompt})
+            full_prompt = request.prompt
+            
+        messages.append({"role": "user", "content": full_prompt})
         
         # Stream response based on provider
         if model_info["provider"] == "OpenAI":
@@ -1205,26 +1172,18 @@ CRITICAL: When you mention executing a command, you MUST output it in TERMINAL: 
                 yield f"data: {json.dumps({'content': content, 'done': True})}\n\n"
             else:
                 # ⚡ STREAMING: Sofort starten, keine Verzögerung!
-                try:
-                    stream = openai_client.chat.completions.create(
-                        model=request.model,
-                        messages=messages,
-                        temperature=0.7,
-                        max_tokens=4000,
-                        stream=True
-                    )
-                    # ⚡ ECHTE AI-ANTWORTEN - KEINE DUMMY-TEXTE!
-                    for chunk in stream:
-                        if chunk.choices and len(chunk.choices) > 0:
-                            if chunk.choices[0].delta and chunk.choices[0].delta.content:
-                                yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
-                    yield f"data: {json.dumps({'done': True})}\n\n"
-                except Exception as e:
-                    import traceback
-                    error_trace = traceback.format_exc()
-                    print(f"❌ OpenAI streaming error: {str(e)}")
-                    print(f"Traceback: {error_trace}")
-                    yield f"data: {json.dumps({'error': f'OpenAI API error: {str(e)}', 'done': True})}\n\n"
+                stream = openai_client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=4000,
+                    stream=True
+                )
+                # ⚡ ECHTE AI-ANTWORTEN - KEINE DUMMY-TEXTE!
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        yield f"data: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
         
         elif model_info["provider"] == "Anthropic":
             if not anthropic_client:
@@ -1401,42 +1360,6 @@ try:
 except Exception as e:
     print(f"⚠️  Chat Agent Router failed to load: {e}")
 
-# HOME CHAT - Unified Chat with All Models & Agents
-# -------------------------------------------------------------
-try:
-    from chat.home_chat_routes import router as home_chat_router
-    app.include_router(home_chat_router, tags=["Home Chat"])
-    print("✅ Home Chat Router loaded")
-    print("   Endpoints: /api/home/chat, /api/home/ws, /api/home/models, /api/home/agents")
-except Exception as e:
-    print(f"⚠️  Home Chat Router failed to load: {e}")
-    import traceback
-    traceback.print_exc()
-
-# PROFILE MANAGEMENT
-# -------------------------------------------------------------
-try:
-    from profile.profile_routes import router as profile_router
-    app.include_router(profile_router, tags=["Profile"])
-    print("✅ Profile Router loaded")
-    print("   Endpoints: /api/profile/me, /api/profile/create, /api/profile/{username}")
-except Exception as e:
-    print(f"⚠️  Profile Router failed to load: {e}")
-    import traceback
-    traceback.print_exc()
-
-# MEDIA PROCESSING (VIDEO & IMAGE)
-# -------------------------------------------------------------
-try:
-    from media.media_routes import router as media_router
-    app.include_router(media_router, prefix="/api/media", tags=["Media"])
-    print("✅ Media Router loaded")
-    print("   Endpoints: /api/media/create-video, /api/media/image/filter, /api/media/image/text")
-except Exception as e:
-    print(f"⚠️  Media Router failed to load: {e}")
-    import traceback
-    traceback.print_exc()
-
 # TEAM COLLABORATION
 # -------------------------------------------------------------
 try:
@@ -1469,42 +1392,6 @@ except ImportError:
     print("⚠️  Download routes not available")
 except Exception as e:
     print(f"⚠️  Download Router failed to load: {e}")
-
-# THEME GENERATOR
-# -------------------------------------------------------------
-try:
-    from ai.theme.theme_routes import router as theme_router
-    app.include_router(theme_router, prefix="/api/theme", tags=["Theme Generator"])
-    print("✅ Theme Router loaded")
-except ImportError:
-    print("⚠️  Theme routes not available")
-except Exception as e:
-    print(f"⚠️  Theme Router failed to load: {e}")
-
-# PRICING SYSTEM
-# -------------------------------------------------------------
-try:
-    from pricing.routes import router as pricing_router
-    app.include_router(pricing_router)
-    print("✅ Pricing Router loaded")
-except ImportError:
-    print("⚠️  Pricing routes not available")
-except Exception as e:
-    print(f"⚠️  Pricing Router failed to load: {e}")
-
-# TEAMS SETUP
-# -------------------------------------------------------------
-try:
-    from teams_setup_routes import router as teams_setup_router
-    app.include_router(teams_setup_router)
-    
-    from checkout_routes import router as checkout_router
-    app.include_router(checkout_router)
-    print("✅ Teams Setup Router loaded")
-except ImportError:
-    print("⚠️  Teams setup routes not available")
-except Exception as e:
-    print(f"⚠️  Teams Setup Router failed to load: {e}")
 
 # AUDIO TRANSCRIPTION (Whisper)
 # -------------------------------------------------------------
@@ -1581,4 +1468,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8005)

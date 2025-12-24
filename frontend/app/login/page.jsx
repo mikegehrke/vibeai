@@ -91,7 +91,7 @@ function LoginPageContent() {
     .then(res => {
       if (res.ok) {
         // Token ist gültig, weiterleiten
-        router.push('/home');
+        router.push(redirect);
       } else {
         // Token ist ungültig, entfernen
         localStorage.removeItem('token');
@@ -134,9 +134,9 @@ function LoginPageContent() {
         }
         // Zeige Erfolgs-Overlay
         setShowSuccessOverlay(true);
-        // Nach 2 Sekunden zur Home-Seite weiterleiten
+        // Nach 2 Sekunden zur Zielseite weiterleiten
         setTimeout(() => {
-          router.push('/home');
+          router.push(redirect);
         }, 2000);
       } else {
         throw new Error('Kein Token erhalten');
@@ -174,9 +174,9 @@ function LoginPageContent() {
       
       // Zeige Erfolgs-Overlay
       setShowSuccessOverlay(true);
-      // Nach 2 Sekunden zur Home-Seite weiterleiten
+      // Nach 2 Sekunden zur Zielseite weiterleiten
       setTimeout(() => {
-        router.push('/home');
+        router.push(redirect);
       }, 2000);
     } catch (err) {
       setError(`${provider} login fehlgeschlagen`);
@@ -242,7 +242,7 @@ function LoginPageContent() {
               color: '#666666',
               marginTop: '0.5rem'
             }}>
-              Weiterleitung zur Home-Seite...
+              Weiterleitung...
             </p>
           </div>
         </div>

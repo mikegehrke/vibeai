@@ -109,9 +109,3 @@ class LiveFileWriter:
         }
 
 
-
-
-
-
-
-

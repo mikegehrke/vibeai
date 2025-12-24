@@ -8,15 +8,15 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://127.0.0.1:8005/api/:path*'
+        destination: 'http://127.0.0.1:8001/api/:path*'
       },
       {
         source: '/preview/:path*',
-        destination: 'http://127.0.0.1:8005/preview/:path*'
+        destination: 'http://127.0.0.1:8001/preview/:path*'
       },
       {
         source: '/ai/:path*',
-        destination: 'http://127.0.0.1:8005/ai/:path*'
+        destination: 'http://127.0.0.1:8001/ai/:path*'
       }
     ]
   },
