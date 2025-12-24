@@ -1,0 +1,40 @@
+# Google Play Store Beschreibung für --Du-bist-ein-erfahrener-Flutter-Entwickler--Erste
+
+## App Name
+--Du-bist-ein-erfahrener-Flutter-Entwickler--Erste
+
+## Kurzbeschreibung (bis 80 Zeichen)
+Eine moderne flutter App, die *„Du bist ein erfahrener Flutter-Entwickler.
+Erstelle mir ei...
+
+## Vollständige Beschreibung
+*„Du bist ein erfahrener Flutter-Entwickler.
+Erstelle mir ein komplettes, produktionsreifes Flutter-Projekt (SDK ≥ 3.22) für eine To-Do-App mit folgenden Anforderungen:
+
+Klare Ordnerstruktur (models/, providers/, screens/, widgets/, utils/).
+
+State-Management über provider-Paket (ChangeNotifier).
+
+Funktionen: Aufgaben anlegen, abhaken, löschen (Swipe-to-Delete), Eingabevalidierung, Dark- & Light-Theme (Material 3).
+
+Vollständiger Code für alle Dateien inkl. pubspec.yaml, Kommentare (Was/Warum/Wie) und README.
+
+Kurze Setup-Anleitung (CLI-Befehle für Windows/macOS/Linux).
+
+Liste von sinnvollen Erweiterungsideen (Persistenz, Push-Benachrichtigungen, Filter).
+Liefere den Output so, dass ich ihn 1:1 in mein Projektverzeichnis kopieren kann.“*
+
+## Features
+- Moderne UI/UX
+- Schnelle Performance
+- Intuitive Bedienung
+
+## Screenshots benötigt:
+- Phone: Mindestens 2, maximal 8 (16:9 oder 9:16)
+- Tablet: Mindestens 1, maximal 8 (16:9 oder 9:16)
+
+## App Icon:
+- 512 x 512 PNG (transparent, wird automatisch gerundet)
+
+## Feature Graphic:
+- 1024 x 500 PNG (für Play Store Banner)

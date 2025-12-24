@@ -1,0 +1,38 @@
+# App Store Beschreibung für --Du-bist-ein-erfahrener-Flutter-Entwickler--Erste
+
+## App Name
+--Du-bist-ein-erfahrener-Flutter-Entwickler--Erste
+
+## Kurzbeschreibung (bis 80 Zeichen)
+Eine moderne flutter App, die *„Du bist ein erfahrener Flutter-Entwickler.
+Erstelle mir ei...
+
+## Vollständige Beschreibung
+*„Du bist ein erfahrener Flutter-Entwickler.
+Erstelle mir ein komplettes, produktionsreifes Flutter-Projekt (SDK ≥ 3.22) für eine To-Do-App mit folgenden Anforderungen:
+
+Klare Ordnerstruktur (models/, providers/, screens/, widgets/, utils/).
+
+State-Management über provider-Paket (ChangeNotifier).
+
+Funktionen: Aufgaben anlegen, abhaken, löschen (Swipe-to-Delete), Eingabevalidierung, Dark- & Light-Theme (Material 3).
+
+Vollständiger Code für alle Dateien inkl. pubspec.yaml, Kommentare (Was/Warum/Wie) und README.
+
+Kurze Setup-Anleitung (CLI-Befehle für Windows/macOS/Linux).
+
+Liste von sinnvollen Erweiterungsideen (Persistenz, Push-Benachrichtigungen, Filter).
+Liefere den Output so, dass ich ihn 1:1 in mein Projektverzeichnis kopieren kann.“*
+
+## Features
+- Moderne UI/UX
+- Schnelle Performance
+- Intuitive Bedienung
+
+## Screenshots benötigt:
+- iPhone 6.7": 1290 x 2796
+- iPhone 6.5": 1242 x 2688
+- iPad Pro 12.9": 2048 x 2732
+
+## App Icon:
+- 1024 x 1024 PNG (transparent, keine Rundung)
