@@ -50,7 +50,7 @@ export default function CursorClone() {
   ])
   const [activeTab, setActiveTab] = useState('7')
   
-  const [code] = useState(`import React, { useState } from 'react'
+  const [editorContent, setEditorContent] = useState(`import React, { useState } from 'react'
 import { Header } from './components/Header'
 
 export default function App() {
@@ -1964,7 +1964,7 @@ export default NewComponent`
                   </div>
                 </div>
               ) : (
-              renderCode(code)
+              renderCode(editorContent)
             )}
                   </div>
 
