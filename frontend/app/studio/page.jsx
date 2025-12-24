@@ -231,28 +231,118 @@ export default function App() {
     setLiveTypingText('')
   }
   
-  // Erstelle File im Explorer
-  const createFileInExplorer = (path, content = '') => {
-    const parts = path.split('/')
+  // Erstelle File im Explorer - FÜGT WIRKLICH ZUM FILETREE HINZU
+  const createFileInExplorer = (filePath, content = '') => {
+    const parts = filePath.split('/')
     const fileName = parts.pop()
+    const folderPath = parts // z.B. ['src', 'screens']
     
-    // Füge File zum files State hinzu
-    setFiles(prev => [...prev, {
+    // Helper: Rekursiv Ordner finden oder erstellen
+    const findOrCreateFolder = (tree, pathParts, depth = 0) => {
+      if (depth >= pathParts.length) return tree
+      
+      const folderName = pathParts[depth]
+      let folder = tree.find(item => item.name === folderName && item.type === 'folder')
+      
+      if (!folder) {
+        // Ordner existiert nicht - erstellen
+        folder = {
+          id: `folder-${Date.now()}-${depth}`,
+          name: folderName,
+          type: 'folder',
+          open: true,
+          children: []
+        }
+        tree.push(folder)
+      }
+      
+      if (depth < pathParts.length - 1) {
+        folder.children = findOrCreateFolder(folder.children || [], pathParts, depth + 1)
+      }
+      
+      return tree
+    }
+    
+    // Helper: File zu richtigem Ordner hinzufügen
+    const addFileToTree = (tree, pathParts, file) => {
+      if (pathParts.length === 0) {
+        // File gehört zur Root
+        tree.push(file)
+        return tree
+      }
+      
+      return tree.map(item => {
+        if (item.name === pathParts[0] && item.type === 'folder') {
+          if (pathParts.length === 1) {
+            // Zielordner gefunden - File hinzufügen
+            return {
+              ...item,
+              open: true,
+              children: [...(item.children || []), file]
+            }
+          } else {
+            // Weiter in Unterordner
+            return {
+              ...item,
+              children: addFileToTree(item.children || [], pathParts.slice(1), file)
+            }
+          }
+        }
+        return item
+      })
+    }
+    
+    // Neues File-Objekt
+    const newFile = {
       id: `file-${Date.now()}`,
       name: fileName,
-      path: path,
+      type: 'file',
+      path: filePath,
+      content: content
+    }
+    
+    // Update FileTree
+    setFileTree(prev => {
+      // Zuerst Ordnerstruktur sicherstellen
+      let updatedTree = [...prev]
+      
+      // Finde root folder (my-vibeai-app)
+      const rootFolder = updatedTree.find(item => item.type === 'folder')
+      if (rootFolder && folderPath.length > 0) {
+        // Erstelle Ordnerstruktur innerhalb von root
+        rootFolder.children = findOrCreateFolder(rootFolder.children || [], folderPath)
+        // Füge File zum richtigen Ordner hinzu
+        rootFolder.children = addFileToTree(rootFolder.children, folderPath, newFile)
+      } else if (rootFolder) {
+        // File direkt in root
+        rootFolder.children = [...(rootFolder.children || []), newFile]
+      }
+      
+      return updatedTree
+    })
+    
+    // Füge File auch zum files State hinzu (für Content-Tracking)
+    setFiles(prev => [...prev, {
+      id: newFile.id,
+      name: fileName,
+      path: filePath,
       content: content
     }])
     
     // Öffne neuen Tab
+    const newTabId = `tab-${Date.now()}`
     setTabs(prev => [...prev, {
-      id: `tab-${Date.now()}`,
+      id: newTabId,
       name: fileName,
-      modified: true
+      modified: true,
+      path: filePath
     }])
+    setActiveTab(newTabId)
     
     // Update Editor Content
     setEditorContent(content)
+    
+    console.log(`✅ File erstellt: ${filePath}`)
   }
   
   // Führe Agent Plan Step-by-Step aus
