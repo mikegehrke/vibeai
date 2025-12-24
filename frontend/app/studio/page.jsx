@@ -45,6 +45,9 @@ export default function CursorClone() {
     ]}
   ])
   
+  // Files State für erstellte Dateien
+  const [files, setFiles] = useState([])
+  
   const [tabs, setTabs] = useState([
     { id: '7', name: 'App.tsx', modified: true },
   ])
