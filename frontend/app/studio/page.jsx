@@ -574,6 +574,57 @@ export default NewComponent`
     }, 100)
   })
   
+  // ========================================
+  // APPLY CODE TO EDITOR - Live Typing
+  // ========================================
+  const applyCodeToEditor = async (code, filename) => {
+    // 1. Erstelle oder öffne File im Editor
+    const existingTab = tabs.find(t => t.name === filename)
+    
+    if (!existingTab) {
+      // Neues Tab erstellen
+      const newTab = {
+        id: `tab-${Date.now()}`,
+        name: filename,
+        modified: true
+      }
+      setTabs(prev => [...prev, newTab])
+      setActiveTab(newTab.id)
+    } else {
+      // Existierendes Tab aktivieren
+      setActiveTab(tabs.find(t => t.name === filename)?.id)
+    }
+    
+    // 2. Live Typing Animation im Editor
+    setEditorContent('')
+    const lines = code.split('\n')
+    let currentContent = ''
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Tippe jede Zeile
+      for (let j = 0; j < line.length; j++) {
+        currentContent += line[j]
+        setEditorContent(currentContent)
+        await delay(10) // 10ms pro Zeichen - schnell aber sichtbar
+      }
+      
+      // Neue Zeile
+      currentContent += '\n'
+      setEditorContent(currentContent)
+      await delay(30) // Kurze Pause nach jeder Zeile
+    }
+    
+    // 3. Zeige Success Notification
+    setTimeout(() => {
+      // File als modified markieren
+      setTabs(prev => prev.map(t => 
+        t.name === filename ? { ...t, modified: true } : t
+      ))
+    }, 100)
+  }
+  
   // CURSOR STYLE: Agent mode at bottom
   const [agentMode, setAgentMode] = useState('agent') // agent, plan, debug, ask
   const [selectedModel, setSelectedModel] = useState('smart-agent') // Default to Smart Agent
@@ -2437,11 +2488,20 @@ export default NewComponent`
                             display: 'flex', gap: 8, marginTop: 12,
                             justifyContent: 'flex-end', borderTop: '1px solid #252525', paddingTop: 12
                           }}>
-                            <button style={{
-                              padding: '6px 16px', borderRadius: 6,
-                              background: 'transparent', border: '1px solid #333',
-                              color: '#888', fontSize: 12, cursor: 'pointer'
-                            }}>
+                            <button 
+                              onClick={async () => {
+                                // Apply alle Code Changes
+                                if (msg.codeBlocks) {
+                                  for (const block of msg.codeBlocks) {
+                                    await applyCodeToEditor(block.code, block.file)
+                                  }
+                                }
+                              }}
+                              style={{
+                                padding: '6px 16px', borderRadius: 6,
+                                background: 'transparent', border: '1px solid #333',
+                                color: '#888', fontSize: 12, cursor: 'pointer'
+                              }}>
                               Apply
                             </button>
                             <button style={{
@@ -2450,8 +2510,8 @@ export default NewComponent`
                               color: '#fff', fontSize: 12, cursor: 'pointer'
                             }}>
                               Review
-                      </button>
-                    </div>
+                            </button>
+                          </div>
                         </div>
                       )}
                       
@@ -2706,11 +2766,13 @@ export default NewComponent`
                           >
                             <Copy size={11} />
                           </button>
-                          <button style={{
-                            display: 'flex', alignItems: 'center', gap: 4,
-                            background: '#2563eb', border: 'none', borderRadius: 4,
-                            padding: '5px 12px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 500
-                          }}>
+                          <button 
+                            onClick={() => applyCodeToEditor(block.code, block.file)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              background: '#2563eb', border: 'none', borderRadius: 4,
+                              padding: '5px 12px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 500
+                            }}>
                             Apply
                           </button>
                         </div>
