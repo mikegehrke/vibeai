@@ -583,18 +583,25 @@ export function NewComponent({ title, children }: Props) {
 
 export default NewComponent`
     
-    await addAgentMessage({
+    // Erstelle Message MIT codeBlocks für Apply Button!
+    const fileCreateMsg = {
       type: 'file_create',
       file: 'src/components/NewComponent.tsx',
-      status: 'creating'
-    })
+      status: 'created',
+      code: newFileCode,
+      // WICHTIG: codeBlocks für Apply Button
+      codeBlocks: [{
+        file: 'src/components/NewComponent.tsx',
+        language: 'tsx',
+        code: newFileCode
+      }]
+    }
+    await addAgentMessage(fileCreateMsg)
     
-    // Live Typing
+    // Live Typing im Editor
     await simulateLiveTyping(newFileCode, 'src/components/NewComponent.tsx', (code) => {
       createFileInExplorer('src/components/NewComponent.tsx', code)
     })
-    
-    await updateLastFileMessage('created', newFileCode)
     await delay(400)
     
     // 7. TERMINAL COMMAND
@@ -1305,37 +1312,14 @@ export default NewComponent`
       clearInterval(stepInterval)
       console.error('Chat error:', error)
       
-      // LIVE AGENT - Arbeitet EXAKT wie Cursor Chat mit Live-Updates
-      if (agentMode === 'agent') {
-        // Zeige jeden Schritt LIVE im Chat wie Cursor
-        await showLiveAgentWork(currentInput)
-      } else if (agentMode === 'plan') {
-        // Nur Plan zeigen, nicht ausführen
-        setMessages(m => [...m, {
-          id: Date.now(),
-          role: 'assistant',
-          content: '📋 Hier ist mein Plan:',
-          thinkTime: 2,
-          todos: [
-            { text: '1. Projektstruktur analysieren', done: false },
-            { text: '2. Komponenten erstellen', done: false },
-            { text: '3. Styles hinzufügen', done: false },
-            { text: '4. Tests schreiben', done: false },
-            { text: '5. Build und Deploy', done: false }
-          ],
-          time: new Date()
-        }])
-        
-      } else {
-        // Default Response
-        setMessages(m => [...m, {
-          id: Date.now(),
-          role: 'assistant',
-          content: 'Ich bin bereit zu helfen. Was möchtest du bauen?',
-          thinkTime: 1,
-          time: new Date()
-        }])
-      }
+      // Zeige Fehlermeldung im Chat
+      setMessages(m => [...m, {
+        id: Date.now(),
+        role: 'assistant',
+        content: `❌ Verbindungsfehler: ${error.message || 'Backend nicht erreichbar'}. Stelle sicher, dass das Backend auf http://localhost:8005 läuft.`,
+        thinkTime: 1,
+        time: new Date()
+      }])
     }
     
     setIsThinking(false)
