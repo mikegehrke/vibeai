@@ -2617,11 +2617,16 @@ export default NewComponent`
                           }}>
                             <button 
                               onClick={async () => {
+                                console.log('🔵 Apply ALL clicked, codeBlocks:', msg.codeBlocks)
                                 // Apply alle Code Changes
-                                if (msg.codeBlocks) {
+                                if (msg.codeBlocks && msg.codeBlocks.length > 0) {
                                   for (const block of msg.codeBlocks) {
+                                    console.log('📝 Applying block:', block.file)
                                     await applyCodeToEditor(block.code, block.file)
                                   }
+                                } else {
+                                  console.error('❌ Keine codeBlocks gefunden!', msg)
+                                  alert('Keine Code-Blöcke zum Anwenden!')
                                 }
                               }}
                               style={{
@@ -2629,7 +2634,7 @@ export default NewComponent`
                                 background: 'transparent', border: '1px solid #333',
                                 color: '#888', fontSize: 12, cursor: 'pointer'
                               }}>
-                              Apply
+                              Apply All
                             </button>
                             <button style={{
                               padding: '6px 16px', borderRadius: 6,
@@ -2894,7 +2899,16 @@ export default NewComponent`
                             <Copy size={11} />
                           </button>
                           <button 
-                            onClick={() => applyCodeToEditor(block.code, block.file)}
+                            onClick={async (e) => {
+                              e.preventDefault()
+                              console.log('🔵 Apply clicked:', { file: block.file, hasCode: !!block.code })
+                              if (block.code && block.file) {
+                                await applyCodeToEditor(block.code, block.file)
+                              } else {
+                                console.error('❌ Missing code or file:', block)
+                                alert('Fehler: Code oder Dateiname fehlt!')
+                              }
+                            }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 4,
                               background: '#2563eb', border: 'none', borderRadius: 4,
