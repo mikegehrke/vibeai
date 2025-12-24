@@ -1240,7 +1240,9 @@ export default NewComponent`
 
   // File icon
   const getIcon = (name) => {
+    if (!name) return { Icon: File, color: '#848484' }
     if (name.endsWith('.tsx') || name.endsWith('.ts')) return { Icon: FileCode, color: '#3178c6' }
+    if (name.endsWith('.jsx') || name.endsWith('.js')) return { Icon: FileCode, color: '#f1dd3f' }
     if (name.endsWith('.json')) return { Icon: FileJson, color: '#cbcb41' }
     if (name.endsWith('.md')) return { Icon: FileText, color: '#519aba' }
     return { Icon: File, color: '#848484' }
