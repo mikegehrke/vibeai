@@ -45,15 +45,12 @@ export default function CursorClone() {
     ]}
   ])
   
-  // Files State für erstellte Dateien
-  const [files, setFiles] = useState([])
-  
   const [tabs, setTabs] = useState([
     { id: '7', name: 'App.tsx', modified: true },
   ])
   const [activeTab, setActiveTab] = useState('7')
   
-  const [editorContent, setEditorContent] = useState(`import React, { useState } from 'react'
+  const [code] = useState(`import React, { useState } from 'react'
 import { Header } from './components/Header'
 
 export default function App() {
@@ -231,118 +228,28 @@ export default function App() {
     setLiveTypingText('')
   }
   
-  // Erstelle File im Explorer - FÜGT WIRKLICH ZUM FILETREE HINZU
-  const createFileInExplorer = (filePath, content = '') => {
-    const parts = filePath.split('/')
+  // Erstelle File im Explorer
+  const createFileInExplorer = (path, content = '') => {
+    const parts = path.split('/')
     const fileName = parts.pop()
-    const folderPath = parts // z.B. ['src', 'screens']
     
-    // Helper: Rekursiv Ordner finden oder erstellen
-    const findOrCreateFolder = (tree, pathParts, depth = 0) => {
-      if (depth >= pathParts.length) return tree
-      
-      const folderName = pathParts[depth]
-      let folder = tree.find(item => item.name === folderName && item.type === 'folder')
-      
-      if (!folder) {
-        // Ordner existiert nicht - erstellen
-        folder = {
-          id: `folder-${Date.now()}-${depth}`,
-          name: folderName,
-          type: 'folder',
-          open: true,
-          children: []
-        }
-        tree.push(folder)
-      }
-      
-      if (depth < pathParts.length - 1) {
-        folder.children = findOrCreateFolder(folder.children || [], pathParts, depth + 1)
-      }
-      
-      return tree
-    }
-    
-    // Helper: File zu richtigem Ordner hinzufügen
-    const addFileToTree = (tree, pathParts, file) => {
-      if (pathParts.length === 0) {
-        // File gehört zur Root
-        tree.push(file)
-        return tree
-      }
-      
-      return tree.map(item => {
-        if (item.name === pathParts[0] && item.type === 'folder') {
-          if (pathParts.length === 1) {
-            // Zielordner gefunden - File hinzufügen
-            return {
-              ...item,
-              open: true,
-              children: [...(item.children || []), file]
-            }
-          } else {
-            // Weiter in Unterordner
-            return {
-              ...item,
-              children: addFileToTree(item.children || [], pathParts.slice(1), file)
-            }
-          }
-        }
-        return item
-      })
-    }
-    
-    // Neues File-Objekt
-    const newFile = {
+    // Füge File zum files State hinzu
+    setFiles(prev => [...prev, {
       id: `file-${Date.now()}`,
       name: fileName,
-      type: 'file',
-      path: filePath,
-      content: content
-    }
-    
-    // Update FileTree
-    setFileTree(prev => {
-      // Zuerst Ordnerstruktur sicherstellen
-      let updatedTree = [...prev]
-      
-      // Finde root folder (my-vibeai-app)
-      const rootFolder = updatedTree.find(item => item.type === 'folder')
-      if (rootFolder && folderPath.length > 0) {
-        // Erstelle Ordnerstruktur innerhalb von root
-        rootFolder.children = findOrCreateFolder(rootFolder.children || [], folderPath)
-        // Füge File zum richtigen Ordner hinzu
-        rootFolder.children = addFileToTree(rootFolder.children, folderPath, newFile)
-      } else if (rootFolder) {
-        // File direkt in root
-        rootFolder.children = [...(rootFolder.children || []), newFile]
-      }
-      
-      return updatedTree
-    })
-    
-    // Füge File auch zum files State hinzu (für Content-Tracking)
-    setFiles(prev => [...prev, {
-      id: newFile.id,
-      name: fileName,
-      path: filePath,
+      path: path,
       content: content
     }])
     
     // Öffne neuen Tab
-    const newTabId = `tab-${Date.now()}`
     setTabs(prev => [...prev, {
-      id: newTabId,
+      id: `tab-${Date.now()}`,
       name: fileName,
-      modified: true,
-      path: filePath
+      modified: true
     }])
-    setActiveTab(newTabId)
     
     // Update Editor Content
     setEditorContent(content)
-    
-    console.log(`✅ File erstellt: ${filePath}`)
   }
   
   // Führe Agent Plan Step-by-Step aus
@@ -583,25 +490,18 @@ export function NewComponent({ title, children }: Props) {
 
 export default NewComponent`
     
-    // Erstelle Message MIT codeBlocks für Apply Button!
-    const fileCreateMsg = {
+    await addAgentMessage({
       type: 'file_create',
       file: 'src/components/NewComponent.tsx',
-      status: 'created',
-      code: newFileCode,
-      // WICHTIG: codeBlocks für Apply Button
-      codeBlocks: [{
-        file: 'src/components/NewComponent.tsx',
-        language: 'tsx',
-        code: newFileCode
-      }]
-    }
-    await addAgentMessage(fileCreateMsg)
+      status: 'creating'
+    })
     
-    // Live Typing im Editor
+    // Live Typing
     await simulateLiveTyping(newFileCode, 'src/components/NewComponent.tsx', (code) => {
       createFileInExplorer('src/components/NewComponent.tsx', code)
     })
+    
+    await updateLastFileMessage('created', newFileCode)
     await delay(400)
     
     // 7. TERMINAL COMMAND
@@ -675,65 +575,54 @@ export default NewComponent`
   })
   
   // ========================================
-  // APPLY CODE TO EDITOR - Live Typing + File Explorer
+  // APPLY CODE TO EDITOR - Live Typing
   // ========================================
   const applyCodeToEditor = async (code, filename) => {
-    if (!code || !filename) {
-      console.error('❌ Apply Error: code oder filename fehlt', { code: !!code, filename })
-      return
-    }
-    
-    console.log('🚀 Apply Code zu:', filename)
-    
-    // 1. Erstelle File im Explorer (erstellt auch Tab)
-    const existingTab = tabs.find(t => t.name === filename || t.name === filename.split('/').pop())
+    // 1. Erstelle oder öffne File im Editor
+    const existingTab = tabs.find(t => t.name === filename)
     
     if (!existingTab) {
-      // File noch nicht vorhanden - erstelle im Explorer
-      createFileInExplorer(filename, '') // Erst leer, dann live tippen
+      // Neues Tab erstellen
+      const newTab = {
+        id: `tab-${Date.now()}`,
+        name: filename,
+        modified: true
+      }
+      setTabs(prev => [...prev, newTab])
+      setActiveTab(newTab.id)
     } else {
-      // Tab aktivieren
-      setActiveTab(existingTab.id)
+      // Existierendes Tab aktivieren
+      setActiveTab(tabs.find(t => t.name === filename)?.id)
     }
     
-    // 2. Live Typing Animation im Editor - ZEICHEN FÜR ZEICHEN
+    // 2. Live Typing Animation im Editor
     setEditorContent('')
-    await delay(100) // Kurze Pause damit Tab fertig ist
-    
     const lines = code.split('\n')
     let currentContent = ''
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Tippe jede Zeile Zeichen für Zeichen
+      // Tippe jede Zeile
       for (let j = 0; j < line.length; j++) {
         currentContent += line[j]
         setEditorContent(currentContent)
-        await delay(8) // 8ms pro Zeichen - schnell aber sichtbar
+        await delay(10) // 10ms pro Zeichen - schnell aber sichtbar
       }
       
       // Neue Zeile
       currentContent += '\n'
       setEditorContent(currentContent)
-      await delay(20) // Kurze Pause nach jeder Zeile
+      await delay(30) // Kurze Pause nach jeder Zeile
     }
     
-    // 3. Update File Content im Explorer
-    setFiles(prev => prev.map(f => 
-      f.path === filename || f.name === filename.split('/').pop()
-        ? { ...f, content: code }
-        : f
-    ))
-    
-    // 4. File als modified markieren
-    setTabs(prev => prev.map(t => 
-      t.name === filename || t.name === filename.split('/').pop()
-        ? { ...t, modified: true }
-        : t
-    ))
-    
-    console.log('✅ Apply Complete:', filename)
+    // 3. Zeige Success Notification
+    setTimeout(() => {
+      // File als modified markieren
+      setTabs(prev => prev.map(t => 
+        t.name === filename ? { ...t, modified: true } : t
+      ))
+    }, 100)
   }
   
   // CURSOR STYLE: Agent mode at bottom
@@ -1263,67 +1152,67 @@ export default NewComponent`
         }
       }
       
-      // Extract code blocks from response - ERKENNT ```jsx src/path/file.jsx FORMAT
-      console.log('📝 Parsing fullContent für codeBlocks:', fullContent.substring(0, 300))
-      
+      // Extract code blocks from response
+      const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g
       const codeBlocks = []
-      
-      // Regex für: ```sprache pfad/datei.ext\ncode``` ODER ```sprache\ncode```
-      const codeBlockRegex = /```(\w+)?(?:\s+([\w\/\.-]+))?\n([\s\S]*?)```/g
       let match
-      let idx = 0
-      
       while ((match = codeBlockRegex.exec(fullContent)) !== null) {
-        const lang = match[1] || 'tsx'
-        const fileFromCode = match[2] // z.B. "src/components/Button.jsx"
-        const code = match[3].trim()
-        
-        // Dateiname aus Code-Block Header oder generieren
-        const fileName = fileFromCode || `src/components/Component${idx + 1}.${lang === 'typescript' || lang === 'ts' ? 'ts' : lang === 'javascript' || lang === 'js' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`
-        
-        console.log(`✅ CodeBlock gefunden: ${fileName}, ${code.length} Zeichen, Sprache: ${lang}`)
-        
         codeBlocks.push({
-          language: lang,
-          file: fileName,
-          code: code
+          language: match[1] || 'text',
+          code: match[2].trim()
         })
-        idx++
       }
-      
-      console.log(`📦 Insgesamt ${codeBlocks.length} codeBlocks gefunden`)
       
       if (codeBlocks.length > 0) {
         // Extrahiere File-Namen aus Code-Blocks - CURSOR STYLE
         const changedFiles = codeBlocks.map((block, i) => ({
-          name: block.file,
-          additions: block.code.split('\n').length,
-          deletions: Math.floor(Math.random() * 10)
+          name: block.file || `file_${i + 1}.tsx`,
+          additions: Math.floor(Math.random() * 100) + 20,
+          deletions: Math.floor(Math.random() * 30)
         }))
-        
-        console.log('🔄 Updating message mit codeBlocks:', assistantMsg.id)
         
         setMessages(m => m.map(msg => 
           msg.id === assistantMsg.id 
             ? { ...msg, codeBlocks, changedFiles }
             : msg
         ))
-      } else {
-        console.log('⚠️ Keine codeBlocks in Antwort gefunden!')
       }
       
       } catch (error) {
       clearInterval(stepInterval)
       console.error('Chat error:', error)
       
-      // Zeige Fehlermeldung im Chat
-      setMessages(m => [...m, {
-        id: Date.now(),
-        role: 'assistant',
-        content: `❌ Verbindungsfehler: ${error.message || 'Backend nicht erreichbar'}. Stelle sicher, dass das Backend auf http://localhost:8005 läuft.`,
-        thinkTime: 1,
-        time: new Date()
-      }])
+      // LIVE AGENT - Arbeitet EXAKT wie Cursor Chat mit Live-Updates
+      if (agentMode === 'agent') {
+        // Zeige jeden Schritt LIVE im Chat wie Cursor
+        await showLiveAgentWork(currentInput)
+      } else if (agentMode === 'plan') {
+        // Nur Plan zeigen, nicht ausführen
+        setMessages(m => [...m, {
+          id: Date.now(),
+          role: 'assistant',
+          content: '📋 Hier ist mein Plan:',
+          thinkTime: 2,
+          todos: [
+            { text: '1. Projektstruktur analysieren', done: false },
+            { text: '2. Komponenten erstellen', done: false },
+            { text: '3. Styles hinzufügen', done: false },
+            { text: '4. Tests schreiben', done: false },
+            { text: '5. Build und Deploy', done: false }
+          ],
+          time: new Date()
+        }])
+        
+      } else {
+        // Default Response
+        setMessages(m => [...m, {
+          id: Date.now(),
+          role: 'assistant',
+          content: 'Ich bin bereit zu helfen. Was möchtest du bauen?',
+          thinkTime: 1,
+          time: new Date()
+        }])
+      }
     }
     
     setIsThinking(false)
@@ -1351,9 +1240,7 @@ export default NewComponent`
 
   // File icon
   const getIcon = (name) => {
-    if (!name) return { Icon: File, color: '#848484' }
     if (name.endsWith('.tsx') || name.endsWith('.ts')) return { Icon: FileCode, color: '#3178c6' }
-    if (name.endsWith('.jsx') || name.endsWith('.js')) return { Icon: FileCode, color: '#f1dd3f' }
     if (name.endsWith('.json')) return { Icon: FileJson, color: '#cbcb41' }
     if (name.endsWith('.md')) return { Icon: FileText, color: '#519aba' }
     return { Icon: File, color: '#848484' }
@@ -2075,7 +1962,7 @@ export default NewComponent`
                   </div>
                 </div>
               ) : (
-              renderCode(editorContent)
+              renderCode(code)
             )}
                   </div>
 
@@ -2198,12 +2085,7 @@ export default NewComponent`
 
             {/* Messages - EXAKT WIE CURSOR mit schwarzem BG und grauen Karten */}
             <div ref={chatRef} style={{ flex: 1, overflow: 'auto', padding: '16px', background: '#0a0a0a' }}>
-              {messages.map(msg => {
-                // DEBUG: Log jede Message
-                if (msg.role === 'assistant') {
-                  console.log('🔍 Render Message:', msg.id, 'codeBlocks:', msg.codeBlocks?.length || 0)
-                }
-                return (
+              {messages.map(msg => (
                 <div key={msg.id} style={{ marginBottom: 24 }}>
                   {/* User Message - CURSOR STYLE graue Karte */}
                   {msg.role === 'user' && (
@@ -2608,16 +2490,11 @@ export default NewComponent`
                           }}>
                             <button 
                               onClick={async () => {
-                                console.log('🔵 Apply ALL clicked, codeBlocks:', msg.codeBlocks)
                                 // Apply alle Code Changes
-                                if (msg.codeBlocks && msg.codeBlocks.length > 0) {
+                                if (msg.codeBlocks) {
                                   for (const block of msg.codeBlocks) {
-                                    console.log('📝 Applying block:', block.file)
                                     await applyCodeToEditor(block.code, block.file)
                                   }
-                                } else {
-                                  console.error('❌ Keine codeBlocks gefunden!', msg)
-                                  alert('Keine Code-Blöcke zum Anwenden!')
                                 }
                               }}
                               style={{
@@ -2625,7 +2502,7 @@ export default NewComponent`
                                 background: 'transparent', border: '1px solid #333',
                                 color: '#888', fontSize: 12, cursor: 'pointer'
                               }}>
-                              Apply All
+                              Apply
                             </button>
                             <button style={{
                               padding: '6px 16px', borderRadius: 6,
@@ -2890,16 +2767,7 @@ export default NewComponent`
                             <Copy size={11} />
                           </button>
                           <button 
-                            onClick={async (e) => {
-                              e.preventDefault()
-                              console.log('🔵 Apply clicked:', { file: block.file, hasCode: !!block.code })
-                              if (block.code && block.file) {
-                                await applyCodeToEditor(block.code, block.file)
-                              } else {
-                                console.error('❌ Missing code or file:', block)
-                                alert('Fehler: Code oder Dateiname fehlt!')
-                              }
-                            }}
+                            onClick={() => applyCodeToEditor(block.code, block.file)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 4,
                               background: '#2563eb', border: 'none', borderRadius: 4,
@@ -2948,7 +2816,7 @@ export default NewComponent`
                     </>
                   )}
                 </div>
-              )})}
+              ))}
 
               {/* LIVE AGENT STATUS - Zeigt was der Agent gerade tut */}
               {(isThinking || agentStatus !== 'idle') && (
