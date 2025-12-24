@@ -1256,37 +1256,31 @@ export default NewComponent`
         }
       }
       
-      // Extract code blocks from response - MIT FILE-NAMEN
-      const codeBlockRegex = /```(\w+)?\s*([\w\/\.-]+)?\n([\s\S]*?)```/g
+      // Extract code blocks from response - EINFACHER REGEX
+      console.log('📝 Parsing fullContent für codeBlocks:', fullContent.substring(0, 200))
+      
       const codeBlocks = []
-      let match
-      let blockIdx = 0
-      while ((match = codeBlockRegex.exec(fullContent)) !== null) {
-        const language = match[1] || 'tsx'
-        const fileName = match[2] || `file_${blockIdx + 1}.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language}`
+      // Einfacher Regex: ```sprache\ncode```
+      const simpleRegex = /```(\w+)?\n([\s\S]*?)```/g
+      let simpleMatch
+      let idx = 0
+      
+      while ((simpleMatch = simpleRegex.exec(fullContent)) !== null) {
+        const lang = simpleMatch[1] || 'tsx'
+        const code = simpleMatch[2].trim()
+        const fileName = `src/components/Component${idx + 1}.${lang === 'typescript' || lang === 'ts' ? 'ts' : lang === 'javascript' || lang === 'js' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`
+        
+        console.log(`✅ CodeBlock gefunden: ${fileName}, ${code.length} Zeichen`)
+        
         codeBlocks.push({
-          language,
-          file: fileName,  // WICHTIG: File-Name für Apply Button
-          code: match[3].trim()
+          language: lang,
+          file: fileName,
+          code: code
         })
-        blockIdx++
+        idx++
       }
       
-      // Fallback: Auch einfachere Code-Blocks matchen
-      if (codeBlocks.length === 0) {
-        const simpleRegex = /```(\w+)?\n([\s\S]*?)```/g
-        let simpleMatch
-        let idx = 0
-        while ((simpleMatch = simpleRegex.exec(fullContent)) !== null) {
-          const lang = simpleMatch[1] || 'tsx'
-          codeBlocks.push({
-            language: lang,
-            file: `src/components/Component${idx + 1}.${lang === 'typescript' ? 'ts' : lang === 'javascript' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`,
-            code: simpleMatch[2].trim()
-          })
-          idx++
-        }
-      }
+      console.log(`📦 Insgesamt ${codeBlocks.length} codeBlocks gefunden`)
       
       if (codeBlocks.length > 0) {
         // Extrahiere File-Namen aus Code-Blocks - CURSOR STYLE
@@ -1296,11 +1290,15 @@ export default NewComponent`
           deletions: Math.floor(Math.random() * 10)
         }))
         
+        console.log('🔄 Updating message mit codeBlocks:', assistantMsg.id)
+        
         setMessages(m => m.map(msg => 
           msg.id === assistantMsg.id 
             ? { ...msg, codeBlocks, changedFiles }
             : msg
         ))
+      } else {
+        console.log('⚠️ Keine codeBlocks in Antwort gefunden!')
       }
       
       } catch (error) {
@@ -2212,7 +2210,12 @@ export default NewComponent`
 
             {/* Messages - EXAKT WIE CURSOR mit schwarzem BG und grauen Karten */}
             <div ref={chatRef} style={{ flex: 1, overflow: 'auto', padding: '16px', background: '#0a0a0a' }}>
-              {messages.map(msg => (
+              {messages.map(msg => {
+                // DEBUG: Log jede Message
+                if (msg.role === 'assistant') {
+                  console.log('🔍 Render Message:', msg.id, 'codeBlocks:', msg.codeBlocks?.length || 0)
+                }
+                return (
                 <div key={msg.id} style={{ marginBottom: 24 }}>
                   {/* User Message - CURSOR STYLE graue Karte */}
                   {msg.role === 'user' && (
@@ -2957,7 +2960,7 @@ export default NewComponent`
                     </>
                   )}
                 </div>
-              ))}
+              )})}
 
               {/* LIVE AGENT STATUS - Zeigt was der Agent gerade tut */}
               {(isThinking || agentStatus !== 'idle') && (
