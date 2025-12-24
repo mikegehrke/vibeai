@@ -668,54 +668,65 @@ export default NewComponent`
   })
   
   // ========================================
-  // APPLY CODE TO EDITOR - Live Typing
+  // APPLY CODE TO EDITOR - Live Typing + File Explorer
   // ========================================
   const applyCodeToEditor = async (code, filename) => {
-    // 1. Erstelle oder öffne File im Editor
-    const existingTab = tabs.find(t => t.name === filename)
-    
-    if (!existingTab) {
-      // Neues Tab erstellen
-      const newTab = {
-        id: `tab-${Date.now()}`,
-        name: filename,
-        modified: true
-      }
-      setTabs(prev => [...prev, newTab])
-      setActiveTab(newTab.id)
-    } else {
-      // Existierendes Tab aktivieren
-      setActiveTab(tabs.find(t => t.name === filename)?.id)
+    if (!code || !filename) {
+      console.error('❌ Apply Error: code oder filename fehlt', { code: !!code, filename })
+      return
     }
     
-    // 2. Live Typing Animation im Editor
+    console.log('🚀 Apply Code zu:', filename)
+    
+    // 1. Erstelle File im Explorer (erstellt auch Tab)
+    const existingTab = tabs.find(t => t.name === filename || t.name === filename.split('/').pop())
+    
+    if (!existingTab) {
+      // File noch nicht vorhanden - erstelle im Explorer
+      createFileInExplorer(filename, '') // Erst leer, dann live tippen
+    } else {
+      // Tab aktivieren
+      setActiveTab(existingTab.id)
+    }
+    
+    // 2. Live Typing Animation im Editor - ZEICHEN FÜR ZEICHEN
     setEditorContent('')
+    await delay(100) // Kurze Pause damit Tab fertig ist
+    
     const lines = code.split('\n')
     let currentContent = ''
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Tippe jede Zeile
+      // Tippe jede Zeile Zeichen für Zeichen
       for (let j = 0; j < line.length; j++) {
         currentContent += line[j]
         setEditorContent(currentContent)
-        await delay(10) // 10ms pro Zeichen - schnell aber sichtbar
+        await delay(8) // 8ms pro Zeichen - schnell aber sichtbar
       }
       
       // Neue Zeile
       currentContent += '\n'
       setEditorContent(currentContent)
-      await delay(30) // Kurze Pause nach jeder Zeile
+      await delay(20) // Kurze Pause nach jeder Zeile
     }
     
-    // 3. Zeige Success Notification
-    setTimeout(() => {
-      // File als modified markieren
-      setTabs(prev => prev.map(t => 
-        t.name === filename ? { ...t, modified: true } : t
-      ))
-    }, 100)
+    // 3. Update File Content im Explorer
+    setFiles(prev => prev.map(f => 
+      f.path === filename || f.name === filename.split('/').pop()
+        ? { ...f, content: code }
+        : f
+    ))
+    
+    // 4. File als modified markieren
+    setTabs(prev => prev.map(t => 
+      t.name === filename || t.name === filename.split('/').pop()
+        ? { ...t, modified: true }
+        : t
+    ))
+    
+    console.log('✅ Apply Complete:', filename)
   }
   
   // CURSOR STYLE: Agent mode at bottom
@@ -1245,23 +1256,44 @@ export default NewComponent`
         }
       }
       
-      // Extract code blocks from response
-      const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g
+      // Extract code blocks from response - MIT FILE-NAMEN
+      const codeBlockRegex = /```(\w+)?\s*([\w\/\.-]+)?\n([\s\S]*?)```/g
       const codeBlocks = []
       let match
+      let blockIdx = 0
       while ((match = codeBlockRegex.exec(fullContent)) !== null) {
+        const language = match[1] || 'tsx'
+        const fileName = match[2] || `file_${blockIdx + 1}.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language}`
         codeBlocks.push({
-          language: match[1] || 'text',
-          code: match[2].trim()
+          language,
+          file: fileName,  // WICHTIG: File-Name für Apply Button
+          code: match[3].trim()
         })
+        blockIdx++
+      }
+      
+      // Fallback: Auch einfachere Code-Blocks matchen
+      if (codeBlocks.length === 0) {
+        const simpleRegex = /```(\w+)?\n([\s\S]*?)```/g
+        let simpleMatch
+        let idx = 0
+        while ((simpleMatch = simpleRegex.exec(fullContent)) !== null) {
+          const lang = simpleMatch[1] || 'tsx'
+          codeBlocks.push({
+            language: lang,
+            file: `src/components/Component${idx + 1}.${lang === 'typescript' ? 'ts' : lang === 'javascript' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`,
+            code: simpleMatch[2].trim()
+          })
+          idx++
+        }
       }
       
       if (codeBlocks.length > 0) {
         // Extrahiere File-Namen aus Code-Blocks - CURSOR STYLE
         const changedFiles = codeBlocks.map((block, i) => ({
-          name: block.file || `file_${i + 1}.tsx`,
-          additions: Math.floor(Math.random() * 100) + 20,
-          deletions: Math.floor(Math.random() * 30)
+          name: block.file,
+          additions: block.code.split('\n').length,
+          deletions: Math.floor(Math.random() * 10)
         }))
         
         setMessages(m => m.map(msg => 
