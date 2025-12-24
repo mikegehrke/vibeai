@@ -1263,21 +1263,25 @@ export default NewComponent`
         }
       }
       
-      // Extract code blocks from response - EINFACHER REGEX
-      console.log('📝 Parsing fullContent für codeBlocks:', fullContent.substring(0, 200))
+      // Extract code blocks from response - ERKENNT ```jsx src/path/file.jsx FORMAT
+      console.log('📝 Parsing fullContent für codeBlocks:', fullContent.substring(0, 300))
       
       const codeBlocks = []
-      // Einfacher Regex: ```sprache\ncode```
-      const simpleRegex = /```(\w+)?\n([\s\S]*?)```/g
-      let simpleMatch
+      
+      // Regex für: ```sprache pfad/datei.ext\ncode``` ODER ```sprache\ncode```
+      const codeBlockRegex = /```(\w+)?(?:\s+([\w\/\.-]+))?\n([\s\S]*?)```/g
+      let match
       let idx = 0
       
-      while ((simpleMatch = simpleRegex.exec(fullContent)) !== null) {
-        const lang = simpleMatch[1] || 'tsx'
-        const code = simpleMatch[2].trim()
-        const fileName = `src/components/Component${idx + 1}.${lang === 'typescript' || lang === 'ts' ? 'ts' : lang === 'javascript' || lang === 'js' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`
+      while ((match = codeBlockRegex.exec(fullContent)) !== null) {
+        const lang = match[1] || 'tsx'
+        const fileFromCode = match[2] // z.B. "src/components/Button.jsx"
+        const code = match[3].trim()
         
-        console.log(`✅ CodeBlock gefunden: ${fileName}, ${code.length} Zeichen`)
+        // Dateiname aus Code-Block Header oder generieren
+        const fileName = fileFromCode || `src/components/Component${idx + 1}.${lang === 'typescript' || lang === 'ts' ? 'ts' : lang === 'javascript' || lang === 'js' ? 'js' : lang === 'jsx' ? 'jsx' : 'tsx'}`
+        
+        console.log(`✅ CodeBlock gefunden: ${fileName}, ${code.length} Zeichen, Sprache: ${lang}`)
         
         codeBlocks.push({
           language: lang,
