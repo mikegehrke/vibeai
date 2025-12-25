@@ -40,3 +40,15 @@ Thumbs.db
 flutter_todo_app/
 *.zip
 backend/generated_project/
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+pubspec.lock
+*.g.dart
+*.freezed.dart
