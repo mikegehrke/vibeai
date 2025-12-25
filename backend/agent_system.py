@@ -458,8 +458,18 @@ class AgentSystemV2(AgentSystem):
         # Request Queue
         self.request_queue = AgentRequestQueue(max_concurrent=10)
 
-        # Start queue processor
-        asyncio.create_task(self.request_queue.process_queue())
+        # Start queue processor (lazy - only when event loop is running)
+        self._queue_task = None
+
+    def ensure_queue_processor(self):
+        """Start queue processor if not already running"""
+        if self._queue_task is None:
+            try:
+                loop = asyncio.get_running_loop()
+                self._queue_task = loop.create_task(self.request_queue.process_queue())
+            except RuntimeError:
+                # No event loop running - will be started later
+                pass
 
     async def run_agent_v2(
         self,
@@ -481,6 +491,9 @@ class AgentSystemV2(AgentSystem):
             use_memory: Context Memory nutzen?
             priority: Request Priority (1-10)
         """
+        # Ensure queue processor is running
+        self.ensure_queue_processor()
+        
         start_time = time.time()
 
         # Initialize metrics if needed

@@ -20,22 +20,37 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSSEChat } from '@/lib/useSSEChat';
 
 export default function AIPanel({ projectId }) {
-    const [input, setInput] = useState("");
-    const [messages, setMessages] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [isConnected, setIsConnected] = useState(true);
-    const messagesEndRef = useRef(null);
+    const { messages: kernelMessages, running, sendMessage: sendKernelMessage, stop } = useSSEChat()
+    const [chatMessages, setChatMessages] = useState([])
+    const [input, setInput] = useState("")
+    const [isConnected, setIsConnected] = useState(true)
+    const messagesEndRef = useRef(null)
+
+    // Convert kernel events to chat messages
+    useEffect(() => {
+        if (kernelMessages.length > 0) {
+            const lastEvent = kernelMessages[kernelMessages.length - 1]
+            if (lastEvent.type === 'done' && lastEvent.message) {
+                setChatMessages(prev => [...prev, {
+                    role: 'ai',
+                    content: lastEvent.message,
+                    timestamp: new Date().toISOString()
+                }])
+            }
+        }
+    }, [kernelMessages])
 
     useEffect(() => {
         // Auto-scroll to bottom on new messages
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [chatMessages]);
 
     useEffect(() => {
         // Load initial welcome message
-        setMessages([{
+        setChatMessages([{
             role: 'ai',
             content: `🤖 AI Assistant ready!\n\nI can help you with:
 • Code improvements & optimization
@@ -53,7 +68,7 @@ Just ask me anything about your project!`,
     async function sendPrompt(e) {
         e?.preventDefault();
         
-        if (!input.trim() || loading) return;
+        if (!input.trim() || running) return;
 
         const userMessage = {
             role: 'user',
@@ -61,81 +76,10 @@ Just ask me anything about your project!`,
             timestamp: new Date().toISOString()
         };
 
-        setMessages(prev => [...prev, userMessage]);
-        const promptText = input; // Store before clearing
+        setChatMessages(prev => [...prev, userMessage]);
+        const task = input;
         setInput("");
-        setLoading(true);
-
-        try {
-            const res = await fetch("http://localhost:8005/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ 
-                    project_id: projectId,
-                    prompt: promptText,
-                    context: {
-                        type: 'builder',
-                        action: 'chat',
-                        files: [] // Could add currently open files
-                    }
-                })
-            });
-
-            if (!res.ok) {
-                throw new Error(`API Error: ${res.status}`);
-            }
-
-            const data = await res.json();
-
-            const aiMessage = {
-                role: 'ai',
-                content: formatAIResponse(data),
-                timestamp: new Date().toISOString(),
-                raw: data,
-                agent: data.agent
-            };
-
-            setMessages(prev => [...prev, aiMessage]);
-
-            // ⭐ BLOCK 16: Auto-reload on UI/Preview changes
-            // wenn KI UI oder Code generiert → sofort reload
-            if (data.agent === "preview_agent" || 
-                data.agent === "ui_agent" || 
-                data.actions?.includes("file_write") ||
-                data.actions?.includes("ui_update")) {
-                
-                console.log("🔄 AI modified UI/Preview - Auto-reloading...");
-                
-                // Show reload notification
-                const reloadMessage = {
-                    role: 'system',
-                    content: '🔄 Preview updated! Reloading in 2 seconds...',
-                    timestamp: new Date().toISOString()
-                };
-                setMessages(prev => [...prev, reloadMessage]);
-
-                // Reload after 2 seconds to let user see the change
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            }
-
-        } catch (error) {
-            console.error("❌ Error sending prompt:", error);
-            
-            const errorMessage = {
-                role: 'ai',
-                content: `❌ Error: ${error.message}\n\nPlease make sure the backend is running on port 8000.`,
-                timestamp: new Date().toISOString(),
-                isError: true
-            };
-
-            setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setLoading(false);
-        }
+        sendKernelMessage(task);
     }
 
     function formatAIResponse(data) {
@@ -164,7 +108,7 @@ Just ask me anything about your project!`,
     }
 
     function clearChat() {
-        setMessages([{
+        setChatMessages([{
             role: 'ai',
             content: '🤖 Chat cleared. How can I help you?',
             timestamp: new Date().toISOString()
@@ -204,7 +148,7 @@ Just ask me anything about your project!`,
 
             {/* Messages */}
             <div className="ai-messages">
-                {messages.map((msg, index) => (
+                {chatMessages.map((msg, index) => (
                     <div 
                         key={index}
                         className={`ai-message message-${msg.role}`}
@@ -240,7 +184,7 @@ Just ask me anything about your project!`,
                     </div>
                 ))}
                 
-                {loading && (
+                {running && (
                     <div className="ai-message message-ai">
                         <div className="message-label">🤖 AI Assistant</div>
                         <div className="message-content">
@@ -268,15 +212,15 @@ Just ask me anything about your project!`,
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    disabled={loading}
+                    disabled={running}
                 />
                 
                 <button 
                     type="submit"
                     className="ai-send-btn"
-                    disabled={loading || !input.trim()}
+                    disabled={running || !input.trim()}
                 >
-                    {loading ? '⏳' : '🚀'} Send
+                    {running ? '⏳' : '🚀'} Send
                 </button>
             </form>
 

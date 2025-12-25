@@ -1,13 +1,14 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { FiChevronDown, FiMenu, FiMessageSquare, FiPlus, FiSearch, FiSend, FiSettings, FiTrash2 } from 'react-icons/fi'
+import { useSSEChat } from '@/lib/useSSEChat'
 
 export default function ChatGPTPage() {
-  const [messages, setMessages] = useState([])
+  const { messages: kernelMessages, running, sendMessage: sendKernelMessage, stop } = useSSEChat()
+  const [chatMessages, setChatMessages] = useState([])
   const [input, setInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini')
   const [selectedAgent, setSelectedAgent] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
   const [showAgentMenu, setShowAgentMenu] = useState(false)
@@ -17,6 +18,40 @@ export default function ChatGPTPage() {
   const [availableModels, setAvailableModels] = useState([])
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const messagesEndRef = useRef(null)
+
+  // Convert kernel events to chat messages
+  useEffect(() => {
+    if (kernelMessages.length > 0) {
+      const lastEvent = kernelMessages[kernelMessages.length - 1]
+      
+      // Bei done Event: Sammle alle message und step Events
+      if (lastEvent.type === 'done') {
+        // Sammle message Events (Dialog)
+        const messageEvents = kernelMessages
+          .filter(e => e.type === 'message' && e.message)
+          .map(e => e.message)
+          .join('')
+        
+        // Sammle step Events (Job-Modus)
+        const stepEvents = kernelMessages
+          .filter(e => e.type === 'step' && e.message)
+          .map(e => e.message)
+          .join('\n\n')
+        
+        const content = messageEvents || stepEvents || 'Aufgabe abgeschlossen.'
+        
+        if (content) {
+          setChatMessages(prev => [...prev, {
+            role: 'assistant',
+            content: content,
+            timestamp: new Date().toISOString(),
+            model: selectedModel,
+            agent: selectedAgent?.name
+          }])
+        }
+      }
+    }
+  }, [kernelMessages, selectedModel, selectedAgent])
 
   // Agenten wie in ChatGPT
   const agents = [
@@ -90,7 +125,7 @@ export default function ChatGPTPage() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [chatMessages])
 
   useEffect(() => {
     // Lade Chat History
@@ -168,7 +203,7 @@ export default function ChatGPTPage() {
   }
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || running) return
 
     const userMessage = {
       role: 'user',
@@ -176,73 +211,21 @@ export default function ChatGPTPage() {
       timestamp: new Date().toISOString()
     }
 
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    setChatMessages(prev => [...prev, userMessage])
+    const task = input
     setInput('')
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('http://localhost:8005/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: input,
-          model: selectedModel,
-          agent: selectedAgent?.id || 'aura',
-          stream: false,
-          conversation_history: messages.slice(-10)
-        })
-      })
-
-      if (!response.ok) throw new Error('Chat request failed')
-
-      const data = await response.json()
-      
-      if (data.success && data.response) {
-        let assistantMessage = {
-          role: 'assistant',
-          content: data.response,
-          timestamp: new Date().toISOString(),
-          model: data.model,
-          provider: data.provider,
-          agent: selectedAgent?.name
-        }
-
-        const finalMessages = [...newMessages, assistantMessage]
-        setMessages(finalMessages)
-
-        // Speichere Chat
-        const chatId = currentChatId || Date.now().toString()
-        setCurrentChatId(chatId)
-        const title = newMessages[0]?.content.slice(0, 50) || 'Neuer Chat'
-        saveChatHistory(chatId, title, finalMessages)
-      } else {
-        throw new Error(data.error || 'Unknown error')
-      }
-
-    } catch (error) {
-      console.error('Chat error:', error)
-      console.error('Error details:', error.message)
-      setMessages([...newMessages, {
-        role: 'assistant',
-        content: `❌ Fehler beim Senden der Nachricht: ${error.message}. Backend erreichbar?`,
-        timestamp: new Date().toISOString(),
-        error: true
-      }])
-    } finally {
-      setIsLoading(false)
-    }
+    sendKernelMessage(task)
   }
 
   const startNewChat = () => {
-    setMessages([])
+    setChatMessages([])
     setCurrentChatId(null)
     setSelectedAgent(null)
     setWebSearchEnabled(false)
   }
 
   const loadChat = (chat) => {
-    setMessages(chat.messages || [])
+    setChatMessages(chat.messages || [])
     setCurrentChatId(chat.id)
     setSelectedModel(chat.model || 'gpt-4o')
     setSelectedAgent(agents.find(a => a.id === chat.agent) || null)
@@ -459,7 +442,7 @@ export default function ChatGPTPage() {
 
         {/* Messages Area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-          {messages.length === 0 ? (
+          {chatMessages.length === 0 ? (
             <div style={{ maxWidth: '800px', margin: '0 auto', paddingTop: '60px' }}>
               <h1 style={{ fontSize: '32px', fontWeight: 600, marginBottom: '32px', textAlign: 'center' }}>
                 Wie kann ich dir helfen?
@@ -506,12 +489,12 @@ export default function ChatGPTPage() {
               </div>
             </div>
           ) : (
-            messages.map((msg, idx) => (
+            chatMessages.map((msg, idx) => (
               <div key={idx} style={{
                 padding: '24px 0',
                 maxWidth: '800px',
                 margin: '0 auto',
-                borderBottom: idx < messages.length - 1 ? '1px solid #2f2f2f' : 'none'
+                borderBottom: idx < chatMessages.length - 1 ? '1px solid #2f2f2f' : 'none'
               }}>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <div style={{
@@ -561,7 +544,7 @@ export default function ChatGPTPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                 placeholder={selectedAgent ? `Frage an ${selectedAgent.name}...` : 'Stelle irgendeine Frage'}
-                disabled={isLoading}
+                disabled={running}
                 style={{
                   width: '100%',
                   minHeight: '56px',
@@ -579,7 +562,7 @@ export default function ChatGPTPage() {
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || running}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -587,10 +570,10 @@ export default function ChatGPTPage() {
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  background: input.trim() && !isLoading ? '#ececec' : '#4d4d4d',
+                  background: input.trim() && !running ? '#ececec' : '#4d4d4d',
                   border: 'none',
                   color: '#212121',
-                  cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
+                  cursor: input.trim() && !running ? 'pointer' : 'not-allowed',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

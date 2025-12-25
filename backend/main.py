@@ -4,12 +4,25 @@ Full-featured API with Authentication, Sessions, Chat, Models, and more
 """
 import os
 import time
+import asyncio
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import anthropic
 import jwt
 import openai
+
+# Kernel imports
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from kernel.kernel_v1 import KernelV1  # Kernel v1.1
+from kernel.kernel_runtime import KernelRuntime, init_runtime  # v1.1
+from kernel.kernel_state_store import KernelStateStore  # v1.1
+from kernel.control.security_policy import SecurityLevel
+from kernel.control.human_control import ControlMode
+from kernel.streamer import SSEStreamer
+from llm.router import LLMRouter
+from llm.openai_client import OpenAIClient
 
 try:
     import google.generativeai as genai
@@ -1353,6 +1366,15 @@ except Exception as e:
 # -------------------------------------------------------------
 # CHAT & AGENTS
 # -------------------------------------------------------------
+# Home Chat - Unified Chat with all AI agents
+try:
+    from chat.home_chat_routes import router as home_chat_router
+    app.include_router(home_chat_router, tags=["Home Chat"])
+    print("✅ Home Chat Router loaded")
+    print("   Endpoints: /api/home/chat, /api/home/ws, /api/home/models, /api/home/agents")
+except Exception as e:
+    print(f"⚠️  Home Chat Router failed to load: {e}")
+
 try:
     from chat.agent_router import router as chat_agent_router
     app.include_router(chat_agent_router, prefix="/api/chat", tags=["Chat Agents"])
@@ -1466,6 +1488,98 @@ async def health_check():
         }
     }
 
+# -------------------------------------------------------------
+# KERNEL SSE ENDPOINT
+# -------------------------------------------------------------
+@app.get("/api/chat/stream")
+async def chat_stream(request: Request, task: str):
+    """
+    SSE-Chat-Endpoint:
+    - startet den AgentKernel
+    - streamt Events live an den Client
+    """
+    
+    async def event_generator():
+        """Generator für SSE Events"""
+        queue = asyncio.Queue()
+        
+        class QueueResponse:
+            """Response-Wrapper für Queue-basiertes Streaming"""
+            async def write(self, data: str):
+                await queue.put(data)
+            
+            async def flush(self):
+                pass
+        
+        # Streamer und Kernel initialisieren
+        streamer = SSEStreamer(response=QueueResponse())
+        
+        # LLM-Router mit verfügbaren Clients
+        llm_router = LLMRouter({
+            "openai": OpenAIClient(model="gpt-4o"),
+            "openai-mini": OpenAIClient(model="gpt-4o-mini"),
+        })
+        
+        # v1.1: Runtime mit allen Komponenten
+        runtime = init_runtime(
+            security_level=SecurityLevel.NORMAL,
+            control_mode=ControlMode.ASSISTED,
+            kernel=None  # Wird von KernelV1 gesetzt
+        )
+        
+        # v1.1: Kernel mit Runtime
+        kernel = KernelV1(
+            streamer=streamer,
+            runtime=runtime,
+            llm_router=llm_router
+        )
+        
+        # Kernel-Task im Hintergrund starten
+        async def run_kernel():
+            try:
+                await kernel.run(task)
+            except Exception as e:
+                import traceback
+                error_msg = f"Kernel Error: {str(e)}\n{traceback.format_exc()}"
+                await queue.put(f'data: {{"type": "error", "message": "{error_msg}", "data": null}}\n\n')
+        
+        kernel_task = asyncio.create_task(run_kernel())
+        
+        # Events aus der Queue streamen
+        try:
+            while True:
+                # Timeout, um auf neue Events zu warten
+                try:
+                    data = await asyncio.wait_for(queue.get(), timeout=0.1)
+                    yield data
+                    
+                    # Bei "done" Event beenden
+                    if '"type": "done"' in data or '"type":"done"' in data:
+                        break
+                except asyncio.TimeoutError:
+                    # Prüfen, ob Kernel-Task fertig ist
+                    if kernel_task.done():
+                        # Hole exception falls vorhanden
+                        if kernel_task.exception():
+                            error = kernel_task.exception()
+                            yield f'data: {{"type": "error", "message": "Kernel failed: {str(error)}", "data": null}}\n\n'
+                        break
+                    continue
+        finally:
+            # Aufräumen
+            if not kernel_task.done():
+                kernel_task.cancel()
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

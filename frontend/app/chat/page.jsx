@@ -1,15 +1,50 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { useSSEChat } from '@/lib/useSSEChat'
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [selectedModel, setSelectedModel] = useState('gpt-4o')
-  const [isLoading, setIsLoading] = useState(false)
   const [availableModels, setAvailableModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(true)
   const messagesEndRef = useRef(null)
+  
+  // Kernel SSE Hook
+  const { messages: kernelMessages, running, sendMessage: sendKernelMessage } = useSSEChat()
+  const [chatMessages, setChatMessages] = useState([])
+
+  // Convert kernel events to chat messages
+  useEffect(() => {
+    if (kernelMessages.length > 0) {
+      const lastEvent = kernelMessages[kernelMessages.length - 1]
+      
+      // Bei done Event: Sammle alle message und step Events
+      if (lastEvent.type === 'done') {
+        // Sammle message Events (Dialog)
+        const messageEvents = kernelMessages
+          .filter(e => e.type === 'message' && e.message)
+          .map(e => e.message)
+          .join('')
+        
+        // Sammle step Events (Job-Modus)
+        const stepEvents = kernelMessages
+          .filter(e => e.type === 'step' && e.message)
+          .map(e => e.message)
+          .join('\n\n')
+        
+        const content = messageEvents || stepEvents || 'Aufgabe abgeschlossen.'
+        
+        if (content) {
+          setChatMessages(prev => [...prev, {
+            role: 'assistant',
+            content: content,
+            timestamp: new Date().toISOString()
+          }])
+        }
+      }
+    }
+  }, [kernelMessages])
 
   // Lade verfügbare Modelle vom Backend
   useEffect(() => {
@@ -18,24 +53,19 @@ export default function ChatPage() {
 
   const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://localhost:8005/api/models')
+      const response = await fetch('http://localhost:8000/api/home/models')
       const data = await response.json()
 
-      // Konvertiere zu flacher Liste
-      const allModels = []
+      if (data.success && data.models) {
+        // Konvertiere zu flacher Liste
+        const allModels = data.models.map(model => ({
+          id: model.id,
+          name: model.name,
+          provider: model.provider,
+          icon: model.icon || getProviderIcon(model.provider)
+        }))
 
-      Object.entries(data.models).forEach(([provider, models]) => {
-        models.forEach(model => {
-          allModels.push({
-            id: model.id,
-            name: model.name,
-            provider: model.provider,
-            icon: getProviderIcon(model.provider)
-          })
-        })
-      })
-
-      setAvailableModels(allModels)
+        setAvailableModels(allModels)
 
       // Setze erstes verfügbares Modell als default
       if (allModels.length > 0) {
@@ -110,47 +140,38 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [chatMessages])
 
-  const sendMessage = async () => {
-    if (!input.trim()) return
+  // Konvertiere Kernel-Events zu Chat-Nachrichten
+  useEffect(() => {
+    if (kernelMessages.length > 0) {
+      const content = kernelMessages
+        .map(event => `**[${event.type.toUpperCase()}]**\n${event.message}`)
+        .join('\n\n')
+      
+      setChatMessages(prev => {
+        const updated = [...prev]
+        if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+          updated[updated.length - 1] = { role: 'assistant', content }
+        } else {
+          updated.push({ role: 'assistant', content })
+        }
+        return updated
+      })
+    }
+  }, [kernelMessages])
+
+  const sendMessage = () => {
+    if (!input.trim() || running) return
 
     const userMessage = { role: 'user', content: input }
-    setMessages(prev => [...prev, userMessage])
+    setChatMessages(prev => [...prev, userMessage])
+    sendKernelMessage(input)
     setInput('')
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: selectedModel,
-          prompt: input,
-          conversation_history: messages,
-          stream: false
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.response) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
-      } else {
-        throw new Error('No response from API')
-      }
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `❌ Error: ${error.message}`
-      }])
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const clearChat = () => {
-    setMessages([])
+    setChatMessages([])
   }
 
   return (
@@ -284,7 +305,7 @@ export default function ChatPage() {
               <p>Ask me anything! I'm powered by multiple AI models.</p>
             </div>
           ) : (
-            messages.map((msg, idx) => (
+            chatMessages.map((msg, idx) => (
               <div
                 key={idx}
                 style={{
@@ -319,7 +340,7 @@ export default function ChatPage() {
             ))
           )}
 
-          {isLoading && (
+          {running && (
             <div style={{
               display: 'flex',
               justifyContent: 'flex-start'
@@ -332,7 +353,7 @@ export default function ChatPage() {
               }}>
                 <div style={{
                   fontSize: '0.75rem',
-                  opacity: 0.7,
+                  opacity: 0.7',
                   marginBottom: '0.5rem',
                   fontWeight: 'bold'
                 }}>
@@ -357,9 +378,9 @@ export default function ChatPage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
+              onKeyPress={(e) => e.key === 'Enter' && !running && sendMessage()}
               placeholder="Type your message..."
-              disabled={isLoading}
+              disabled={running}
               style={{
                 flex: 1,
                 padding: '1rem 1.5rem',
@@ -373,10 +394,10 @@ export default function ChatPage() {
             />
             <button
               onClick={sendMessage}
-              disabled={isLoading || !input.trim()}
+              disabled={running || !input.trim()}
               style={{
                 padding: '1rem 2rem',
-                background: isLoading || !input.trim()
+                background: running || !input.trim()
                   ? 'rgba(100, 100, 100, 0.3)'
                   : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 border: 'none',
@@ -384,11 +405,11 @@ export default function ChatPage() {
                 color: 'white',
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
+                cursor: running || !input.trim() ? 'not-allowed' : 'pointer',
                 transition: 'all 0.3s'
               }}
             >
-              {isLoading ? '⏳' : '🚀'} Send
+              {running ? '⏳' : '🚀'} Send
             </button>
           </div>
         </div>

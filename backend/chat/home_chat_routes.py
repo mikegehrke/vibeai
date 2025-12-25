@@ -477,18 +477,28 @@ def init_ai_clients():
     
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if openai_api_key:
-        openai.api_key = openai_api_key
-        openai_client = openai
+        openai_client = openai.OpenAI(api_key=openai_api_key)
+        print(f"✅ OpenAI client initialized")
+    else:
+        print(f"⚠️  No OpenAI API key found")
     
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
     if anthropic_api_key:
         anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
+        print(f"✅ Anthropic client initialized")
+    else:
+        print(f"⚠️  No Anthropic API key found")
     
     if GEMINI_AVAILABLE:
         google_api_key = os.getenv("GOOGLE_API_KEY")
         if google_api_key:
             genai.configure(api_key=google_api_key)
             gemini_client = genai
+            print(f"✅ Gemini client initialized")
+        else:
+            print(f"⚠️  No Google API key found")
+    else:
+        print(f"⚠️  Gemini not available")
 
 # Initialize clients on import
 init_ai_clients()
@@ -608,6 +618,31 @@ async def call_gemini_model(model: str, prompt: str, stream: bool = True):
         raise HTTPException(500, f"Gemini error: {str(e)}")
 
 
+async def call_mock_model(messages: List[Dict], stream: bool = True):
+    """Mock model for development/testing without API keys"""
+    # Get user message
+    user_msg = next((m["content"] for m in messages if m["role"] == "user"), "")
+    
+    # Generate mock response based on user message
+    response = f"✅ Mock Response: Ich habe deine Nachricht erhalten: '{user_msg}'\n\n"
+    response += "🤖 **VibeAI Mock Mode**\n"
+    response += "Da keine API Keys konfiguriert sind, läuft VibeAI im Mock-Modus.\n\n"
+    response += "Um echte KI-Antworten zu erhalten:\n"
+    response += "1. Füge `OPENAI_API_KEY` in `.env` hinzu\n"
+    response += "2. Optional: `ANTHROPIC_API_KEY` für Claude\n"
+    response += "3. Optional: `GOOGLE_API_KEY` für Gemini\n\n"
+    response += "💡 Trotzdem kannst du alle Features testen - ich antworte immer freundlich!"
+    
+    if stream:
+        # Simulate streaming
+        for char in response:
+            yield {"type": "chunk", "content": char}
+            await asyncio.sleep(0.01)
+        yield {"type": "done", "content": response}
+    else:
+        yield {"type": "done", "content": response}
+
+
 async def call_model(model: str, messages: List[Dict], stream: bool = True):
     """Route to appropriate model provider"""
     model_info = AVAILABLE_MODELS.get(model)
@@ -617,27 +652,59 @@ async def call_model(model: str, messages: List[Dict], stream: bool = True):
     
     provider = model_info["provider"]
     
-    if provider == "openai" or provider == "github":
-        async for chunk in call_openai_model(model, messages, stream):
-            yield chunk
+    # Check if any API client is available
+    no_clients = (not openai_client and not anthropic_client and not gemini_client)
     
-    elif provider == "anthropic":
-        async for chunk in call_anthropic_model(model, messages, stream):
+    if no_clients:
+        # Use mock model if no API keys configured
+        print("⚠️  No API clients available - using mock mode")
+        async for chunk in call_mock_model(messages, stream):
             yield chunk
+        return
     
-    elif provider == "google":
-        # Convert messages to single prompt for Gemini
-        prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-        async for chunk in call_gemini_model(model, prompt, stream):
+    try:
+        if provider == "openai" or provider == "github":
+            if not openai_client:
+                # Fallback to mock
+                async for chunk in call_mock_model(messages, stream):
+                    yield chunk
+            else:
+                async for chunk in call_openai_model(model, messages, stream):
+                    yield chunk
+        
+        elif provider == "anthropic":
+            if not anthropic_client:
+                async for chunk in call_mock_model(messages, stream):
+                    yield chunk
+            else:
+                async for chunk in call_anthropic_model(model, messages, stream):
+                    yield chunk
+        
+        elif provider == "google":
+            if not gemini_client:
+                async for chunk in call_mock_model(messages, stream):
+                    yield chunk
+            else:
+                # Convert messages to single prompt for Gemini
+                prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                async for chunk in call_gemini_model(model, prompt, stream):
+                    yield chunk
+        
+        elif provider == "ollama":
+            # Use Ollama local models
+            async for chunk in call_ollama_model(model, messages, stream):
+                yield chunk
+        
+        else:
+            raise HTTPException(400, f"Unknown provider: {provider}")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error calling {provider} model: {e}")
+        # Fallback to mock on error
+        async for chunk in call_mock_model(messages, stream):
             yield chunk
-    
-    elif provider == "ollama":
-        # Use Ollama local models
-        async for chunk in call_ollama_model(model, messages, stream):
-            yield chunk
-    
-    else:
-        raise HTTPException(400, f"Unknown provider: {provider}")
 
 
 async def call_ollama_model(model: str, messages: List[Dict], stream: bool = True):
@@ -855,8 +922,14 @@ async def home_chat(
                 metadata={"building": True, "project_id": project_id}
             )
         
-        # Detect if user describes an app idea
-        if any(keyword in request.message.lower() for keyword in ["erstelle", "baue", "create app", "build app", "make app"]):
+        # Detect if user describes an app idea - stricter matching
+        message_lower = request.message.lower()
+        app_keywords = [
+            "erstelle app", "erstelle eine app", "baue app", "baue eine app",
+            "create app", "create an app", "build app", "build an app", 
+            "make app", "make an app", "entwickle app"
+        ]
+        if any(keyword in message_lower for keyword in app_keywords):
             # Generate plan first, let user confirm with START button
             plan_response = ""
             async for chunk in call_model(request.model, messages + [
